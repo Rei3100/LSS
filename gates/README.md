@@ -28,6 +28,15 @@ One ref update is allowed: `refs/heads/main`, or an agent branch under
 Deletes, tags and all other refs are blocked. The publication wrapper verifies
 the fetch URL and every effective push URL against the fixed repository forms.
 
+`lss_gh.py` inspects outgoing titles, labels and bodies before sending them to the
+fixed repository. It supports issue creation, comments, reason-first closure and
+label changes; PR comments, draft creation, draft/ready changes and reason-first
+closure; and deletion of individual issue/PR comments. PR creation and state
+changes require the assigned branch. Issue operations, PR comments and comment
+deletion also work from main without `LSS_AGENT_BRANCH`. Only
+`issue-comment --allow-canary-test` permits a body consisting of exactly one canary token; private
+literal hits still block. See `ENTRY_POINTS.md` for the operation inputs.
+
 `lss_gh.py review-record` reads a JSON object binding `base_sha`,
 `review_head_sha`, `diff_digest`, `engine` (`"claude"` or `"codex"`),
 `complete: true`, a nonempty `summary`, `findings_p0p1` (integer >= 0) and
