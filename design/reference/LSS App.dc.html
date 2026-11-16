@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Oswald:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Noto+Sans+JP:wght@500;700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:oklch(0.94 0.004 264)}
+a{color:oklch(0.58 0.2 27)}
+a:hover{color:oklch(0.66 0.19 30)}
+.lss-band{scrollbar-width:none}
+.lss-band::-webkit-scrollbar{display:none}
+@keyframes lssWipeF{0%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+@keyframes lssWipeB{0%{transform:translateX(120%)}100%{transform:translateX(-120%)}}
+@keyframes lssFlash{0%{opacity:0}22%{opacity:.5}100%{opacity:0}}
+@keyframes lssLine{0%{opacity:0;transform:translateX(-40%) scaleX(.15)}25%{opacity:.9}100%{opacity:0;transform:translateX(150%) scaleX(1)}}
+@keyframes lssStamp{0%{opacity:0;transform:rotate(-11deg) scale(2.1)}58%{opacity:1;transform:rotate(-3deg) scale(1.03)}78%{transform:rotate(-1deg) scale(.995)}100%{opacity:1;transform:rotate(-2deg) scale(1)}}
+@keyframes lssSubIn{0%{opacity:0;transform:translateX(-16px)}100%{opacity:1;transform:translateX(0)}}
+@keyframes lssTagIn{0%{opacity:0;transform:translateY(-14px) rotate(-7deg) scale(1.2)}70%{opacity:1;transform:translateY(2px) rotate(1deg) scale(.98)}100%{opacity:1;transform:translateY(0) rotate(0) scale(1)}}
+@keyframes lssSlap{0%{opacity:0;transform:translateY(-22px) rotate(-9deg) scale(1.12)}70%{opacity:1;transform:translateY(2px) rotate(1deg) scale(.99)}100%{opacity:1;transform:translateY(0) rotate(0) scale(1)}}
+@keyframes lssHalt{0%{opacity:0;transform:translateY(-30px) skewX(-5deg) scale(1.06)}58%{opacity:1;transform:translateY(5px) skewX(1.5deg) scale(.994)}80%{transform:translateY(-2px) skewX(0deg) scale(1.003)}100%{opacity:1;transform:translateY(0) skewX(0deg) scale(1)}}
+@keyframes lssShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes lssPulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes lssScan{0%{transform:translateX(-100%)}100%{transform:translateX(320%)}}
+@keyframes lssTipIn{0%{opacity:0;transform:translate(-50%,var(--tipoff)) scale(.94)}100%{opacity:1;transform:translate(-50%,var(--tiprest)) scale(1)}}
+@keyframes lssSwap{0%{opacity:0;transform:translateY(5px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes lssHatch{0%{background-position:0 0}100%{background-position:22px 0}}
+@keyframes lssBrace{0%{opacity:0;transform:translate(6px,6px)}100%{opacity:1;transform:translate(0,0)}}
+@keyframes lssRideT{0%,32%,100%{transform:scaleY(1);background:oklch(0.7 0.008 264)}10%{transform:scaleY(1.3);background:oklch(0.97 0.01 200)}}
+@keyframes lssRideB{0%,36%,100%{transform:scaleY(.92);background:oklch(0.78 0.12 200 / 0.62)}10%{transform:scaleY(1.24);background:oklch(0.9 0.13 200)}}
+@keyframes lssSplitU{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes lssSplitD{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+@keyframes lssSweep{0%{transform:translateX(-50%)}100%{transform:translateX(575%)}}
+@keyframes lssLand{0%{background-position:100% 0;opacity:1}70%{opacity:1}100%{background-position:0% 0;opacity:0}}
+@keyframes lssFadeIn{0%{opacity:0}100%{opacity:1}}
+@keyframes lssFadeOut{0%{opacity:1}100%{opacity:0}}
+@keyframes lssToTray{0%{transform:scale(1);opacity:1}70%{opacity:1}100%{transform:scale(.014);opacity:0}}
+@keyframes lssFromTray{0%{transform:scale(.014);opacity:0}30%{opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes lssToastIn{0%{opacity:0;transform:translateX(44px)}100%{opacity:1;transform:translateX(0)}}
+</style>
+</helmet>
+<div style="display:flex;flex-direction:column;gap:14px;align-items:flex-start;font-family:'IBM Plex Sans',system-ui,sans-serif">
+
+<sc-if value="{{ debugOn }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;flex-direction:column;gap:7px;align-items:flex-start;max-width:1440px">
+  <div style="display:flex;align-items:center;gap:8px;font:600 10px 'IBM Plex Mono',ui-monospace,monospace;color:oklch(0.42 0.006 264);flex-wrap:wrap">
+    <span style="letter-spacing:1px;white-space:nowrap">STATE JUMP</span>
+    <sc-for list="{{ demoButtons }}" as="b" hint-placeholder-count="7">
+      <div style="{{ b.style }}" onClick="{{ b.onClick }}" data-jump="1" style-hover="border-color:oklch(0.55 0.2 27);color:oklch(0.3 0.05 27)">{{ b.label }}</div>
+    </sc-for>
+  </div>
+  <div style="display:flex;align-items:baseline;gap:9px;font:500 10px 'IBM Plex Mono',ui-monospace,monospace;color:oklch(0.45 0.006 264);flex-wrap:wrap">
+    <span style="letter-spacing:1.2px;font-weight:600;color:oklch(0.52 0.14 55);white-space:nowrap">NEEDS WIRING</span>
+    <sc-for list="{{ handoffItems }}" as="h" hint-placeholder-count="6">
+      <span style="{{ h.style }}" key="{{ h.key }}">{{ h.t }}</span>
+    </sc-for>
+  </div>
+  </div>
+</sc-if>
+
+<div style="width:1440px;height:900px;overflow:hidden;position:relative;--bg:oklch(0.13 0.004 264);--panel:oklch(0.195 0.006 264);--line:oklch(1 0 0 / 0.13);--muted:oklch(0.7 0.008 264);--dim:oklch(0.56 0.008 264);--text:oklch(0.96 0.003 264);--red:{{ accentRed }};--cyan:oklch(0.78 0.12 200);--gold:oklch(0.83 0.16 95);background:var(--bg);color:var(--text);display:flex;flex-direction:column" ref="{{ setFrameRef }}" onMouseEnter="{{ onEnterFrame }}" onMouseLeave="{{ onLeaveFrame }}" onMouseMove="{{ onFrameMove }}" onContextMenu="{{ onContext }}" onClick="{{ onFrameClick }}">
+
+  <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0">
+    <div style="position:absolute;right:-150px;top:-190px;width:620px;height:620px;background:oklch(0.58 0.2 27 / 0.065);transform:rotate(24deg)"></div>
+    <div style="position:absolute;right:240px;top:-40px;width:2px;height:420px;background:oklch(1 0 0 / 0.05);transform:rotate(24deg)"></div>
+    <div style="position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.5) 1px,transparent 1.2px);background-size:6px 6px;opacity:.028"></div>
+    <div style="position:absolute;left:-18px;bottom:-58px;font-family:'Anton',sans-serif;font-size:190px;line-height:.78;letter-spacing:-6px;color:oklch(1 0 0 / 0.032)">LSS</div>
+  </div>
+
+  <sc-if value="{{ wipeOn }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:60;pointer-events:none;overflow:hidden" key="{{ wipeKeyStr }}">
+      <div style="{{ wipeWrapStyle }}">
+        <div style="{{ wipePanelStyle }}"></div>
+        <div style="{{ wipeBladeStyle }}"></div>
+      </div>
+      <div style="position:absolute;left:0;right:0;top:24%;height:2px;background:#fff;opacity:.7;animation:lssLine .42s cubic-bezier(.3,0,.3,1) .04s both"></div>
+      <div style="position:absolute;left:0;right:0;top:56%;height:3px;background:#fff;opacity:.55;animation:lssLine .46s cubic-bezier(.3,0,.3,1) both"></div>
+      <div style="position:absolute;left:0;right:0;top:78%;height:1px;background:#fff;opacity:.5;animation:lssLine .4s cubic-bezier(.3,0,.3,1) .09s both"></div>
+      <div style="position:absolute;inset:0;background:#fff;animation:lssFlash .34s ease-out .13s both"></div>
+    </div>
+  </sc-if>
+
+  <div style="{{ topBarStyle }}">
+    <div style="display:flex;align-items:center;gap:12px;padding-left:20px;min-width:0">
+      <div style="{{ statusMarkStyle }}"></div>
+      <span style="font-family:'Anton',sans-serif;font-size:20px;letter-spacing:2.5px;line-height:1;color:var(--text);white-space:nowrap">LSS</span>
+    </div>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:stretch">
+      <div style="{{ chrome.min.style }}" onClick="{{ onMin }}" data-tip="min" style-hover="background:var(--panel);color:var(--text)" style-active="transform:scale(.9)"><div style="width:15px;height:2px;background:currentColor"></div></div>
+      <div style="{{ chrome.close.style }}" onClick="{{ onClose }}" data-tip="close" style-hover="background:var(--red);color:#fff" style-active="transform:scale(.9)"><div style="position:relative;width:14px;height:14px"><div style="position:absolute;left:0;top:6px;width:14px;height:2px;background:currentColor;transform:rotate(45deg)"></div><div style="position:absolute;left:0;top:6px;width:14px;height:2px;background:currentColor;transform:rotate(-45deg)"></div></div></div>
+    </div>
+  </div>
+
+  <sc-if value="{{ tipOn }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ tipStyle }}" key="{{ tipKeyStr }}">
+      <span style="display:inline-block;animation:lssSwap .16s ease-out both" key="{{ tipSwapKey }}">{{ tipText }}</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ctxOn }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ ctxStyle }}" key="{{ ctxKeyStr }}">
+      <div style="{{ ctxBodyStyle }}" key="{{ ctxContentKey }}">
+        <div style="{{ ctxHeadStyle }}">{{ ctxHead }}</div>
+        <sc-for list="{{ ctxItems }}" as="it" hint-placeholder-count="3">
+          <div style="{{ it.style }}" onClick="{{ it.onClick }}" key="{{ it.key }}" style-hover="background:var(--red);color:#fff">
+            <span style="{{ it.enStyle }}">{{ it.en }}</span>
+            <span style="{{ it.jpStyle }}">{{ it.jp }}</span>
+            <div style="flex:1"></div>
+            <span style="{{ it.keyStyle }}">{{ it.hint }}</span>
+          </div>
+        </sc-for>
+        <div style="{{ ctxFootWrapStyle }}">
+          <sc-if value="{{ ctxFootIsPath }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ ctxPathBoxStyle }}">
+              <div style="{{ pathTickStyle }}"></div>
+              <span style="{{ ctxPathRootStyle }}">{{ ctxPathRoot }}</span>
+              <span style="{{ ctxPathLeafStyle }}">{{ ctxPathLeaf }}</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{ ctxFootIsNote }}" hint-placeholder-val="{{ true }}">
+            <span style="{{ ctxFootNoteStyle }}">{{ ctxFoot }}</span>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ quitAskOn }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:0;right:0;top:48px;bottom:0;z-index:50;background:oklch(0.08 0.004 264 / 0.7);display:flex;justify-content:flex-end;align-items:flex-start;padding:14px 18px;animation:lssFadeIn .16s ease-out both" onClick="{{ onQuitCancel }}">
+      <div style="{{ quitCardStyle }}" onClick="{{ stopProp }}">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;padding:3px 10px;background:var(--red);color:#fff;clip-path:polygon(12% 0,100% 0,88% 100%,0 100%);white-space:nowrap">QUIT</span>
+          <span style="font-family:'Noto Sans JP',sans-serif;font-weight:900;font-size:22px;color:var(--text);white-space:nowrap">LSS を終了しますか？</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:14px;color:var(--text);white-space:nowrap">{{ quitLine }}</span>
+          <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:12.5px;color:var(--muted);white-space:nowrap">完成した結果はすべて保存されています。</span>
+        </div>
+        <div style="display:flex;gap:8px;padding-top:4px">
+          <sc-for list="{{ quitActions }}" as="a" hint-placeholder-count="3">
+            <div style="{{ a.style }}" onClick="{{ a.onClick }}" key="{{ a.key }}" style-hover="border-color:var(--text)" style-active="transform:scale(.95)">
+              <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:1.4px">{{ a.en }}</span>
+              <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11px;opacity:.8">{{ a.jp }}</span>
+              <sc-if value="{{ a.hasKey }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;opacity:.6">{{ a.k }}</span></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ trayOn }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ deskStyle }}" key="{{ deskKey }}">
+      <div style="position:absolute;left:32px;top:28px;display:flex;flex-direction:column;gap:8px;max-width:640px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:11px;letter-spacing:1px;color:oklch(0.62 0.02 250)">PROTOTYPE · WINDOWS DESKTOP</span>
+        <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:14px;color:oklch(0.82 0.01 250);text-wrap:pretty">LSS はタスクトレイで動いています。トレイのアイコンをクリックすると全画面に戻ります。</span>
+      </div>
+      <div style="{{ ghostStyle }}"></div>
+      <sc-if value="{{ toastOn }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ toastStyle }}" onClick="{{ onRestore }}" style-hover="transform:translateY(-2px)">
+          <div style="display:flex;align-items:center;gap:9px">
+            <div style="width:6px;height:14px;background:var(--gold);transform:skewX(-14deg)"></div>
+            <span style="font-family:'Anton',sans-serif;font-size:14px;letter-spacing:1.5px;color:var(--text)">LSS</span>
+            <div style="flex:1"></div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim)">{{ clock }}</span>
+          </div>
+          <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:21px;letter-spacing:2.5px;color:var(--text);white-space:nowrap">SESSION COMPLETE</span>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <sc-for list="{{ toastTags }}" as="tg" hint-placeholder-count="2">
+              <span style="{{ tg.style }}" key="{{ tg.key }}">{{ tg.t }}</span>
+            </sc-for>
+          </div>
+          <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11.5px;color:var(--dim)">クリックで LSS を開く</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ trayTipOn }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ trayTipStyle }}">{{ trayTip }}</div>
+      </sc-if>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:44px;background:oklch(0.15 0.01 250);border-top:1px solid oklch(1 0 0 / 0.07)"></div>
+      <div style="{{ trayIconStyle }}" onClick="{{ onRestore }}" onMouseEnter="{{ onTrayEnter }}" onMouseLeave="{{ onTrayLeave }}" style-hover="background:oklch(1 0 0 / 0.1)">
+        <div style="{{ trayGlyphStyle }}"></div>
+        <div style="{{ trayBarStyle }}"><div style="{{ trayBarFillStyle }}"></div></div>
+      </div>
+      <div style="position:absolute;right:16px;bottom:0;height:44px;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:1px">
+        <span style="font-family:'IBM Plex Sans',sans-serif;font-size:12px;color:oklch(0.88 0.005 250)">{{ clock }}</span>
+        <span style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;color:oklch(0.7 0.01 250)">{{ dateStr }}</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ quitOn }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:80;background:oklch(0.07 0.003 264);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;animation:lssFadeIn .26s ease both">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1px;color:var(--dim)">PROTOTYPE</span>
+      <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:16px;color:var(--muted)">LSS を終了しました</span>
+      <div style="display:flex;align-items:baseline;gap:8px;cursor:pointer;padding:7px 16px;border:1px solid oklch(1 0 0 / 0.3);clip-path:polygon(8% 0,100% 0,92% 100%,0 100%);color:var(--text);transition:background .15s ease, border-color .15s ease" onClick="{{ onRelaunch }}" style-hover="background:var(--red);border-color:var(--red)">
+        <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:1.4px">LAUNCH</span>
+        <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11px;opacity:.8">LSS を起動</span>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="position:relative;z-index:1;flex:1;min-height:0;display:flex;flex-direction:column;gap:16px;padding:20px 24px 18px">
+
+    <div style="display:flex;align-items:flex-start;gap:30px">
+      <div style="position:relative;display:flex;flex-direction:column;gap:9px;flex-shrink:0">
+        <div style="{{ anchorBadgeStyle }}"></div>
+        <div style="position:relative;display:flex;align-items:flex-end;gap:12px;z-index:1">
+          <div style="{{ anchorNumStyle }}" key="{{ anchorKey }}">{{ anchorNum }}</div>
+          <div style="{{ anchorUnitStyle }}">{{ anchorUnit }}</div>
+        </div>
+        <div style="{{ anchorSubStyle }}" key="{{ anchorSubKey }}">
+          <div style="{{ anchorRuleStyle }}"></div>
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+            <div style="{{ anchorStateStyle }}">{{ anchorState }}</div>
+            <sc-if value="{{ hasAnchorJp }}" hint-placeholder-val="{{ true }}">
+              <div style="{{ anchorJpStyle }}">{{ anchorJp }}</div>
+            </sc-if>
+            <sc-if value="{{ showAnchorSecond }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ anchorJp2Style }}" key="{{ anchorJp2Key }}">{{ anchorJp2 }}</div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+
+      <div style="width:500px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+
+        <sc-if value="{{ showOutput }}" hint-placeholder-val="{{ true }}">
+          <div style="{{ outCardStyle }}">
+            <div style="display:flex;align-items:center;gap:10px;width:100%">
+              <span style="{{ wantLabelStyle }}" key="{{ wantLabelKey }}">{{ wantLabel }}</span>
+              <span style="{{ wantLabelJpStyle }}">{{ wantLabelJp }}</span>
+              <div style="flex:1;height:1px;background:var(--line)"></div>
+              <sc-if value="{{ bulkOn }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ clearMarksStyle }}" onClick="{{ onClearMarks }}" style-hover="color:var(--text);border-color:var(--text)">
+                  <span>CLEAR</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:10.5px;opacity:.75">Esc</span>
+                </div>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:stretch;gap:9px;width:100%;padding-top:3px">
+              <sc-for list="{{ slabs }}" as="sl" hint-placeholder-count="2">
+                <div style="{{ sl.style }}" onClick="{{ sl.onClick }}" key="{{ sl.key }}" style-hover="border-color:var(--text)" style-active="transform:translateY(0) scale(.97)">
+                  <sc-if value="{{ sl.mixed }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ sl.hatchStyle }}"></div>
+                  </sc-if>
+                  <div style="position:relative;z-index:1;display:flex;align-items:center;gap:8px">
+                    <span style="{{ sl.keyStyle }}">{{ sl.kbd }}</span>
+                    <div style="flex:1"></div>
+                    <span style="{{ sl.markStyle }}">{{ sl.mark }}</span>
+                  </div>
+                  <div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;min-width:0">
+                    <span style="{{ sl.enStyle }}">{{ sl.en }}</span>
+                    <span style="{{ sl.jpStyle }}">{{ sl.jp }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="{{ snd.style }}" onClick="{{ snd.onClick }}" key="{{ snd.key }}" style-hover="border-color:var(--text)" style-active="transform:translateY(0) scale(.99)">
+              <sc-if value="{{ snd.mixed }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ snd.hatchStyle }}"></div>
+              </sc-if>
+              <div style="position:relative;z-index:1;display:flex;align-items:center;gap:10px;min-width:0">
+                <span style="{{ snd.keyStyle }}">{{ snd.kbd }}</span>
+                <span style="{{ snd.enStyle }}">{{ snd.en }}</span>
+                <span style="{{ snd.jpStyle }}">{{ snd.jp }}</span>
+                <div style="flex:1"></div>
+                <span style="{{ snd.markStyle }}">{{ snd.mark }}</span>
+              </div>
+              <sc-if value="{{ snd.open }}" hint-placeholder-val="{{ false }}">
+                <div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:7px;width:100%" onClick="{{ snd.onField }}">
+                  <sc-if value="{{ snd.hasItems }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;flex-wrap:wrap;gap:5px">
+                      <sc-for list="{{ snd.items }}" as="c" hint-placeholder-count="3">
+                        <div style="{{ c.style }}" onClick="{{ c.onClick }}" key="{{ c.key }}" style-active="transform:scale(.94)">{{ c.t }}</div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                  <div style="display:flex;flex-wrap:wrap;gap:5px">
+                    <sc-for list="{{ snd.chips }}" as="c" hint-placeholder-count="8">
+                      <div style="{{ c.style }}" onClick="{{ c.onClick }}" key="{{ c.key }}" style-hover="background:#fff;color:var(--red)" style-active="transform:scale(.94)">{{ c.t }}</div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;width:100%;height:26px">
+              <span style="{{ scopeNoteStyle }}" key="{{ scopeNoteKey }}">{{ scopeNote }}</span>
+              <div style="flex:1"></div>
+              <sc-if value="{{ hasScopeHint }}" hint-placeholder-val="{{ false }}">
+                <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11.5px;color:var(--dim);white-space:nowrap">{{ scopeHint }}</span>
+              </sc-if>
+              <sc-if value="{{ hasScopeReset }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ scopeResetStyle }}" onClick="{{ onScopeReset }}" style-hover="background:var(--red);color:#fff;border-color:var(--red)" style-active="transform:scale(.95)">
+                  <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:1.3px">RESET</span>
+                  <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:10.5px;opacity:.75">共通設定に戻す</span>
+                </div>
+              </sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;width:100%;padding-top:11px;border-top:1px solid var(--line)">
+              <div style="display:flex;align-items:center;gap:11px;width:100%">
+                <span style="{{ fieldLabelStyle }}">SAVE TO</span>
+                <div style="{{ pathBoxStyle }}" data-tip="dest">
+                  <div style="{{ pathTickStyle }}"></div>
+                  <span style="{{ pathRootStyle }}">{{ outPathRoot }}</span>
+                  <span style="{{ pathLeafStyle }}">{{ outPathLeaf }}</span>
+                </div>
+                <sc-if value="{{ outMulti }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ destCountStyle }}">{{ outDestCount }}</span>
+                </sc-if>
+                <span style="{{ fmtBadgeStyle }}">FLAC</span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showPipeline }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;width:100%">
+            <div style="display:flex;align-items:center;gap:7px;width:100%;justify-content:flex-end">
+              <sc-if value="{{ hasFrozenNote }}" hint-placeholder-val="{{ false }}">
+                <span style="{{ frozenNoteStyle }}">{{ frozenNote }}</span>
+              </sc-if>
+              <span style="{{ fieldLabelStyle }}">OUTPUT</span>
+              <sc-for list="{{ frozenTags }}" as="tg" hint-placeholder-count="1">
+                <span style="{{ tg.style }}" key="{{ tg.key }}">{{ tg.t }}</span>
+              </sc-for>
+            </div>
+            <div style="display:flex;align-items:stretch;gap:3px;width:100%">
+              <sc-for list="{{ queueSegs }}" as="q" hint-placeholder-count="8">
+                <div style="{{ q.style }}" key="{{ q.key }}"></div>
+              </sc-for>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;width:100%;justify-content:flex-end">
+              <sc-if value="{{ hasForecast }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="{{ elapsedLabelStyle }}">REMAINING</span>
+                  <span style="{{ elapsedStyle }}">{{ forecastValue }}</span>
+                </div>
+              </sc-if>
+              <span style="{{ elapsedLabelStyle }}">ELAPSED</span>
+              <span style="{{ elapsedStyle }}">{{ elapsedValue }}</span>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showFault }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ faultCardStyle }}" key="{{ faultKeyStr }}">
+            <div style="display:flex;align-items:center;gap:11px;width:100%">
+              <span style="{{ faultTagStyle }}">HALTED</span>
+              <span style="{{ faultCodeStyle }}">{{ faultCode }}</span>
+            </div>
+            <span style="{{ faultJpStyle }}">{{ faultJp }}</span>
+            <span style="{{ faultSafeStyle }}">{{ faultSafe }}</span>
+            <sc-if value="{{ hasFaultMetrics }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;gap:20px;padding-top:2px">
+                <sc-for list="{{ faultMetrics }}" as="m" hint-placeholder-count="2">
+                  <div style="display:flex;align-items:baseline;gap:7px" key="{{ m.key }}">
+                    <span style="{{ m.labelStyle }}">{{ m.label }}</span>
+                    <span style="{{ m.valueStyle }}">{{ m.value }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <span style="{{ faultRefStyle }}">{{ faultRef }}</span>
+            <div style="display:flex;gap:8px;padding-top:5px">
+              <sc-for list="{{ faultActions }}" as="a" hint-placeholder-count="2">
+                <div style="{{ a.style }}" onClick="{{ a.onClick }}" key="{{ a.key }}" style-hover="background:var(--red);color:#fff;border-color:var(--red)" style-active="transform:scale(.95)">
+                  <span style="{{ a.enStyle }}">{{ a.en }}</span>
+                  <span style="{{ a.jpStyle }}">{{ a.jp }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ showResult }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ resultStyle }}">
+            <sc-for list="{{ resTargets }}" as="rt" hint-placeholder-count="1">
+              <div style="display:flex;align-items:center;gap:14px" key="{{ rt.key }}">
+                <div style="display:flex;align-items:center;gap:5px">
+                  <sc-for list="{{ rt.notes }}" as="nt" hint-placeholder-count="1">
+                    <span style="{{ nt.style }}" key="{{ nt.key }}">{{ nt.t }}</span>
+                  </sc-for>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+                  <span style="{{ rt.enStyle }}">{{ rt.en }}</span>
+                  <span style="{{ rt.jpStyle }}">{{ rt.unit }}</span>
+                </div>
+                <div style="display:flex;align-items:baseline;gap:5px;min-width:84px;justify-content:flex-end">
+                  <span style="{{ rt.numStyle }}">{{ rt.num }}</span>
+                  <span style="{{ rt.uStyle }}">{{ rt.u }}</span>
+                </div>
+              </div>
+            </sc-for>
+            <div style="width:100%;height:1px;background:var(--line)"></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;width:100%">
+              <div style="display:flex;align-items:center;gap:10px">
+                <sc-if value="{{ resMulti }}" hint-placeholder-val="{{ false }}">
+                  <span style="{{ destCountStyle }}">{{ resDestCount }}</span>
+                </sc-if>
+                <span style="{{ fieldLabelStyle }}">SAVED TO</span>
+              </div>
+              <div style="{{ resPathBoxStyle }}" onClick="{{ onOpenRes }}" data-tip="{{ resPathTip }}" style-hover="border-color:oklch(1 0 0 / 0.38)" style-active="transform:scale(.98)">
+                <div style="{{ pathTickStyle }}"></div>
+                <span style="{{ pathRootStyle }}">{{ resPathRoot }}</span>
+                <span style="{{ pathLeafStyle }}">{{ resPathLeaf }}</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:12px">
+              <span style="{{ fieldLabelStyle }}">TIME TAKEN</span>
+              <span style="{{ resTimeStyle }}">{{ resTime }}</span>
+            </div>
+          </div>
+        </sc-if>
+
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:flex-end;gap:14px">
+      <span style="{{ listTitleStyle }}">{{ listTitle }}</span>
+      <div style="display:flex;align-items:baseline;gap:14px">
+        <sc-for list="{{ listSubs }}" as="t" hint-placeholder-count="1">
+          <div style="display:flex;align-items:baseline;gap:6px" key="{{ t.key }}">
+            <span style="{{ t.labelStyle }}">{{ t.label }}</span>
+            <span style="{{ t.valueStyle }}">{{ t.value }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="flex:1"></div>
+      <sc-if value="{{ showAdd }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:stretch;gap:8px">
+          <div style="{{ addFileStyle }}" onClick="{{ onAddFile }}" style-hover="border-color:var(--red);color:var(--text);transform:translateY(-2px) rotate(-0.6deg)" style-active="transform:translateY(-1px) scale(.96) rotate(-0.6deg)"><span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:15px;letter-spacing:.6px">＋ FILES</span><span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11px;color:var(--dim)">ファイルを追加</span></div>
+          <div style="{{ addFolderStyle }}" onClick="{{ onAddFolder }}" style-hover="border-color:var(--red);color:var(--text);transform:translateY(-2px) rotate(0.6deg)" style-active="transform:translateY(-1px) scale(.96) rotate(0.6deg)"><span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:15px;letter-spacing:.6px">＋ FOLDER</span><span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11px;color:var(--dim)">フォルダごと追加</span></div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="{{ bandOuterStyle }}">
+      <div class="lss-band" style="{{ bandStyle }}" ref="{{ setBandRef }}" onScroll="{{ onBandScroll }}">
+        <div style="{{ indicatorStyle }}"></div>
+
+        <sc-if value="{{ showDrop }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ emptyStyle }}" onClick="{{ onAddFile }}" style-hover="background:oklch(1 0 0 / 0.035)">
+            <div style="{{ braceTLStyle }}"></div>
+            <div style="{{ braceBRStyle }}"></div>
+            <div style="{{ emptySlabStyle }}"></div>
+            <div style="display:flex;align-items:center;gap:34px;width:100%;position:relative;z-index:1">
+              <div style="display:flex;flex-direction:column;gap:15px;min-width:0">
+                <div style="{{ emptyTitleStyle }}">DROP HERE</div>
+                <div style="display:flex;align-items:center;gap:13px">
+                  <div style="width:38px;height:5px;background:var(--red);transform:skewX(-14deg)"></div>
+                  <span style="{{ emptyLineStyle }}">音声ファイルやフォルダを、ここにドロップ</span>
+                </div>
+              </div>
+              <div style="flex:1"></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:9px;flex-shrink:0;padding-right:22px">
+                <sc-for list="{{ emptyChevrons }}" as="c" hint-placeholder-count="3">
+                  <div style="{{ c.style }}" key="{{ c.key }}"></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-for list="{{ rows }}" as="row" hint-placeholder-count="8">
+          <div style="{{ row.wrapStyle }}" onClick="{{ row.onClick }}" key="{{ row.key }}" data-row="{{ row.key }}">
+            <div style="{{ row.pillStyle }}">
+              <sc-if value="{{ row.landOn }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ row.landStyle }}" key="{{ row.landKey }}"></div>
+              </sc-if>
+              <div style="{{ row.headStyle }}">
+                <div style="{{ row.numStyle }}" onClick="{{ row.onMark }}" data-tip="{{ row.numTip }}">{{ row.num }}</div>
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+                  <div style="{{ row.nameStyle }}">{{ row.name }}</div>
+                  <sc-if value="{{ row.showMeta }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;align-items:center;gap:11px;min-width:0">
+                      <span style="{{ row.fmtStyle }}">{{ row.fmt }}</span>
+                      <sc-for list="{{ row.metaParts }}" as="m" hint-placeholder-count="3">
+                        <div style="{{ m.wrapStyle }}" key="{{ m.key }}">
+                          <div style="{{ m.ruleStyle }}"></div>
+                          <span style="{{ m.numStyle }}">{{ m.n }}</span>
+                          <span style="{{ m.unitStyle }}">{{ m.u }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ row.hasTags }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:5px;flex-shrink:0" key="{{ row.tagsKey }}">
+                    <sc-for list="{{ row.tags }}" as="tg" hint-placeholder-count="1">
+                      <span style="{{ tg.style }}" key="{{ tg.key }}">{{ tg.t }}</span>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ row.hasBadge }}" hint-placeholder-val="{{ false }}">
+                  <div style="{{ row.badgeStyle }}" key="{{ row.badgeKey }}">{{ row.badge }}</div>
+                </sc-if>
+                <div style="{{ row.rightStyle }}">{{ row.right }}</div>
+              </div>
+
+              <sc-if value="{{ row.isCur }}" hint-placeholder-val="{{ false }}">
+                <div style="{{ row.curBodyStyle }}">
+                  <div style="display:flex;align-items:center;gap:12px;width:100%">
+                    <div style="display:flex;align-items:center;gap:4px">
+                      <sc-for list="{{ row.steps }}" as="sp" hint-placeholder-count="3">
+                        <div style="{{ sp.style }}" key="{{ sp.key }}">
+                          <span style="{{ sp.enStyle }}">{{ sp.en }}</span>
+                          <sc-if value="{{ sp.cur }}" hint-placeholder-val="{{ false }}">
+                            <span style="{{ sp.jpStyle }}" key="{{ sp.jpKey }}">{{ sp.jp }}</span>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="flex:1"></div>
+                    <sc-if value="{{ row.hasCurNote }}" hint-placeholder-val="{{ false }}">
+                      <span style="{{ row.curDetailStyle }}" key="{{ row.curDetailKey }}">{{ row.curDetail }}</span>
+                    </sc-if>
+                    <div style="display:flex;align-items:center;gap:5px">
+                      <sc-for list="{{ row.curTargets }}" as="tg" hint-placeholder-count="1">
+                        <span style="{{ tg.style }}" key="{{ tg.key }}">{{ tg.t }}</span>
+                      </sc-for>
+                    </div>
+                    <div style="display:flex;align-items:baseline;gap:7px;padding-left:6px;border-left:1px solid oklch(1 0 0 / 0.16)">
+                      <span style="{{ row.curClockLabelStyle }}">この音源</span>
+                      <span style="{{ row.curClockStyle }}">{{ row.curClock }}</span>
+                    </div>
+                  </div>
+                  <div style="{{ row.waveBoxStyle }}">
+                    <div style="{{ row.sweepStyle }}"></div>
+                    <div style="{{ row.waveTopStyle }}">
+                      <sc-for list="{{ row.wTop }}" as="b" hint-placeholder-count="120">
+                        <div style="{{ b }}"></div>
+                      </sc-for>
+                    </div>
+                    <div style="{{ row.waveMidStyle }}"></div>
+                    <div style="{{ row.waveBotStyle }}">
+                      <sc-for list="{{ row.wBot }}" as="b" hint-placeholder-count="120">
+                        <div style="{{ b }}"></div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <div style="{{ row.openStyle }}">
+                <sc-if value="{{ row.hasWave }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:3px;height:44px">
+                    <sc-for list="{{ row.wave }}" as="bar" hint-placeholder-count="120">
+                      <div style="{{ bar }}"></div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ row.hasWants }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:8px;min-width:0;height:28px">
+                    <span style="{{ fieldLabelStyle }}">WANTS</span>
+                    <sc-for list="{{ row.wantBtns }}" as="w" hint-placeholder-count="2">
+                      <div style="{{ w.style }}" onClick="{{ w.onClick }}" key="{{ w.key }}" style-hover="border-color:var(--text)" style-active="transform:scale(.94)">{{ w.t }}</div>
+                    </sc-for>
+                    <span style="{{ row.wantNoteStyle }}" key="{{ row.wantNoteKey }}">{{ row.wantNote }}</span>
+                    <div style="flex:1"></div>
+                    <sc-if value="{{ row.hasFollow }}" hint-placeholder-val="{{ false }}">
+                      <div style="{{ row.followStyle }}" onClick="{{ row.onFollow }}" style-hover="background:var(--red);color:#fff;border-color:var(--red)" style-active="transform:scale(.94)">
+                        <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:1.3px">RESET</span>
+                        <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:10.5px;opacity:.75">共通設定に戻す</span>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ row.hasOutputs }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <sc-for list="{{ row.outputs }}" as="o" hint-placeholder-count="2">
+                      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0" key="{{ o.key }}">
+                        <div style="{{ o.tagStyle }}">{{ o.jp }}</div>
+                        <span style="{{ o.fileStyle }}">{{ o.file }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <div style="display:flex;align-items:flex-end;gap:14px">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:7px;min-width:0">
+                    <div style="{{ row.pathBoxStyle }}" onClick="{{ row.onOpen }}" data-tip="open" style-hover="border-color:oklch(1 0 0 / 0.38)" style-active="transform:scale(.98)">
+                      <div style="{{ pathTickStyle }}"></div>
+                      <span style="{{ row.pathRootStyle }}">{{ row.pathRoot }}</span>
+                      <span style="{{ row.pathLeafStyle }}">{{ row.pathLeaf }}</span>
+                    </div>
+                    <sc-if value="{{ row.hasNote }}" hint-placeholder-val="{{ false }}">
+                      <span style="{{ row.noteStyle }}">{{ row.note }}</span>
+                    </sc-if>
+                  </div>
+                  <div style="flex:1"></div>
+                  <sc-if value="{{ row.hasAction }}" hint-placeholder-val="{{ false }}">
+                    <div style="{{ row.actionStyle }}" onClick="{{ row.onAction }}" style-hover="background:var(--red);color:#fff;border-color:var(--red)" style-active="transform:scale(.94)">
+                      <span style="{{ row.actionEnStyle }}">{{ row.actionEn }}</span>
+                      <span style="{{ row.actionJpStyle }}">{{ row.actionJp }}</span>
+                    </div>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+
+      </div>
+
+      <sc-if value="{{ railOn }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;right:0;top:2px;display:flex;flex-direction:column;gap:3px;pointer-events:none">
+          <sc-for list="{{ railTicks }}" as="t" hint-placeholder-count="12">
+            <div style="{{ t.style }}" key="{{ t.key }}"></div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ cutOn }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:0;right:0;bottom:20px;height:36px;pointer-events:none;background:linear-gradient(to bottom,transparent,var(--bg) 68%);clip-path:polygon(0 26%,100% 0,100% 100%,0 100%)"></div>
+      </sc-if>
+      <sc-if value="{{ cutOn }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:18px;bottom:0;display:flex;align-items:center;gap:9px;pointer-events:none">
+          <span style="width:22px;height:3px;background:var(--red);transform:skewX(-14deg)"></span>
+          <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:1.5px;color:var(--red);white-space:nowrap">{{ cutLabel }}</span>
+          <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11.5px;color:var(--dim);white-space:nowrap">{{ cutSub }}</span>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="display:flex;align-items:flex-end;gap:24px">
+      <div style="display:flex;flex-direction:column;gap:11px;min-width:0">
+        <sc-if value="{{ showPost }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:11px">
+            <div style="display:flex;flex-direction:column;gap:1px">
+              <span style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2.2px;color:var(--muted);white-space:nowrap">WHEN DONE</span>
+              <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11px;color:var(--dim);white-space:nowrap">完了したら</span>
+            </div>
+            <div style="display:flex;gap:5px;transform:rotate(-1deg)">
+              <div style="{{ post.none.style }}" onClick="{{ post.none.onClick }}" data-tip="post-none" style-hover="transform:scale(1.12)" style-active="transform:scale(.9)"><div style="width:11px;height:11px;border:2px solid currentColor;border-radius:50%"></div></div>
+              <div style="{{ post.quit.style }}" onClick="{{ post.quit.onClick }}" data-tip="post-quit" style-hover="transform:scale(1.12)" style-active="transform:scale(.9)"><div style="position:relative;width:13px;height:13px"><div style="position:absolute;inset:0;clip-path:polygon(15% 0,100% 0,85% 100%,0 100%);background:currentColor;opacity:.28"></div><div style="position:absolute;left:3px;top:5.5px;width:7px;height:2px;background:currentColor;transform:rotate(45deg)"></div><div style="position:absolute;left:3px;top:5.5px;width:7px;height:2px;background:currentColor;transform:rotate(-45deg)"></div></div></div>
+              <div style="{{ post.restart.style }}" onClick="{{ post.restart.onClick }}" data-tip="post-restart" style-hover="transform:scale(1.12)" style-active="transform:scale(.9)"><div style="width:13px;height:13px;border:2px solid currentColor;border-radius:50%;border-right-color:transparent;transform:rotate(35deg);position:relative"><div style="position:absolute;left:-3px;top:-1.5px;width:0;height:0;border-left:3px solid transparent;border-right:3px solid transparent;border-bottom:4.5px solid currentColor;transform:rotate(120deg)"></div></div></div>
+              <div style="{{ post.shutdown.style }}" onClick="{{ post.shutdown.onClick }}" data-tip="post-shutdown" style-hover="transform:scale(1.12)" style-active="transform:scale(.9)"><div style="width:13px;height:13px;border:2px solid currentColor;border-radius:50%;position:relative;box-sizing:border-box"><div style="position:absolute;left:50%;top:-3px;width:2px;height:7px;background:currentColor;margin-left:-1px"></div></div></div>
+            </div>
+            <div style="{{ postLabelWrapStyle }}">
+              <span style="{{ postLabelStyle }}" key="{{ postLabelKey }}">{{ postLabel }}</span>
+            </div>
+          </div>
+        </sc-if>
+        <div style="display:flex;align-items:center;gap:15px;flex-wrap:wrap;max-width:640px">
+          <sc-for list="{{ keyHints }}" as="k" hint-placeholder-count="5">
+            <div style="display:flex;align-items:center;gap:6px" key="{{ k.key }}">
+              <span style="{{ k.kStyle }}">{{ k.k }}</span>
+              <span style="{{ k.lStyle }}">{{ k.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+      <div style="{{ primaryWrapStyle }}" key="{{ primaryKey }}">
+        <sc-if value="{{ primaryHot }}" hint-placeholder-val="{{ true }}">
+          <span style="{{ primaryLabelStyle }}" onClick="{{ onPrimary }}" style-hover="transform:scale(1.03)" style-active="transform:scale(.94)">{{ primaryLabel }}</span>
+        </sc-if>
+        <sc-if value="{{ primaryInert }}" hint-placeholder-val="{{ false }}">
+          <span style="{{ primaryLabelStyle }}">{{ primaryLabel }}</span>
+        </sc-if>
+        <div style="display:flex;flex-direction:column;gap:2px;width:100%">
+          <div style="{{ primaryBar1Style }}"></div>
+          <div style="{{ primaryBar2Style }}"></div>
+        </div>
+        <sc-if value="{{ hasPrimaryCaption }}" hint-placeholder-val="{{ false }}">
+          <span style="{{ primaryCaptionStyle }}">{{ primaryCaption }}</span>
+        </sc-if>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1500,&quot;height&quot;:990},&quot;accentRed&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;oklch(0.58 0.2 27)&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Look&quot;,&quot;options&quot;:[&quot;oklch(0.58 0.2 27)&quot;,&quot;oklch(0.56 0.22 12)&quot;,&quot;oklch(0.6 0.19 40)&quot;]},&quot;irregularity&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1,&quot;min&quot;:0,&quot;max&quot;:1.8,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Look&quot;},&quot;demoSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:2,&quot;min&quot;:0.5,&quot;max&quot;:4,&quot;step&quot;:0.5,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;debugTools&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Demo&quot;}}">
+class Component extends DCLogic {
+  state = {
+    phase: 'ready', boot: true, bootRun: false, stampOn: false, mcached: true,
+    wipeOn: false, wipeKey: 0, wipeDir: 'fwd',
+    queue: ['f1','f2','f3','f4','f5','f6','f7','f8'],
+    hist: [],
+    st: {},
+    ci: 0, ph: 0, phP: 0, dlDone: false, elapsed: 0,
+    allDone: false, stopReq: false, stopped: false, stopKind: 'stop',
+    selId: null, newIds: null, badgeSeq: 0, stamps: {},
+    fault: null, faultKey: 0,
+    post: 'none', postSeq: 0,
+    tip: null, tipKey: 0, tipVis: 'in',
+    ctx: null, ctxKey: 0, ctxVis: 'in',
+    scrollTop: 0, shakeKey: 0,
+    // wanted results: batch default -> optional per-SOURCE override -> frozen at START
+    bdef: ['inst'], ovr: {}, marks: [], markAnchor: null, frozen: {}, frozenDef: null, sounds: '', soundNeed: false, sndMore: false, sndCombo: null,
+    tst: {}, have: { f2: { inst: 1 }, f4: { inst: 1, bgm: 2 } }, curEl: 0,
+    refuse: null, rowRefuse: null, refuseKey: 0, bulkSeq: 0, forecast: null,
+    // window: open | tray | quit. tray keeps the session running; quit ends the app
+    win: 'open', trayFx: 'in', trayHover: false, toast: false, quitAsk: false, deskKey: 0,
+    landId: null, landKey: 0
+  };
+
+  BASE = {
+    f1:{num:'01',bgm:2,name:'Night Drive — Full Mix',fmt:'FLAC',dur:'4:12',mb:'42.1',sr:'44.1',bit:'24',ch:2,dir:'C:\\Music\\Inbox'},
+    f2:{num:'02',bgm:1,name:'Interlude (Live Take)',fmt:'WAV',dur:'3:47',mb:'38.4',sr:'48',bit:'24',ch:2,dir:'C:\\Music\\Inbox'},
+    f3:{num:'03',bgm:0,name:'Session_04_vocal_ref',fmt:'MP3',dur:'2:58',mb:'6.8',sr:'44.1',ch:2,dir:'C:\\Music\\Inbox\\takes'},
+    f4:{num:'04',name:'Untitled Voice Memo',fmt:'M4A',dur:'1:15',mb:'2.1',sr:'44.1',ch:2,dir:'C:\\Music\\Inbox\\takes'},
+    f5:{num:'05',bgm:4,name:'Chorus Demo Bounce',fmt:'FLAC',dur:'3:33',mb:'34.9',sr:'44.1',bit:'16',ch:2,dir:'C:\\Music\\Inbox'},
+    f6:{num:'06',name:'Guitar Sketch (Rough)',fmt:'WAV',dur:'2:04',mb:'21.2',sr:'44.1',bit:'24',ch:2,dir:'C:\\Music\\Inbox',fail:'input_changed'},
+    f7:{num:'07',name:'Live Set 5.1 Mixdown',fmt:'WAV',dur:'6:20',mb:'128.4',sr:'48',bit:'24',ch:6,dir:'C:\\Music\\Inbox',hard:'unsupported_channels'},
+    f8:{num:'08',bgm:'fail',name:'Piano Take 3',fmt:'FLAC',dur:'3:10',mb:'30.7',sr:'44.1',bit:'24',ch:2,dir:'C:\\Music\\Inbox'},
+    h1:{num:'—',name:'Rain on the Terrace',fmt:'FLAC',dur:'3:58',mb:'36.2',sr:'44.1',bit:'24',ch:2,dir:'C:\\Music\\Album',on:'2026-08-29',at:'22:14'},
+    h2:{num:'—',name:'Last Train Home',fmt:'MP3',dur:'4:26',mb:'9.4',sr:'44.1',ch:2,dir:'C:\\Music\\Album',on:'2025-11-03',at:'21:50'}
+  };
+
+  GEN = ['Rooftop Jam (Take 2)','Bassline Idea 07','Ending Theme Draft','Static Bloom','Late Reply','Harbour Lights','Second Floor','Tape Hiss Waltz','Neon Errand','Slow Exit','Morning Static','Paper Lantern','Cassette Sunday','Blue Hour Loop','Nightshift Demo','Cold Open','Backseat Radio','Half Step','Long Way Round','Closing Time'];
+
+  // which model or recipe produced a result is internal provenance. it never reaches the screen.
+  MODEL = { cached:true, result:['INSTRUMENTAL','伴奏','Instrumental'] };
+
+  // semantic results the user can want. order is display order; adding a result extends T and TL only.
+  T = ['bgm','inst','snd'];
+  TL = { bgm: { en:'BGM', jp:'作品の BGM', short:'BGM' }, inst: { en:'INSTRUMENTAL', jp:'伴奏', short:'伴奏' }, snd: { en:'STEM', jp:'楽器や声を選ぶ', short:'ステム' } };
+  // what the STEM board offers. a press adds one stem; in combination mode presses build one summed file.
+  SOUND_CHIPS = ['ボーカル', 'コーラス', 'ドラム', 'ベース', 'ギター', 'ピアノ', 'ストリングス', 'シンセ', '管楽器'];
+  SOUND_MORE = ['キック', 'スネア', 'タム', 'ハイハット', 'シンバル', 'アコースティックギター', 'エレキギター', 'オルガン', '金管楽器', '木管楽器', 'バイオリン', 'チェロ', 'ハープ', 'フルート', 'トランペット', 'サックス', 'パーカッション', '男性ボーカル', '女性ボーカル'];
+  // only inside a combination: the instrumental, so chorus plus accompaniment is one file
+  SOUND_COMBO_ONLY = ['伴奏'];
+  BASEQ = ['f1','f2','f3','f4','f5','f6','f7','f8'];
+  HAVE0() { return { f2: { inst: 1 }, f4: { inst: 1, bgm: 2 } }; }
+
+  FORMATS = ['WAV','FLAC','MP3','M4A','AAC','OGG','OPUS','AIFF','WMA'];
+
+  H_ROW = 46;
+  H_OPEN_HEAD = 58;
+  H_OPEN_BODY = 226;
+  H_CUR = 188;
+  H_HIST_HEAD = 30;
+  GAP = 6;
+  RHYTHM = [{r:-0.4,x:0,sh:5},{r:-0.16,x:14,sh:3},{r:-0.4,x:6,sh:5},{r:-0.16,x:20,sh:3}];
+
+  FAULTS = {
+    // what failed / what the user does / that finished work is safe — one line each
+    insufficient_output_space: { code:'DISK FULL', jp:'保存先の空き容量が足りません。',
+      safe:'空きを作ってから RETRY を押してください。保存済みの結果は無事です。',
+      metrics:[['空き','1.2 GB'],['必要','3.4 GB']], ref:'' },
+    model_download_failed: { code:'FETCH FAILED', jp:'処理に必要なデータを取得できませんでした。',
+      safe:'接続を確認して RETRY を押してください。保存済みの結果は無事です。', metrics:[], ref:'' },
+    worker_unavailable: { code:'ENGINE STOPPED', jp:'分離エンジンが応答しません。',
+      safe:'RETRY でエンジンを起動し直します。保存済みの結果は無事です。', metrics:[], ref:'' }
+  };
+  ROW_ERR = {
+    input_changed: ['FAILED','処理中に元のファイルが変更されました。', true],
+    unsupported_channels: ['UNSUPPORTED','', false],
+    target_failed: ['PARTIAL','', true]
+  };
+
+  songs() {
+    if (!this._songs) {
+      this._songs = Object.assign({}, this.BASE);
+      this.GEN.forEach((name, i) => {
+        const n = i + 9;
+        this._songs['g' + n] = {
+          num: String(n).padStart(2, '0'), name,
+          bgm: i % 5 === 2 ? 0 : (i % 7 === 3 ? 'held' : (i % 3) + 1),
+          fmt: ['FLAC','WAV','MP3','M4A'][i % 4], dur: (2 + (i % 4)) + ':' + String(10 + (i * 7) % 49).padStart(2, '0'),
+          mb: (8 + (i * 5.3) % 40).toFixed(1),
+          sr: i % 3 === 1 ? '48' : '44.1', bit: i % 2 ? '24' : '', ch: 2,
+          dir: 'C:\\Music\\Inbox'
+        };
+      });
+    }
+    return this._songs;
+  }
+  song(id) { return this.songs()[id] || { num: '—', name: id, fmt: '', dur: '', mb: '', sr: '', bit: '', ch: 2, dir: '' }; }
+
+  componentDidMount() {
+    this._t = {};
+    this.runBoot();
+    this._t.measure = setTimeout(() => { if (this._band) this.setState({ bandH: this._band.clientHeight }); }, 420);
+    this._key = (e) => {
+      const t = e.target;
+      if (t && t.closest && t.closest('input,textarea,select,[contenteditable="true"]')) return;
+      if (!this._hot) return;
+      const s = this.state;
+      if (s.win !== 'open') return;
+      if (s.quitAsk) { if (e.key === 'Escape') { e.preventDefault(); this.setState({ quitAsk: false }); } return; }
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      if (e.key === 'Enter') { e.preventDefault(); this.primary(); }
+      else if (e.key === 'Escape') {
+        if (s.ctx) this.closeCtx();
+        else if (s.phase === 'ready' && s.marks.length) this.clearMarks();
+        else if (s.phase === 'processing' && !s.fault) this.requestStop();
+      }
+      else if (s.phase === 'ready' && (e.key === '1' || e.key === '2' || e.key === '3') && !e.ctrlKey && !e.metaKey) { e.preventDefault(); this.toggleTarget(e.key === '1' ? 'bgm' : (e.key === '2' ? 'inst' : 'snd')); }
+      else if (s.phase === 'ready' && e.key === ' ' && s.selId) { e.preventDefault(); this.toggleMark(s.selId); }
+      else if ((e.key === 'a' || e.key === 'A') && s.phase !== 'complete') { e.preventDefault(); if (e.shiftKey) this.addFolder(); else this.addFile(); }
+      else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && s.phase !== 'processing') { e.preventDefault(); this.moveSel(e.key === 'ArrowDown' ? 1 : -1, e.shiftKey && s.phase === 'ready'); }
+      else if ((e.key === 'Delete' || e.key === 'Backspace') && s.selId && s.phase === 'ready') { e.preventDefault(); this.removeFile(s.selId); }
+    };
+    window.addEventListener('keydown', this._key);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this._key);
+    clearInterval(this._iv);
+    Object.keys(this._t || {}).forEach(k => clearTimeout(this._t[k]));
+  }
+  componentDidUpdate() {
+    const el = this._band;
+    if (!el) return;
+    if (this.state.phase === 'processing' && !this.state.fault) {
+      const id = this.state.queue[this.state.ci];
+      if (id && id !== this._lastCur) { this._lastCur = id; this.scrollTo(id); }
+    } else { this._lastCur = null; }
+  }
+
+  // one startup event: offsets are set pre-paint, then released so every element
+  // transitions continuously into its real resting transform (no post-animation snap)
+  runBoot() {
+    clearTimeout(this._t.boot); clearTimeout(this._t.bootRun);
+    this.setState({ boot: true, bootRun: false });
+    this._t.bootRun = setTimeout(() => this.setState({ bootRun: true }), 40);
+    this._t.boot = setTimeout(() => this.setState({ boot: false }), 1150);
+  }
+
+  scrollTo(id) {
+    const el = this._band, box = this._tops && this._tops[id];
+    if (!el || !box) return;
+    const view = el.clientHeight, top = el.scrollTop;
+    let want = top;
+    if (box.top < top + 8) want = Math.max(0, box.top - 8);
+    else if (box.top + box.h > top + view - 8) want = box.top + box.h - view + 8;
+    if (Math.abs(want - top) > 3) el.scrollTop = want;
+  }
+  setBandRef = (el) => { this._band = el; };
+  setFrameRef = (el) => { this._frame = el; };
+  onBandScroll = (e) => {
+    const el = e.currentTarget;
+    if (Math.abs(el.scrollTop - this.state.scrollTop) > 2) this.setState({ scrollTop: el.scrollTop, bandH: el.clientHeight });
+  };
+
+  model() { return Object.assign({}, this.MODEL, { cached: this.state.mcached }); }
+  // prototype stand-in for the source's real overview waveform (native: computed locally from the file)
+  wave(id, len) {
+    const L = len || 44, n = id.charCodeAt(id.length - 1) + id.length * 7 + id.charCodeAt(0) * 0.3;
+    return Array.from({ length: L }).map((_, i) => {
+      const env = 0.62 + 0.38 * Math.sin(Math.PI * i / L);
+      const v = Math.abs(Math.sin(i * 0.61 + n) * 0.5 + Math.sin(i * 0.19 + n * 0.5) * 0.32 + Math.sin(i * 1.7 + n * 0.3) * 0.18) * env;
+      return Math.max(8, Math.min(100, Math.round(v * 120)));
+    });
+  }
+  // three user-level stages. internal steps (fingerprint, dependency fetch, re-verify,
+  // completion record) are evidence about state, not the vocabulary the user needs.
+  plan(id, dlDone) {
+    const f = this.song(id), m = this.model();
+    const prep = { k:'PREP', ms: (!m.cached && !dlDone) ? 2600 : 700 };
+    if (f.hard) return [prep, { k:'HARDFAIL' }];
+    if (f.fail) return [prep, { k:'SEPARATE', ms:4800 }, { k:'FAIL' }];
+    return [prep, { k:'SEPARATE', ms:4800 }, { k:'SAVE', ms:1200 }];
+  }
+  processed() { return this.state.queue.filter(id => this.state.st[id] && this.state.st[id] !== 'queued').length; }
+  // one elapsed grammar for every duration in the app: m:ss, and h:mm:ss once a batch runs past an hour
+  mmss(ms) {
+    const t = Math.max(0, Math.round(ms / 1000)), sec = String(t % 60).padStart(2, '0'), m = Math.floor(t / 60);
+    return m < 60 ? m + ':' + sec : Math.floor(m / 60) + ':' + String(m % 60).padStart(2, '0') + ':' + sec;
+  }
+  splitPath(p) {
+    const t = String(p).replace(/\\+$/, '');
+    const i = t.lastIndexOf('\\');
+    return i < 0 ? { root: '', leaf: t } : { root: t.slice(0, i + 1), leaf: t.slice(i + 1) };
+  }
+
+  TIPS = {
+    min: 'トレイに格納',
+    close: 'LSS を終了',
+    mark: 'クリックで選択、Shift で範囲選択',
+    dest: '各音源と同じ場所の LSS フォルダに保存',
+    open: 'フォルダを開く',
+    'post-none': '完了しても何もしない',
+    'post-quit': '完了したら LSS を終了',
+    'post-restart': '完了したら PC を再起動',
+    'post-shutdown': '完了したら PC をシャットダウン'
+  };
+  placeTip(id, el) {
+    const frame = this._frame;
+    if (!frame) return null;
+    const fr = frame.getBoundingClientRect(), tr = el.getBoundingClientRect();
+    const below = (tr.top - fr.top) < fr.height * 0.5;
+    const cx = Math.min(Math.max(tr.left - fr.left + tr.width / 2, 96), fr.width - 96);
+    return { id, text: this.TIPS[id], cx, y: below ? tr.bottom - fr.top + 11 : tr.top - fr.top - 11, below };
+  }
+  onFrameMove = (e) => {
+    const node = e.target;
+    const owner = node && node.closest ? node.closest('[data-tip]') : null;
+    const id = owner ? owner.getAttribute('data-tip') : null;
+    if (!id || !this.TIPS[id] || this.state.ctx) { this.exitTip(); return; }
+    const next = this.placeTip(id, owner);
+    if (!next) return;
+    const cur = this.state.tip;
+    clearTimeout(this._t.tipOut);
+    if (cur && this.state.tipVis === 'in') {
+      if (cur.id !== id || Math.abs(cur.cx - next.cx) > 1) this.setState({ tip: next });
+      return;
+    }
+    clearTimeout(this._t.tipIn);
+    if (cur && this.state.tipVis === 'out') { this.setState({ tip: next, tipVis: 'in' }); return; }
+    this._t.tipIn = setTimeout(() => this.setState(s => ({ tip: next, tipVis: 'in', tipKey: s.tipKey + 1 })), 110);
+  };
+  exitTip = () => {
+    clearTimeout(this._t.tipIn);
+    if (!this.state.tip || this.state.tipVis === 'out') return;
+    this.setState({ tipVis: 'out' });
+    clearTimeout(this._t.tipOut);
+    this._t.tipOut = setTimeout(() => { if (this.state.tipVis === 'out') this.setState({ tip: null }); }, 150);
+  };
+
+  // context menu: full lifecycle — open, retarget while open, content swap, deliberate exit
+  onContext = (e) => {
+    e.preventDefault();
+    if (this.state.win !== 'open' || this.state.quitAsk) return;
+    const frame = this._frame;
+    if (!frame) return;
+    const fr = frame.getBoundingClientRect();
+    const owner = e.target && e.target.closest ? e.target.closest('[data-row]') : null;
+    const id = owner ? owner.getAttribute('data-row') : null;
+    const x = Math.min(e.clientX - fr.left, fr.width - 276);
+    const y = Math.min(e.clientY - fr.top, fr.height - 262);
+    clearTimeout(this._t.tipIn); clearTimeout(this._t.ctxOut);
+    const open = !!this.state.ctx && this.state.ctxVis === 'in';
+    this.setState(s => ({ ctx: { x, y, id }, ctxVis: 'in', ctxKey: open ? s.ctxKey : s.ctxKey + 1, tip: null }));
+  };
+  closeCtx() {
+    if (!this.state.ctx || this.state.ctxVis === 'out') return;
+    this.setState({ ctxVis: 'out' });
+    clearTimeout(this._t.ctxOut);
+    this._t.ctxOut = setTimeout(() => { if (this.state.ctxVis === 'out') this.setState({ ctx: null }); }, 150);
+  }
+  onFrameClick = () => { if (this.state.ctx) this.closeCtx(); };
+
+  wipeTo(phase, extra, dir) {
+    this.setState(s => ({ wipeOn: true, wipeKey: s.wipeKey + 1, wipeDir: dir || 'fwd', tip: null, ctx: null }));
+    clearTimeout(this._t.a); clearTimeout(this._t.b); clearTimeout(this._t.c);
+    this._t.a = setTimeout(() => {
+      this.setState(Object.assign({ phase: phase }, extra || {}));
+      if (phase === 'complete') {
+        // finishing while hidden in the tray raises one OS notification; clicking it restores LSS
+        this.setState({ stampOn: true, toast: this.state.win === 'tray' });
+        this._t.c = setTimeout(() => this.setState({ stampOn: false }), 760);
+      }
+    }, 250);
+    this._t.b = setTimeout(() => this.setState({ wipeOn: false }), 620);
+  }
+  primary() {
+    const s = this.state;
+    if (s.phase === 'ready') this.start();
+    else if (s.phase === 'processing') { if (!s.allDone && !s.fault) this.requestStop(); }
+    else this.backToReady();
+  }
+  start() {
+    const s = this.state;
+    const pending = s.queue.filter(id => !s.st[id] || s.st[id] === 'queued');
+    if (!pending.length) { this.setState(t => ({ shakeKey: t.shakeKey + 1 })); return; }
+    // START freezes each SOURCE's resolved wanted set. results that already exist resolve now,
+    // so a SOURCE whose every wanted result is on disk never passes through PROCESSING.
+    const frozen = {};
+    s.queue.forEach(id => { frozen[id] = this.want(id, s).slice(); });
+    const fs = Object.assign({}, s, { frozen });
+    const st = Object.assign({}, s.st), tst = Object.assign({}, s.tst);
+    pending.forEach(id => { if (!this.needs(id, fs).length) { const o = this.outcome(id, 'ok', fs); st[id] = o.agg; tst[id] = o.tst; } });
+    const work = pending.filter(id => !st[id] || st[id] === 'queued');
+    const common = { frozen, frozenDef: s.bdef.slice(), st, tst, marks: [], selId: null, fault: null, landId: null, stopReq: false, stopped: false, allDone: false, curEl: 0, elapsed: 0, ph: 0, phP: 0 };
+    this._fin = false;
+    clearInterval(this._iv);
+    if (!work.length) { this.wipeTo('complete', common); return; }
+    this.wipeTo('processing', Object.assign(common, { ci: s.queue.indexOf(work[0]) }));
+    this._iv = setInterval(() => this.step(), 150);
+  }
+  // recovery from a mistaken START is one control with an immediate, visible effect:
+  // the queue stops advancing now, and only the song already inside the GPU is finished and saved.
+  requestStop() { this.setState({ stopReq: true }); }
+  // a saved result carries the moment it was made, so the ALREADY SAVED list stays readable years later
+  nowStamp() {
+    const d = new Date(), p = (n) => String(n).padStart(2, '0');
+    return { on: d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()), at: p(d.getHours()) + ':' + p(d.getMinutes()) };
+  }
+  // completed session work leaves the queue. durable per-result knowledge stays internal (have),
+  // so a re-added or partly failed SOURCE reuses what exists instead of listing history.
+  backToReady() {
+    const s = this.state;
+    const keep = s.queue.filter(id => s.st[id] === 'failed');
+    const ovr = {};
+    keep.forEach(id => { if (s.ovr[id]) ovr[id] = s.ovr[id]; });
+    this.wipeTo('ready', {
+      queue: keep, st: {}, tst: {}, frozen: {}, frozenDef: null, ovr, marks: [], ci: 0, ph: 0, phP: 0,
+      allDone: false, stopped: false, selId: null, elapsed: 0, fault: null
+    }, 'back');
+  }
+  raiseFault(code) {
+    clearInterval(this._iv);
+    this.setState(s => ({ phase: 'processing', fault: code, faultKey: s.faultKey + 1, tip: null }));
+  }
+  clearFault(resume) {
+    this.setState({ fault: null });
+    if (resume) { clearInterval(this._iv); this._iv = setInterval(() => this.step(), 150); }
+  }
+  skipCurrent() {
+    const s = this.state;
+    const id = s.queue[s.ci];
+    this.setState(t => Object.assign({ fault: null }, this.finalizeSong(t, id, 'skip')), () => {
+      if (this.state.allDone) { this._fin = true; this._t.d = setTimeout(() => this.wipeTo('complete'), 700); }
+      else { clearInterval(this._iv); this._iv = setInterval(() => this.step(), 150); }
+    });
+  }
+  finalizeSong(st, id, kind) {
+    const o = this.outcome(id, kind, st);
+    const map = Object.assign({}, st.st, { [id]: o.agg });
+    const base = { st: map, tst: Object.assign({}, st.tst, { [id]: o.tst }), have: Object.assign({}, st.have, { [id]: o.have }), ph: 0, phP: 0, curEl: 0, landId: id, landKey: (st.landKey || 0) + 1 };
+    const rest = st.queue.slice(st.ci + 1).filter(x => !map[x] || map[x] === 'queued');
+    if (st.stopReq) return Object.assign(base, { stopReq: false, _stop: true });
+    if (!rest.length) return Object.assign(base, { allDone: true });
+    return Object.assign(base, { ci: st.queue.indexOf(rest[0]), badgeSeq: st.badgeSeq + 1 });
+  }
+  // ---- wanted-result model ----
+  norm(set) { return this.T.filter(t => set.indexOf(t) >= 0); }
+  want(id, s) { s = s || this.state; const fr = s.frozen && s.frozen[id]; return fr || (s.ovr && s.ovr[id]) || s.bdef; }
+  haveOf(id, s) { s = s || this.state; return (s.have && s.have[id]) || {}; }
+  needs(id, s) { const hv = this.haveOf(id, s); return this.want(id, s).filter(t => hv[t] === undefined); }
+  // per-result outcome is the primitive; the SOURCE state is only its aggregate
+  outcome(id, kind, s) {
+    const f = this.song(id), have = this.haveOf(id, s), nh = Object.assign({}, have), tst = {};
+    this.want(id, s).forEach(t => {
+      const hv = have[t];
+      if (hv !== undefined) { tst[t] = { k: 'reused', n: hv === 'none' ? 0 : hv }; return; }
+      if (kind === 'hard') { tst[t] = { k: 'unsupported' }; return; }
+      if (kind !== 'ok') { tst[t] = { k: 'failed' }; return; }
+      if (t === 'inst') { tst[t] = { k: 'done', n: 1 }; nh.inst = 1; return; }
+      const b = f.bgm;
+      if (b === 'fail') tst[t] = { k: 'failed' };
+      else if (b === 'held') tst[t] = { k: 'held' };
+      else if (!b) { tst[t] = { k: 'none', n: 0 }; nh.bgm = 'none'; }
+      else { tst[t] = { k: 'done', n: b }; nh.bgm = b; }
+    });
+    const bad = Object.keys(tst).some(t => tst[t].k === 'failed' || tst[t].k === 'unsupported');
+    return { tst, have: nh, agg: bad ? 'failed' : 'done' };
+  }
+  refuseT(t) {
+    this.setState(s => ({ refuse: t, refuseKey: s.refuseKey + 1 }));
+    clearTimeout(this._t.rf); this._t.rf = setTimeout(() => this.setState({ refuse: null }), 1700);
+  }
+  // one selector, two scopes: no marks = batch default, marks = those SOURCES.
+  // MIXED or OFF -> ON for every marked SOURCE. ON -> OFF only if nothing would be left empty.
+  toggleTarget(t) {
+    const s = this.state, other = this.T.filter(x => x !== t);
+    if (!s.marks.length) {
+      const on = s.bdef.indexOf(t) >= 0;
+      if (on && s.bdef.length === 1) return this.refuseT(t);
+      this.setState({ bdef: this.norm(on ? s.bdef.filter(x => x !== t) : s.bdef.concat(t)), refuse: null });
+      return;
+    }
+    const agg = (x) => { const n = s.marks.filter(id => this.want(id).indexOf(x) >= 0).length; return n === 0 ? 'off' : (n === s.marks.length ? 'on' : 'mixed'); };
+    const ovr = Object.assign({}, s.ovr);
+    if (agg(t) === 'on') {
+      if (other.some(x => agg(x) !== 'on')) return this.refuseT(t);
+      s.marks.forEach(id => { ovr[id] = this.norm(this.want(id).filter(x => x !== t)); });
+    } else s.marks.forEach(id => { ovr[id] = this.norm(this.want(id).concat(t)); });
+    this.setState(q => ({ ovr, refuse: null, bulkSeq: q.bulkSeq + 1 }));
+  }
+  toggleRowTarget(id, t) {
+    const cur = this.want(id), on = cur.indexOf(t) >= 0;
+    if (on && cur.length === 1) {
+      this.setState(s => ({ rowRefuse: id + t, refuseKey: s.refuseKey + 1 }));
+      clearTimeout(this._t.rrf); this._t.rrf = setTimeout(() => this.setState({ rowRefuse: null }), 1700);
+      return;
+    }
+    this.setState(s => ({ ovr: Object.assign({}, s.ovr, { [id]: this.norm(on ? cur.filter(x => x !== t) : cur.concat(t)) }), rowRefuse: null }));
+  }
+  resetRow(id) { this.setState(s => { const ovr = Object.assign({}, s.ovr); delete ovr[id]; return { ovr }; }); }
+  resetMarks() { this.setState(s => { const ovr = Object.assign({}, s.ovr); s.marks.forEach(id => delete ovr[id]); return { ovr, bulkSeq: s.bulkSeq + 1 }; }); }
+  toggleMark(id) { this.setState(s => ({ marks: s.marks.indexOf(id) >= 0 ? s.marks.filter(x => x !== id) : s.marks.concat(id), markAnchor: id, ctx: null })); }
+  rangeMark(id) {
+    const s = this.state, a = s.markAnchor || s.selId;
+    if (!a || s.queue.indexOf(a) < 0) { this.toggleMark(id); return; }
+    const i = s.queue.indexOf(a), j = s.queue.indexOf(id);
+    const add = s.queue.slice(Math.min(i, j), Math.max(i, j) + 1);
+    this.setState({ marks: s.marks.concat(add.filter(x => s.marks.indexOf(x) < 0)), ctx: null });
+  }
+  clearMarks() { this.setState({ marks: [], markAnchor: null }); }
+  resetReady(extra, cb) {
+    clearInterval(this._iv);
+    this.setState(Object.assign({ phase: 'ready', queue: this.BASEQ.slice(), hist: [], st: {}, tst: {}, frozen: {}, frozenDef: null, ci: 0, ph: 0, phP: 0, allDone: false, stopped: false, stopReq: false, selId: null, marks: [], markAnchor: null, elapsed: 0, curEl: 0, fault: null, scrollTop: 0, bdef: ['inst'], ovr: {}, have: this.HAVE0(), refuse: null, rowRefuse: null, win: 'open', trayFx: 'in', quitAsk: false, toast: false, landId: null }, extra || {}), () => { if (this._band) this._band.scrollTop = 0; if (cb) cb(); });
+  }
+  step() {
+    const sp = this.props.demoSpeed ?? 2;
+    const dt = 150 * sp;
+    this.setState(s => {
+      if (s.phase !== 'processing' || s.allDone || s.fault) return {};
+      const id = s.queue[s.ci];
+      if (!id) return {};
+      const plan = this.plan(id, s.dlDone);
+      const cur = plan[s.ph];
+      if (!cur) return {};
+      // a SOURCE added mid-session whose wanted results all exist resolves without ceremony
+      if (!this.needs(id, s).length) return this.finalizeSong(s, id, 'ok');
+      if (cur.k === 'FAIL') return this.finalizeSong(s, id, 'fail');
+      if (cur.k === 'HARDFAIL') return this.finalizeSong(s, id, 'hard');
+      const phP = s.phP + dt / cur.ms;
+      if (phP < 1) return { phP, elapsed: s.elapsed + dt, curEl: s.curEl + dt };
+      const dlDone = s.dlDone || cur.k === 'PREP';
+      if (s.ph + 1 >= plan.length) return Object.assign({ dlDone, elapsed: s.elapsed + dt }, this.finalizeSong(s, id, 'ok'));
+      return { ph: s.ph + 1, phP: 0, dlDone, elapsed: s.elapsed + dt, curEl: s.curEl + dt };
+    }, () => {
+      const s = this.state;
+      if (s._stop) {
+        clearInterval(this._iv);
+        this.setState({ _stop: false, phase: 'ready', stopped: true, stopKind: 'stop', selId: null, frozen: {}, frozenDef: null });
+        return;
+      }
+      if (s.allDone && !this._fin) {
+        this._fin = true;
+        clearInterval(this._iv);
+        this._t.d = setTimeout(() => this.wipeTo('complete'), 900);
+      }
+    });
+  }
+  pool(n) {
+    const s = this.state, used = s.queue.concat(s.hist);
+    return Object.keys(this.songs()).filter(id => id[0] !== 'h' && used.indexOf(id) < 0).slice(0, n);
+  }
+  addMany(n) {
+    const add = this.pool(n);
+    if (!add.length) return;
+    this.setState(s => {
+      const st = Object.assign({}, s.st);
+      add.forEach(id => st[id] = 'queued');
+      // mid-session arrivals take the running session's frozen default; nothing already frozen moves
+      let frozen = s.frozen;
+      if (s.phase === 'processing' && s.frozenDef) { frozen = Object.assign({}, s.frozen); add.forEach(id => { frozen[id] = s.frozenDef.slice(); }); }
+      return { queue: s.queue.concat(add), newIds: add, st, frozen, ctx: null };
+    });
+    clearTimeout(this._t.n); this._t.n = setTimeout(() => this.setState({ newIds: null }), 900);
+    // adding sources must be visible: bring the arrival into view instead of only moving the counter
+    clearTimeout(this._t.ns); this._t.ns = setTimeout(() => this.scrollTo(add[add.length - 1]), 40);
+  }
+  addFile() { this.addMany(1); }
+  addFolder() { this.addMany(3); }
+  removeFile(id) { this.setState(s => { const ovr = Object.assign({}, s.ovr); delete ovr[id]; return { queue: s.queue.filter(f => f !== id), marks: s.marks.filter(f => f !== id), ovr, selId: s.selId === id ? null : s.selId, ctx: null }; }); }
+  // accepted results stay in have; the next run repeats only the unresolved ones
+  retry(id) { this.setState(s => { const tst = Object.assign({}, s.tst); delete tst[id]; return { st: Object.assign({}, s.st, { [id]: 'queued' }), tst, selId: null, ctx: null }; }); }
+  moveSel(d, extend) {
+    const s = this.state;
+    const list = s.queue;
+    if (!list.length) return;
+    const i = s.selId ? list.indexOf(s.selId) : -1;
+    const n = Math.max(0, Math.min(list.length - 1, i + d));
+    const patch = { selId: list[n] };
+    if (extend) { const m = s.marks.slice(); [s.selId, list[n]].forEach(x => { if (x && m.indexOf(x) < 0) m.push(x); }); patch.marks = m; }
+    this.setState(patch, () => this.scrollTo(list[n]));
+  }
+  setPost(k) { this.setState(s => ({ post: k, postSeq: s.postSeq + 1 })); }
+  // minimize = hide into the tray, work continues. restore always returns to full screen.
+  toTray() { clearTimeout(this._t.rs); this.setState(s => ({ win: 'tray', trayFx: 'in', deskKey: s.deskKey + 1, toast: false, trayHover: false, quitAsk: false, tip: null, ctx: null })); }
+  restore() {
+    if (this.state.win !== 'tray' || this.state.trayFx === 'out') return;
+    this.setState({ trayFx: 'out', toast: false, trayHover: false });
+    clearTimeout(this._t.rs); this._t.rs = setTimeout(() => this.setState({ win: 'open', trayFx: 'in' }), 460);
+  }
+  // close = quit the app. only an in-flight SOURCE would be lost, so only then does LSS ask once.
+  requestQuit() {
+    const s = this.state;
+    if (s.phase === 'processing' && !s.allDone) { this.setState({ quitAsk: true, tip: null, ctx: null }); return; }
+    this.quit();
+  }
+  quit() { clearInterval(this._iv); this.setState({ quitAsk: false, win: 'quit', tip: null, ctx: null, toast: false }); }
+  relaunch() { this.resetReady(); this.runBoot(); }
+
+  renderVals() {
+    const s = this.state;
+    const red = this.props.accentRed ?? 'oklch(0.58 0.2 27)';
+    const irr = this.props.irregularity ?? 1;
+    const phase = s.phase;
+    const model = this.model();
+    const nQueue = s.queue.length;
+    const pending = s.queue.filter(id => !s.st[id] || s.st[id] === 'queued');
+    const isEmpty = nQueue === 0;
+    const work = pending.filter(id => this.needs(id).length > 0);
+    const bulk = phase === 'ready' && s.marks.length > 0;
+    const partialN = s.queue.filter(id => s.st[id] === 'failed' && s.tst[id] && Object.keys(s.tst[id]).some(t => s.tst[id][t].k === 'done' || s.tst[id][t].k === 'reused')).length;
+    const processed = this.processed();
+    const doneN = s.queue.filter(id => s.st[id] === 'done').length;
+    const skipN = s.queue.filter(id => s.st[id] === 'skipped').length;
+    const failN = s.queue.filter(id => s.st[id] === 'failed').length;
+    const curId = s.queue[s.ci];
+    const plan = curId ? this.plan(curId, s.dlDone) : [];
+    const curPh = plan[s.ph] || {};
+    const fault = s.fault ? this.FAULTS[s.fault] : null;
+    const accent = fault ? 'var(--red)' : (phase === 'processing' ? 'var(--cyan)' : (phase === 'complete' ? 'var(--gold)' : 'var(--red)'));
+    const run = s.bootRun;
+    const bdelay = (i) => (s.boot ? (i < 6 ? i * 40 : 240 + Math.min(i - 6, 6) * 14) : 0);
+    const bootIn = (ms, dy) => ({
+      opacity: run ? 1 : 0,
+      transform: 'translateY(' + (run ? 0 : dy) + 'px)',
+      transition: 'opacity .34s ease ' + (s.boot ? ms : 0) + 'ms, transform .44s cubic-bezier(.2,.85,.25,1) ' + (s.boot ? ms : 0) + 'ms'
+    });
+
+    // ---- type system ----
+    const OSW = "'Oswald',sans-serif";
+    const ANT = "'Anton',sans-serif";
+    const MON = "'IBM Plex Mono',monospace";
+    const SANS = "'IBM Plex Sans',sans-serif";
+    const JP = "'Noto Sans JP',sans-serif";
+
+    const PH = [
+      { k:'PREP', en:'PREPARE', jp:'準備' },
+      { k:'SEPARATE', en:'SEPARATE', jp:'分離' },
+      { k:'SAVE', en:'SAVE', jp:'保存' }
+    ];
+    const phDef = PH.find(p => p.k === curPh.k);
+
+    // the title bar carries identity and the phase colour only. the anchor owns the state words.
+    const topBarStyle = Object.assign({ position: 'relative', zIndex: 3, height: '48px', flexShrink: 0, display: 'flex', alignItems: 'stretch', borderBottom: '1px solid var(--line)', background: 'oklch(0.155 0.005 264)' }, bootIn(0, -12));
+    const statusMarkStyle = { width: '10px', height: '20px', background: accent, transform: 'skewX(-14deg)', transition: 'background .3s ease' };
+    const cbtn = (w) => ({ width: w + 'px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--muted)', clipPath: 'polygon(14% 0,100% 0,86% 100%,0 100%)', transition: 'background .16s ease, color .16s ease, transform .12s ease' });
+    const chrome = { min: { style: cbtn(46) }, close: { style: cbtn(52) } };
+
+    // ---- shared path treatment: deliberate, LSS-owned, never OS default text ----
+    const pathBox = (fs) => ({ display: 'flex', alignItems: 'center', gap: '7px', minWidth: 0, maxWidth: '100%', background: 'oklch(1 0 0 / 0.05)', border: '1px solid oklch(1 0 0 / 0.1)', clipPath: 'polygon(1.5% 0,100% 0,98.5% 100%,0 100%)', padding: fs > 12 ? '5px 13px 6px' : '4px 11px 5px' });
+    const pathTickStyle = { width: '3px', height: '11px', background: 'var(--red)', transform: 'skewX(-16deg)', flexShrink: 0 };
+    const pathRoot = (fs) => ({ fontFamily: MON, fontWeight: 400, fontSize: fs + 'px', letterSpacing: '.1px', color: 'var(--dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' });
+    const pathLeaf = (fs) => ({ fontFamily: MON, fontWeight: 600, fontSize: fs + 'px', letterSpacing: '.1px', color: 'var(--text)', whiteSpace: 'nowrap' });
+    const fieldLabelStyle = { fontFamily: OSW, fontWeight: 600, fontSize: '11.5px', letterSpacing: '2.2px', color: 'var(--dim)', whiteSpace: 'nowrap' };
+    // durable provenance: absolute, year-qualified, structured like the spec block — never relative prose
+    const savedLabelStyle = { fontFamily: OSW, fontWeight: 600, fontSize: '10.5px', letterSpacing: '2.2px', color: 'oklch(0.46 0.006 264)', whiteSpace: 'nowrap' };
+    const savedDateStyle = { fontFamily: MON, fontWeight: 600, fontSize: '13px', letterSpacing: '.6px', color: 'oklch(0.74 0.1 95)', whiteSpace: 'nowrap' };
+    const savedRuleStyle = { width: '1px', height: '13px', background: 'oklch(1 0 0 / 0.18)', flexShrink: 0 };
+    const savedTimeStyle = { fontFamily: MON, fontWeight: 500, fontSize: '13px', letterSpacing: '.6px', color: 'oklch(0.58 0.008 264)', whiteSpace: 'nowrap' };
+    const chip = (strong) => ({ fontFamily: JP, fontWeight: 700, fontSize: '11px', letterSpacing: '.2px', color: strong ? 'var(--text)' : 'var(--muted)', background: strong ? 'oklch(1 0 0 / 0.09)' : 'transparent', border: '1px solid ' + (strong ? 'oklch(1 0 0 / 0.16)' : 'oklch(1 0 0 / 0.11)'), padding: '2px 8px', clipPath: 'polygon(7% 0,100% 0,93% 100%,0 100%)', whiteSpace: 'nowrap' });
+
+    // ---- result tags: one grammar for planned, reused, produced, absent, held, failed ----
+    const TAGC = {
+      plan: ['transparent', 'oklch(1 0 0 / 0.4)', 'var(--text)'], own: ['var(--red)', 'var(--red)', '#fff'],
+      have: ['transparent', 'oklch(0.83 0.16 95 / 0.55)', 'oklch(0.85 0.12 95)'], done: ['var(--gold)', 'var(--gold)', 'oklch(0.2 0.02 95)'],
+      none: ['transparent', 'oklch(1 0 0 / 0.24)', 'var(--muted)'], held: ['transparent', 'oklch(0.78 0.13 70 / 0.7)', 'oklch(0.85 0.12 70)'],
+      fail: ['var(--red)', 'var(--red)', '#fff'], unsup: ['transparent', 'var(--red)', 'oklch(0.78 0.14 27)'],
+      wait: ['transparent', 'oklch(0.78 0.12 200 / 0.55)', 'var(--cyan)']
+    };
+    const tagS = (k, delay) => { const c = TAGC[k]; return { fontFamily: JP, fontWeight: 700, fontSize: '11.5px', letterSpacing: '.5px', lineHeight: '19px', padding: '0 10px', background: c[0], border: '1px solid ' + c[1], color: c[2], clipPath: 'polygon(9% 0,100% 0,91% 100%,0 100%)', whiteSpace: 'nowrap', flexShrink: 0, animation: delay != null ? 'lssTagIn .28s cubic-bezier(.16,.84,.24,1) ' + delay + 'ms both' : 'none' }; };
+    const tShort = (t) => this.TL[t] ? this.TL[t].short : t;
+    const outTag = (t, o) => {
+      if (!o) return null;
+      const b = tShort(t), many = t !== 'inst' && o.n > 0 ? ' ' + o.n + (t === 'bgm' ? ' 曲' : ' 件') : '';
+      if (o.k === 'done') return [b + many, 'done'];
+      if (o.k === 'reused') return o.n === 0 && t !== 'inst' ? [b + ' なし', 'none'] : [b + many + ' 作成済み', 'have'];
+      if (o.k === 'none') return [b + ' なし', 'none'];
+      if (o.k === 'held') return [b + ' 保留', 'held'];
+      if (o.k === 'unsupported') return [b + ' 非対応', 'unsup'];
+      return [b + ' 失敗', 'fail'];
+    };
+
+    // ---- tooltip ----
+    const tip = s.tip;
+    const tOut = s.tipVis === 'out';
+    const restY = tip && tip.below ? '0px' : '-100%';
+    const offY = tip && tip.below ? '-7px' : 'calc(-100% + 7px)';
+    const tipStyle = tip ? {
+      position: 'absolute', zIndex: 44, left: tip.cx + 'px', top: tip.y + 'px',
+      '--tipoff': offY, '--tiprest': restY,
+      transform: 'translate(-50%,' + (tOut ? offY : restY) + ')' + (tOut ? ' scale(.96)' : ''),
+      opacity: tOut ? 0 : 1,
+      background: 'var(--panel)', border: '1px solid var(--line)', borderBottom: tip.below ? '1px solid var(--line)' : '3px solid var(--red)', borderTop: tip.below ? '3px solid var(--red)' : '1px solid var(--line)',
+      clipPath: 'polygon(0 0,100% 0,97% 100%,3% 100%)', padding: '7px 15px',
+      fontFamily: JP, fontWeight: 700, fontSize: '12.5px', whiteSpace: 'nowrap',
+      color: 'var(--text)', boxShadow: '3px 3px 0 rgba(0,0,0,.45)', pointerEvents: 'none',
+      transition: 'left .2s cubic-bezier(.3,.9,.3,1), top .2s cubic-bezier(.3,.9,.3,1), opacity .15s ease, transform .15s ease',
+      animation: tOut ? 'none' : 'lssTipIn .17s cubic-bezier(.2,.9,.2,1) both'
+    } : {};
+
+    // ---- context menu ----
+    const ctx = s.ctx;
+    const cOut = s.ctxVis === 'out';
+    const ctxRowId = ctx && ctx.id ? ctx.id : null;
+    const ctxSt = ctxRowId ? (s.st[ctxRowId] || 'queued') : null;
+    const ctxHard = ctxRowId ? !!this.song(ctxRowId).hard : false;
+    const ctxStyle = ctx ? {
+      position: 'absolute', zIndex: 45, left: ctx.x + 'px', top: ctx.y + 'px', width: '264px',
+      display: 'flex', flexDirection: 'column', background: 'oklch(0.185 0.006 264)',
+      border: '1px solid var(--line)', borderTop: '3px solid var(--red)',
+      clipPath: 'polygon(0 0,100% 0,98.5% 100%,1.5% 100%)', boxShadow: '7px 9px 0 rgba(0,0,0,.45)',
+      overflow: 'hidden', transformOrigin: 'top left',
+      opacity: cOut ? 0 : 1, transform: cOut ? 'translateY(-5px) scale(.97)' : 'translateY(0) scale(1)',
+      transition: 'left .17s cubic-bezier(.3,.9,.3,1), top .17s cubic-bezier(.3,.9,.3,1), opacity .14s ease, transform .14s cubic-bezier(.3,.9,.3,1)',
+      animation: cOut ? 'none' : 'lssSwap .15s cubic-bezier(.2,.9,.2,1) both'
+    } : {};
+    const ctxBodyStyle = { display: 'flex', flexDirection: 'column', animation: 'lssSwap .14s ease-out both' };
+    const ctxHeadStyle = { padding: '9px 14px 7px', fontFamily: SANS, fontWeight: 600, fontSize: '13px', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' };
+    const ctxFootWrap = { padding: '8px 13px 9px', borderTop: '1px solid var(--line)', display: 'flex', minWidth: 0 };
+    const ctxFootNoteStyle = { fontFamily: JP, fontWeight: 700, fontSize: '11px', color: 'oklch(0.5 0.006 264)', whiteSpace: 'nowrap' };
+    const ctxItem = () => ({ display: 'flex', alignItems: 'baseline', gap: '9px', cursor: 'pointer', padding: '8px 14px', color: 'var(--text)', transition: 'background .12s ease, color .12s ease' });
+    const mkItem = (key, en, jp, hint, onClick) => ({ key, en, jp, hint, onClick, style: ctxItem(),
+      enStyle: { fontFamily: OSW, fontWeight: 600, fontSize: '13.5px', letterSpacing: '1.2px', whiteSpace: 'nowrap' },
+      jpStyle: { fontFamily: JP, fontWeight: 700, fontSize: '11px', opacity: .62, whiteSpace: 'nowrap' },
+      keyStyle: { fontFamily: MON, fontSize: '11px', color: 'var(--dim)', whiteSpace: 'nowrap' } });
+    let ctxItems = [], ctxHead = '', ctxFoot = '', ctxFootIsPath = false, ctxPathRoot = '', ctxPathLeaf = '';
+    if (ctxRowId) {
+      const cf = this.song(ctxRowId);
+      ctxHead = cf.name;
+      if (ctxSt === 'failed' && !ctxHard) ctxItems.push(mkItem('retry', 'RETRY', '再試行', '', () => this.retry(ctxRowId)));
+      if (s.phase === 'ready' && s.queue.indexOf(ctxRowId) >= 0) {
+        const mk = s.marks.indexOf(ctxRowId) >= 0;
+        ctxItems.push(mkItem('mark', mk ? 'UNMARK' : 'MARK', mk ? '選択を解除' : '選択', 'Space', () => { this.toggleMark(ctxRowId); this.closeCtx(); }));
+        if (mk && s.marks.some(x => s.ovr[x])) ctxItems.push(mkItem('fdm', 'RESET', '選んだ音源を共通設定に', '', () => { this.resetMarks(); this.closeCtx(); }));
+        else if (!mk && s.ovr[ctxRowId]) ctxItems.push(mkItem('fd', 'RESET', '共通設定に戻す', '', () => { this.resetRow(ctxRowId); this.closeCtx(); }));
+        ctxItems.push(mkItem('rm', 'REMOVE', '一覧から外す', 'Del', () => this.removeFile(ctxRowId)));
+      }
+      ctxItems.push(mkItem('open', 'OPEN FOLDER', 'フォルダを開く', '', () => this.closeCtx()));
+      ctxItems.push(mkItem('copy', 'COPY PATH', 'パスをコピー', '', () => this.closeCtx()));
+      ctxFootIsPath = true;
+      const sp = this.splitPath(cf.dir);
+      ctxPathRoot = sp.root; ctxPathLeaf = sp.leaf;
+    } else {
+      ctxHead = 'LSS';
+      ctxItems = s.phase === 'complete' ? [mkItem('rd', 'BACK TO READY', 'READY に戻る', '⏎', () => this.backToReady())] : [
+        mkItem('af', 'ADD FILES', 'ファイルを追加', 'A', () => this.addFile()),
+        mkItem('ad', 'ADD FOLDER', 'フォルダを追加', '⇧A', () => this.addFolder())
+      ];
+      ctxFoot = '';
+    }
+
+    // ---- wipe ----
+    const fwd = s.wipeDir !== 'back';
+    const wipeWrapStyle = { position: 'absolute', top: '-14%', left: 0, width: '128%', height: '128%', animation: 'lssWipe' + (fwd ? 'F' : 'B') + ' .5s cubic-bezier(.45,.02,.35,1) both' };
+    const wipePanelStyle = { position: 'absolute', inset: 0, background: 'linear-gradient(103deg, oklch(0.44 0.19 25) 0%, var(--red) 46%, oklch(0.63 0.21 32) 100%)', clipPath: fwd ? 'polygon(7% 0,100% 0,100% 100%,1% 100%,4.5% 74%,0.5% 52%,5% 27%)' : 'polygon(0 0,93% 0,95.5% 27%,99.5% 52%,96% 74%,99% 100%,0 100%)' };
+    const wipeBladeStyle = Object.assign({ position: 'absolute', top: 0, bottom: 0, width: '20px', background: '#fff', transform: 'skewX(-13deg)', boxShadow: '0 0 34px 6px rgba(255,255,255,.5)' }, fwd ? { right: '-14px' } : { left: '-14px' });
+
+    // ---- anchor ----
+    // one entity all the way through: a SOURCE the user supplied. never a stem or a physical file count.
+    let anchorNum = String(pending.length || nQueue).padStart(2, '0'), anchorUnit = 'SOURCES', anchorState = 'READY', anchorJp = '', anchorJp2 = '';
+    if (phase === 'ready') {
+      if (isEmpty) { anchorNum = '00'; anchorState = 'NO INPUT'; }
+      else if (s.stopped) { anchorState = 'STOPPED'; anchorJp = 'ここまでの結果は保存済みです'; }
+    }
+    if (phase === 'processing') {
+      anchorNum = String(processed).padStart(2, '0'); anchorUnit = '/ ' + nQueue + ' SOURCES';
+      anchorState = s.allDone ? 'ALL DONE' : 'PROCESSING';
+      if (s.stopReq && !s.allDone) { anchorState = 'STOPPING'; anchorJp = '処理中の 1 件を仕上げています'; }
+      if (fault) { anchorState = 'HALTED'; anchorJp = ''; }
+    }
+    if (phase === 'complete') {
+      // the anchor counts SOURCES whose every wanted result landed; the total shows what did not
+      anchorNum = String(doneN).padStart(2, '0'); anchorUnit = doneN < nQueue ? '/ ' + nQueue + ' SOURCES' : 'SOURCES'; anchorState = 'SESSION COMPLETE';
+    }
+    const anchorNumStyle = {
+      fontFamily: ANT, fontSize: '122px', lineHeight: .74, letterSpacing: '-4px',
+      transform: 'rotate(-2deg)', transformOrigin: '10% 22%', marginLeft: '-6px',
+      textShadow: '7px 7px 0 rgba(0,0,0,.32), -3px -3px 0 ' + accent,
+      // the keyframes already choreograph the settle, so the timing function must not overshoot again
+      animation: (phase === 'complete' && s.stampOn) ? 'lssStamp .42s cubic-bezier(.16,.84,.24,1) both' : (s.boot ? 'lssStamp .52s cubic-bezier(.16,.84,.24,1) .06s both' : 'none')
+    };
+    const anchorUnitStyle = { fontFamily: OSW, fontWeight: 700, fontSize: '22px', letterSpacing: '2.5px', color: accent, paddingBottom: '15px', whiteSpace: 'nowrap', transition: 'color .3s ease' };
+    const anchorBadgeStyle = { position: 'absolute', left: '-18px', top: '-14px', width: '88px', height: '88px', background: accent, opacity: .15, transform: 'rotate(18deg)', zIndex: 0, transition: 'background .3s ease' };
+    const anchorSubStyle = { display: 'flex', alignItems: 'stretch', gap: '12px', zIndex: 1, animation: 'lssSubIn .3s ease-out both' };
+    const anchorRuleStyle = { width: '4px', background: accent, flexShrink: 0, transition: 'background .3s ease' };
+    const anchorStateStyle = { fontFamily: OSW, fontWeight: 700, fontSize: '20px', letterSpacing: '4.5px', color: 'var(--text)', whiteSpace: 'nowrap' };
+    const anchorJpStyle = { fontFamily: JP, fontWeight: 700, fontSize: '14px', letterSpacing: '.2px', color: 'var(--muted)', whiteSpace: 'nowrap' };
+    const anchorJp2Style = { fontFamily: phase === 'processing' && !fault ? SANS : JP, fontWeight: phase === 'processing' && !fault ? 600 : 700, fontSize: '12.5px', color: 'var(--dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '380px', animation: 'lssSwap .18s ease-out both' };
+
+    // ---- OUTPUT: what LSS produces now. no model choice; route is provenance only ----
+    const outCardStyle = Object.assign({ display: 'flex', flexDirection: 'column', gap: '11px', alignItems: 'flex-start', width: '100%', background: 'oklch(0.175 0.006 264)', border: '1px solid var(--line)', borderLeft: '4px solid ' + (bulk ? 'var(--text)' : 'var(--red)'), clipPath: 'polygon(0 0,100% 0,99% 100%,1% 100%)', padding: '13px 18px 15px' }, bootIn(150, -10));
+    outCardStyle.transition = (outCardStyle.transition || '') + ', border-color .18s ease';
+    const resultEnStyle = { fontFamily: OSW, fontWeight: 600, fontSize: '38px', letterSpacing: '.6px', lineHeight: .96, color: 'var(--text)', whiteSpace: 'nowrap' };
+    const resultJpStyle = { fontFamily: JP, fontWeight: 700, fontSize: '13.5px', letterSpacing: '1.5px', color: 'var(--muted)', whiteSpace: 'nowrap' };
+    const rbar = (w, h, o) => ({ width: w + 'px', height: h + 'px', background: 'var(--red)', opacity: o, transform: 'skewX(-14deg)' });
+    const resultBar1Style = rbar(104, 7, 1);
+    const resultBar2Style = rbar(66, 4, .62);
+    const resultBar3Style = rbar(34, 3, .34);
+    const fmtBadgeStyle = { fontFamily: OSW, fontWeight: 600, fontSize: '11px', letterSpacing: '1.6px', color: 'var(--text)', background: 'oklch(1 0 0 / 0.1)', border: '1px solid oklch(1 0 0 / 0.16)', padding: '2px 9px', clipPath: 'polygon(9% 0,100% 0,91% 100%,0 100%)', whiteSpace: 'nowrap', flexShrink: 0 };
+    // the destination is derived, never chosen: each SOURCE writes into an LSS folder beside itself,
+    // so one batch can honestly have several destinations. never print one path to stand for many.
+    const destsOf = (ids) => { const out = []; ids.forEach(id => { const d = this.song(id).dir; if (d && out.indexOf(d) < 0) out.push(d); }); return out; };
+    const destSplit = (dirs) => dirs.length === 1 ? this.splitPath(dirs[0] + '\\LSS') : { root: 'EACH SOURCE FOLDER\\', leaf: 'LSS' };
+    const destCountStyle = { fontFamily: OSW, fontWeight: 700, fontSize: '11px', letterSpacing: '1.6px', color: 'var(--text)', background: 'oklch(0.58 0.2 27 / 0.22)', border: '1px solid oklch(0.58 0.2 27 / 0.5)', padding: '2px 9px', clipPath: 'polygon(9% 0,100% 0,91% 100%,0 100%)', whiteSpace: 'nowrap', flexShrink: 0 };
+    const destNoteStyle = { fontFamily: JP, fontWeight: 700, fontSize: '11.5px', letterSpacing: '.2px', color: 'var(--dim)', whiteSpace: 'nowrap' };
+    const outDests = destsOf(pending.length ? pending : s.queue);
+    const outSp = destSplit(outDests.length ? outDests : ['C:\\Music\\Inbox']);
+    const outMulti = outDests.length > 1;
+    const outDestCount = outDests.length + ' FOLDERS';
+    const outDestNote = '保存先は ' + outDests.length + ' か所。各音源の隣に LSS フォルダを作ります。';
+    const outPathRoot = outSp.root, outPathLeaf = outSp.leaf;
+
+    // ---- WANTED RESULT selector: one control, scope = batch default or the marked SOURCES ----
+    const markN = s.marks.length;
+    const inScope = (t) => s.marks.filter(id => this.want(id).indexOf(t) >= 0).length;
+    const aggOf = (t) => { if (!bulk) return s.bdef.indexOf(t) >= 0 ? 'on' : 'off'; const n = inScope(t); return n === 0 ? 'off' : (n === markN ? 'on' : 'mixed'); };
+    const slabs = this.T.filter(t => t !== 'snd').map((t, i) => {
+      const a = aggOf(t), on = a === 'on', mixed = a === 'mixed', L = this.TL[t], refused = s.refuse === t;
+      return {
+        key: t + (refused ? 'r' + s.refuseKey : ''), t, mixed, en: L.en, kbd: String(i + 1),
+        jp: mixed ? '一部の音源のみ（押すとすべてに適用）' : L.jp,
+        mark: on ? '✓' : (mixed ? inScope(t) + ' / ' + markN : 'OFF'),
+        onClick: (e) => { if (e) e.stopPropagation(); this.toggleTarget(t); },
+        style: { flex: i === 0 ? 1.45 : 1, minWidth: 0, position: 'relative', overflow: 'hidden', height: '80px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '8px 18px 10px 20px', cursor: 'pointer', clipPath: i === 0 ? 'polygon(3.5% 0,100% 0,96.5% 100%,0 100%)' : 'polygon(5.5% 0,100% 0,94.5% 100%,0 100%)', background: on ? 'var(--red)' : (mixed ? 'oklch(0.58 0.2 27 / 0.14)' : 'oklch(1 0 0 / 0.035)'), border: '1px solid ' + (on ? 'var(--red)' : (mixed ? 'oklch(0.58 0.2 27 / 0.75)' : 'oklch(1 0 0 / 0.14)')), transform: on ? 'translateY(-3px)' : 'translateY(0)', transition: 'background .16s ease, border-color .16s ease, transform .18s cubic-bezier(.34,1.5,.64,1)', animation: refused ? 'lssShake .32s ease-out both' : 'none' },
+        hatchStyle: { position: 'absolute', inset: 0, background: 'repeating-linear-gradient(118deg, oklch(0.58 0.2 27 / 0.42) 0 3px, transparent 3px 11px)', pointerEvents: 'none' },
+        keyStyle: { fontFamily: MON, fontWeight: 600, fontSize: '10.5px', color: on ? '#fff' : 'var(--muted)', border: '1px solid ' + (on ? 'oklch(1 0 0 / 0.5)' : 'oklch(1 0 0 / 0.18)'), padding: '0 5px', lineHeight: '15px' },
+        markStyle: on ? { fontFamily: OSW, fontWeight: 700, fontSize: '13px', color: 'var(--red)', background: '#fff', padding: '0 9px', lineHeight: '18px', clipPath: 'polygon(14% 0,100% 0,86% 100%,0 100%)' } : { fontFamily: OSW, fontWeight: 700, fontSize: '11.5px', letterSpacing: '1.4px', color: mixed ? 'var(--text)' : 'var(--muted)', background: mixed ? 'var(--bg)' : 'transparent', padding: '0 8px', lineHeight: '18px' },
+        enStyle: { fontFamily: OSW, fontWeight: 600, fontSize: '30px', letterSpacing: '.5px', lineHeight: .95, color: on ? '#fff' : (mixed ? 'var(--text)' : 'var(--muted)'), whiteSpace: 'nowrap' },
+        jpStyle: { fontFamily: JP, fontWeight: 700, fontSize: '12px', letterSpacing: '1px', color: on ? '#fff' : (mixed ? 'var(--text)' : 'var(--muted)'), whiteSpace: 'nowrap' }
+      };
+    });
+    const snd = (() => {
+      const t = 'snd', a = aggOf(t), on = a === 'on', mixed = a === 'mixed', L = this.TL[t], refused = s.refuse === t;
+      const wanted = on || mixed || s.queue.some(id => !s.st[id] && this.want(id).indexOf(t) >= 0);
+      const open = phase === 'ready' && wanted;
+      // the wanted stems are words joined by '、'; a combination is one item 'AとB' (one summed file).
+      const items = (s.sounds || '').split('、').map(x => x.trim()).filter(Boolean);
+      const shown = (w) => w.split('と').join('+');
+      const setItems = (list) => this.setState({ sounds: list.join('、'), soundNeed: false });
+      const combo = s.sndCombo;
+      const press = (w) => {
+        if (combo) { this.setState({ sndCombo: combo.indexOf(w) >= 0 ? combo.filter(x => x !== w) : combo.concat([w]) }); return; }
+        setItems(items.indexOf(w) >= 0 ? items.filter(x => x !== w) : items.concat([w]));
+      };
+      const finishCombo = () => {
+        const joined = (combo || []).join('と');
+        const next = combo && combo.length >= 2 && items.indexOf(joined) < 0 ? items.concat([joined]) : items;
+        this.setState({ sndCombo: null, sounds: next.join('、'), soundNeed: false });
+      };
+      const ink = on ? '#fff' : (mixed ? 'var(--text)' : 'var(--muted)');
+      const chipStyle = (lit, control) => ({ fontFamily: JP, fontWeight: 700, fontSize: '11px', letterSpacing: '.3px', lineHeight: '19px', padding: '0 9px', cursor: 'pointer', clipPath: 'polygon(9% 0,100% 0,91% 100%,0 100%)', background: lit ? '#fff' : 'transparent', color: lit ? 'var(--red)' : (on ? '#fff' : 'var(--text)'), border: '1px ' + (control ? 'dashed ' : 'solid ') + (on ? 'oklch(1 0 0 / 0.55)' : 'oklch(1 0 0 / 0.25)'), whiteSpace: 'nowrap', transition: 'background .14s ease, color .14s ease, transform .12s ease' });
+      const stop = (e) => { if (e) e.stopPropagation(); };
+      const words = this.SOUND_CHIPS.concat(s.sndMore ? this.SOUND_MORE : []).concat(combo ? this.SOUND_COMBO_ONLY : []);
+      const chips = words.map(w => {
+        const lit = combo ? combo.indexOf(w) >= 0 : items.indexOf(w) >= 0;
+        return { key: 'c' + w, t: (lit ? '✓ ' : '+ ') + w, onClick: (e) => { stop(e); press(w); }, style: chipStyle(lit, false) };
+      });
+      chips.push({ key: 'cmore', t: s.sndMore ? 'その他を閉じる' : 'その他', onClick: (e) => { stop(e); this.setState({ sndMore: !s.sndMore }); }, style: chipStyle(false, true) });
+      if (combo) {
+        chips.push({ key: 'cdone', t: combo.length >= 2 ? (combo.map(shown).join('+') + ' を追加') : '2つ以上選んでください', onClick: (e) => { stop(e); finishCombo(); }, style: chipStyle(combo.length >= 2, true) });
+        chips.push({ key: 'ccancel', t: 'やめる', onClick: (e) => { stop(e); this.setState({ sndCombo: null }); }, style: chipStyle(false, true) });
+      } else {
+        chips.push({ key: 'ccombo', t: '組み合わせを追加', onClick: (e) => { stop(e); this.setState({ sndCombo: [] }); }, style: chipStyle(false, true) });
+      }
+      return {
+        key: t + (refused ? 'r' + s.refuseKey : ''), mixed, open, en: L.en, kbd: '3',
+        jp: mixed ? '一部の音源のみ（押すとすべてに適用）' : L.jp,
+        mark: on ? '✓' : (mixed ? inScope(t) + ' / ' + markN : 'OFF'),
+        hasItems: items.length > 0,
+        items: items.map(w => ({ key: 'i' + w, t: shown(w) + ' ×', onClick: (e) => { stop(e); setItems(items.filter(x => x !== w)); }, style: chipStyle(true, false) })),
+        onClick: (e) => { if (e) e.stopPropagation(); this.toggleTarget(t); },
+        onField: (e) => { if (e) e.stopPropagation(); },
+        chips,
+        style: { width: '100%', minWidth: 0, position: 'relative', overflow: 'hidden', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '8px', padding: '8px 18px 10px 20px', cursor: 'pointer', clipPath: 'polygon(1.6% 0,100% 0,98.4% 100%,0 100%)', background: on ? 'var(--red)' : (mixed ? 'oklch(0.58 0.2 27 / 0.14)' : 'oklch(1 0 0 / 0.035)'), border: '1px solid ' + (on ? 'var(--red)' : (mixed ? 'oklch(0.58 0.2 27 / 0.75)' : 'oklch(1 0 0 / 0.14)')), transform: on ? 'translateY(-3px)' : 'translateY(0)', transition: 'background .16s ease, border-color .16s ease, transform .18s cubic-bezier(.34,1.5,.64,1)', animation: refused || s.soundNeed ? 'lssShake .32s ease-out both' : 'none' },
+        hatchStyle: { position: 'absolute', inset: 0, background: 'repeating-linear-gradient(118deg, oklch(0.58 0.2 27 / 0.42) 0 3px, transparent 3px 11px)', pointerEvents: 'none' },
+        keyStyle: { fontFamily: MON, fontWeight: 600, fontSize: '10.5px', color: on ? '#fff' : 'var(--muted)', border: '1px solid ' + (on ? 'oklch(1 0 0 / 0.5)' : 'oklch(1 0 0 / 0.18)'), padding: '0 5px', lineHeight: '15px' },
+        markStyle: on ? { fontFamily: OSW, fontWeight: 700, fontSize: '13px', color: 'var(--red)', background: '#fff', padding: '0 9px', lineHeight: '18px', clipPath: 'polygon(14% 0,100% 0,86% 100%,0 100%)' } : { fontFamily: OSW, fontWeight: 700, fontSize: '11.5px', letterSpacing: '1.4px', color: mixed ? 'var(--text)' : 'var(--muted)', background: mixed ? 'var(--bg)' : 'transparent', padding: '0 8px', lineHeight: '18px' },
+        enStyle: { fontFamily: OSW, fontWeight: 600, fontSize: '22px', letterSpacing: '.5px', lineHeight: 1, color: ink, whiteSpace: 'nowrap' },
+        jpStyle: { fontFamily: JP, fontWeight: 700, fontSize: '12px', letterSpacing: '1px', color: ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+      };
+    })();
+    const nOwnQ = s.queue.filter(id => s.ovr[id]).length;
+    const ownMarked = s.marks.filter(id => s.ovr[id]).length;
+    let scopeNote = '', scopeWarn = false, scopeHint = '';
+    if (s.refuse) { scopeNote = '1つ以上選んでください'; scopeWarn = true; }
+    else if (s.soundNeed) { scopeNote = '保存するステムを選んでください'; scopeWarn = true; }
+    else if (bulk) scopeNote = ownMarked ? ('個別設定 ' + ownMarked + ' 件を含む') : '共通設定のまま';
+    else if (isEmpty) scopeNote = 'これから追加する音源に適用';
+    else if (nOwnQ) scopeNote = '共通 ' + (nQueue - nOwnQ) + ' 件、個別 ' + nOwnQ + ' 件';
+    else scopeNote = nQueue > 1 ? '全 ' + nQueue + ' 件に適用' : 'この音源に適用';
+    if (!bulk && !s.refuse && nQueue > 1) scopeHint = '番号クリックで個別に設定';
+    const wantLabel = bulk ? 'MARKED ' + String(markN).padStart(2, '0') : 'OUTPUT';
+    const wantLabelJp = bulk ? '選んだ音源だけ' : '出力';
+    const wantLabelStyle = bulk
+      ? { fontFamily: OSW, fontWeight: 700, fontSize: '12.5px', letterSpacing: '2.2px', color: 'var(--bg)', background: 'var(--text)', padding: '1px 11px', clipPath: 'polygon(8% 0,100% 0,92% 100%,0 100%)', whiteSpace: 'nowrap', animation: 'lssTagIn .24s cubic-bezier(.16,.84,.24,1) both' }
+      : { fontFamily: OSW, fontWeight: 600, fontSize: '12.5px', letterSpacing: '2.6px', color: 'var(--muted)', whiteSpace: 'nowrap' };
+    const wantLabelJpStyle = { fontFamily: JP, fontWeight: 700, fontSize: '11.5px', color: bulk ? 'var(--text)' : 'var(--dim)', whiteSpace: 'nowrap' };
+    const scopeNoteStyle = { fontFamily: JP, fontWeight: 700, fontSize: '12px', letterSpacing: '.2px', color: scopeWarn ? 'oklch(0.8 0.14 27)' : 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', animation: 'lssSwap .18s ease-out both' };
+    const smallAct = { display: 'flex', alignItems: 'baseline', gap: '7px', cursor: 'pointer', color: 'var(--text)', border: '1px solid oklch(1 0 0 / 0.35)', clipPath: 'polygon(7% 0,100% 0,93% 100%,0 100%)', padding: '3px 13px', whiteSpace: 'nowrap', flexShrink: 0, transition: 'background .15s ease, color .15s ease, transform .12s ease, border-color .15s ease' };
+    const clearMarksStyle = { display: 'flex', alignItems: 'baseline', gap: '6px', cursor: 'pointer', fontFamily: OSW, fontWeight: 700, fontSize: '11.5px', letterSpacing: '1.4px', color: 'var(--muted)', border: '1px solid var(--line)', padding: '1px 9px', clipPath: 'polygon(9% 0,100% 0,91% 100%,0 100%)', whiteSpace: 'nowrap', transition: 'color .15s ease, border-color .15s ease' };
+
+    // ---- PROCESSING: what this session was asked for, frozen at START ----
+    const fDef = s.frozenDef || s.bdef;
+    const frozenTags = fDef.map(t => ({ key: t, t: tShort(t), style: tagS('plan') }));
+    const ownFrozen = s.queue.filter(id => s.frozen[id] && s.frozen[id].join() !== fDef.join()).length;
+    const frozenNote = ownFrozen ? '個別設定 ' + ownFrozen + ' 件を含む' : '';
+    const frozenNoteStyle = { fontFamily: JP, fontWeight: 700, fontSize: '11px', color: 'var(--dim)', whiteSpace: 'nowrap' };
+
+    // ---- COMPLETE: counts per wanted result; detail lives in the rows ----
+    const sessIds = s.queue.filter(id => s.tst[id]);
+    const resTargets = this.T.filter(t => sessIds.some(id => s.tst[id][t])).map(t => {
+      const outs = sessIds.map(id => s.tst[id][t]).filter(Boolean);
+      const c = (k) => outs.filter(o => o.k === k).length;
+      const acc = outs.filter(o => o.k === 'done' || o.k === 'reused');
+      const notes = [];
+      let num, unit, u;
+      if (t === 'inst') { num = acc.length; unit = '伴奏'; u = '件'; }
+      else {
+        num = acc.reduce((a, o) => a + (o.n || 0), 0);
+        const from = acc.filter(o => o.n > 0).length;
+        unit = from ? from + ' 件の音源から' : '見つかりませんでした'; u = t === 'bgm' ? '曲' : '件';
+        const z = c('none') + acc.filter(o => o.k === 'reused' && !o.n).length;
+        if (z) notes.push([tShort(t) + ' なし ' + z, 'none']);
+        if (c('held')) notes.push(['保留 ' + c('held'), 'held']);
+      }
+      const ru = outs.filter(o => o.k === 'reused' && (t === 'inst' || o.n > 0)).length;
+      if (t === 'snd') { const words = outs.reduce((a, o) => a + (Array.isArray(o.items) ? o.items.filter(x => x.k === 'unsupported').length : 0), 0); if (words) notes.push(['読めない言葉 ' + words, 'unsup']); }
+      if (ru) notes.push(['作成済み ' + ru, 'have']);
+      const bad = c('failed') + c('unsupported');
+      if (bad) notes.push(['失敗 ' + bad, 'fail']);
+      return {
+        key: t, en: this.TL[t].en, unit, u, num: String(num).padStart(2, '0'),
+        uStyle: { fontFamily: JP, fontWeight: 700, fontSize: '13px', color: 'var(--muted)', whiteSpace: 'nowrap' },
+        notes: notes.map((n, j) => ({ key: t + j, t: n[0], style: tagS(n[1], 300 + j * 60) })),
+        enStyle: { fontFamily: OSW, fontWeight: 700, fontSize: '16px', letterSpacing: '2.2px', color: 'var(--text)', whiteSpace: 'nowrap' },
+        jpStyle: { fontFamily: JP, fontWeight: 700, fontSize: '11.5px', color: 'var(--muted)', whiteSpace: 'nowrap' },
+        numStyle: { fontFamily: ANT, fontSize: '46px', lineHeight: .9, color: 'var(--gold)', textShadow: '3px 3px 0 rgba(0,0,0,.35)', textAlign: 'right' }
+      };
+    });
+
+    // ---- pipeline ----
+    const queueSegs = s.queue.map((id, i) => {
+      const st = s.st[id];
+      let bg = 'oklch(1 0 0 / 0.09)', anim = 'none';
+      const tq = s.tst[id];
+      if (st === 'done' && tq && Object.keys(tq).every(k => tq[k].k === 'reused')) bg = 'oklch(0.83 0.16 95 / 0.6)';
+      else if (st === 'done') bg = 'var(--cyan)';
+      else if (st === 'skipped') bg = 'oklch(0.5 0.01 264)';
+      else if (st === 'failed') bg = 'var(--red)';
+      else if (i === s.ci && phase === 'processing' && !s.allDone) { bg = fault ? 'var(--red)' : 'var(--cyan)'; anim = 'lssPulse 1.1s ease-in-out infinite'; }
+      // STOP registers the instant it is asked for: everything after the current song stands down visibly
+      const held = s.stopReq && (!st || st === 'queued') && i > s.ci;
+      return { key: id, style: { flex: 1, height: '10px', background: bg, transform: 'skewX(-14deg)', animation: anim, opacity: held ? .3 : 1, transition: 'background .25s ease, opacity .2s ease' } };
+    });
+    const planKeys = plan.map(p => p.k);
+    const curIdx = planKeys.indexOf(curPh.k);
+    // stage steps live on the current SOURCE only: one place says where the work is
+    const steps = PH.map(p => {
+      const idx = planKeys.indexOf(p.k), cur = p.k === curPh.k && !s.allDone, passed = idx >= 0 && curIdx >= 0 && idx < curIdx;
+      const bg = cur ? (fault ? 'var(--red)' : 'var(--cyan)') : 'transparent';
+      return { key: p.k, en: p.en, jp: p.jp, cur, jpKey: 'j' + p.k,
+        style: { display: 'flex', alignItems: 'baseline', gap: '8px', padding: cur ? '3px 15px 4px' : '3px 11px 4px', clipPath: 'polygon(9% 0,100% 0,91% 100%,0 100%)', background: bg, border: '1px solid ' + (cur ? bg : (passed ? 'oklch(0.78 0.12 200 / 0.45)' : 'oklch(1 0 0 / 0.13)')), whiteSpace: 'nowrap', transition: 'background .2s ease, border-color .2s ease, padding .2s ease' },
+        enStyle: { fontFamily: OSW, fontWeight: 700, fontSize: cur ? '15px' : '12px', letterSpacing: '2px', color: cur ? (fault ? '#fff' : 'oklch(0.16 0.02 200)') : (passed ? 'var(--cyan)' : 'var(--dim)'), transition: 'font-size .2s ease, color .2s ease' },
+        jpStyle: { fontFamily: JP, fontWeight: 700, fontSize: '12.5px', letterSpacing: '1px', color: fault ? '#fff' : 'oklch(0.24 0.03 200)', animation: 'lssSwap .2s ease-out both' } };
+    });
+    // the separation made visible: source above, result below. PREPARE and SAVE advance by their
+    // measured fraction; SEPARATE is not measured, so it moves continuously and never fills or ends.
+    const WN = 120, WD = 1.9, sepOn = curPh.k === 'SEPARATE' && !s.allDone, ps = fault ? 'paused' : 'running';
+    const curWave = (id) => {
+      const top = this.wave(id, WN), mix = this.wave(id + 'x', WN), k = curPh.k, p = s.phP || 0;
+      const dl = (j) => ((j / WN - 1.1) * WD).toFixed(3) + 's';
+      const wTop = top.map((v, j) => {
+        const lit = k !== 'PREP' || j / WN < p;
+        return { flex: 1, minWidth: 0, height: (lit ? v : 12) + '%', transformOrigin: '50% 100%',
+          background: lit ? (k === 'SAVE' ? 'oklch(0.5 0.008 264)' : 'oklch(0.7 0.008 264)') : 'oklch(1 0 0 / 0.1)',
+          animation: sepOn ? 'lssRideT ' + WD + 's ease-out ' + dl(j) + ' infinite' : 'none', animationPlayState: ps,
+          transition: 'height .3s ease, background .3s ease' };
+      });
+      const wBot = top.map((v, j) => {
+        const h = k === 'PREP' ? 0 : Math.round(v * (0.42 + 0.5 * mix[j] / 100));
+        const saved = k === 'SAVE' && j / WN < p;
+        return { flex: 1, minWidth: 0, height: h + '%', transformOrigin: '50% 0',
+          background: saved ? 'var(--gold)' : 'oklch(0.78 0.12 200 / 0.62)',
+          animation: sepOn ? 'lssRideB ' + WD + 's ease-out ' + dl(j) + ' infinite' : 'none', animationPlayState: ps,
+          transition: 'height .5s cubic-bezier(.2,.9,.25,1) ' + (sepOn ? j * 5 : 0) + 'ms, background .2s ease' };
+      });
+      return { wTop, wBot };
+    };
+    const waveBoxStyle = { position: 'relative', height: '60px', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', opacity: fault ? .5 : 1, transition: 'opacity .2s ease' };
+    const sweepStyle = { position: 'absolute', top: 0, bottom: 0, left: 0, width: '16%', background: 'linear-gradient(90deg, transparent, oklch(0.78 0.12 200 / 0.16), transparent)', pointerEvents: 'none', opacity: sepOn ? 1 : 0, animation: sepOn ? 'lssSweep ' + WD + 's linear infinite' : 'none', animationPlayState: ps, transition: 'opacity .3s ease' };
+    const waveTopStyle = { height: '27px', display: 'flex', alignItems: 'flex-end', gap: '3px', animation: sepOn ? 'lssSplitU ' + (WD * 2) + 's ease-in-out infinite' : 'none', animationPlayState: ps };
+    const waveMidStyle = { height: '1px', flexShrink: 0, background: sepOn ? 'oklch(0.78 0.12 200 / 0.4)' : 'oklch(1 0 0 / 0.14)', transition: 'background .3s ease' };
+    const waveBotStyle = { height: '27px', display: 'flex', alignItems: 'flex-start', gap: '3px', animation: sepOn ? 'lssSplitD ' + (WD * 2) + 's ease-in-out infinite' : 'none', animationPlayState: ps };
+    // honest stage detail: no invented percentages, model fetch is a system state, not a choice
+    // PREPARE and SAVE advance measurably; SEPARATE does not. the bar carries that fact,
+    // so the only stage sentence left is the first-run wait the user could not otherwise explain.
+    const firstPrep = !model.cached && !s.dlDone;
+    const stageDetail = (k) => (k === 'PREP' && firstPrep) ? '初回は準備に時間がかかります' : '';
+    const elapsedValue = this.mmss(s.elapsed);
+    const elapsedLabelStyle = { fontFamily: OSW, fontWeight: 600, fontSize: '11.5px', letterSpacing: '2.2px', color: 'var(--dim)', whiteSpace: 'nowrap' };
+    const elapsedStyle = { fontFamily: MON, fontWeight: 600, fontSize: '22px', letterSpacing: '.5px', color: 'var(--text)', whiteSpace: 'nowrap' };
+
+    // ---- session-level halt ----
+    const faultCardStyle = { display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start', width: '100%', background: 'oklch(0.22 0.05 25)', border: '1px solid oklch(0.58 0.2 27 / 0.55)', borderLeft: '4px solid var(--red)', clipPath: 'polygon(0 0,100% 0,99% 100%,1% 100%)', padding: '13px 18px 15px', boxShadow: '6px 7px 0 rgba(0,0,0,.4)', animation: 'lssHalt .36s cubic-bezier(.16,.84,.24,1) both' };
+    const faultTagStyle = { fontFamily: OSW, fontWeight: 700, fontSize: '12px', letterSpacing: '2px', padding: '3px 10px', background: 'var(--red)', color: '#fff', clipPath: 'polygon(12% 0,100% 0,88% 100%,0 100%)', whiteSpace: 'nowrap' };
+    const faultCodeStyle = { fontFamily: ANT, fontSize: '30px', letterSpacing: '.5px', lineHeight: 1, color: 'var(--text)', whiteSpace: 'nowrap' };
+    const faultJpStyle = { fontFamily: JP, fontWeight: 700, fontSize: '14px', color: 'var(--text)', whiteSpace: 'nowrap' };
+    const faultSafeStyle = { fontFamily: JP, fontWeight: 700, fontSize: '12.5px', color: 'oklch(0.84 0.05 27)', whiteSpace: 'nowrap' };
+    const faultRefStyle = { fontFamily: MON, fontSize: '11px', letterSpacing: '.2px', color: 'oklch(0.66 0.06 27)', whiteSpace: 'nowrap' };
+    const faultAct = { display: 'flex', alignItems: 'baseline', gap: '8px', cursor: 'pointer', color: 'var(--text)', border: '1px solid oklch(1 0 0 / 0.35)', background: 'transparent', clipPath: 'polygon(8% 0,100% 0,92% 100%,0 100%)', padding: '6px 14px', whiteSpace: 'nowrap', transition: 'background .15s ease, color .15s ease, transform .12s ease, border-color .15s ease' };
+    const faEn = { fontFamily: OSW, fontWeight: 700, fontSize: '13px', letterSpacing: '1.4px' };
+    const faJp = { fontFamily: JP, fontWeight: 700, fontSize: '11px', opacity: .7 };
+    const faultMetrics = (fault ? fault.metrics : []).map(([label, value]) => ({
+      key: label, label, value,
+      labelStyle: { fontFamily: JP, fontWeight: 700, fontSize: '11px', letterSpacing: '1px', color: 'oklch(0.72 0.07 27)', whiteSpace: 'nowrap' },
+      valueStyle: { fontFamily: MON, fontWeight: 600, fontSize: '15px', letterSpacing: '.3px', color: 'var(--text)', whiteSpace: 'nowrap' }
+    }));
+    const faultActions = [
+      { key: 'retry', en: 'RETRY', jp: '再試行', style: faultAct, enStyle: faEn, jpStyle: faJp, onClick: () => this.clearFault(true) },
+      { key: 'skip', en: 'SKIP', jp: 'この音源を飛ばす', style: faultAct, enStyle: faEn, jpStyle: faJp, onClick: () => this.skipCurrent() }
+    ];
+
+    // ---- COMPLETE: where it went, how long, then provenance ----
+    const resultStyle = { display: 'flex', flexDirection: 'column', gap: '11px', alignItems: 'flex-end', width: '100%', borderRight: '4px solid var(--gold)', paddingRight: '15px', animation: 'lssSubIn .34s ease-out .12s both' };
+    const resDests = destsOf(s.queue.filter(id => s.st[id] === 'done' || (s.st[id] === 'failed' && s.tst[id] && Object.keys(s.tst[id]).some(t => s.tst[id][t].k === 'done' || s.tst[id][t].k === 'reused'))));
+    const resSp = destSplit(resDests.length ? resDests : ['C:\\Music\\Inbox']);
+    const resMulti = resDests.length > 1;
+    const resDestCount = resDests.length + ' FOLDERS';
+    const resDestNote = resDests.length + ' か所に保存しました。各音源の隣の LSS フォルダです。';
+    const resPathBoxStyle = Object.assign({}, pathBox(13), resMulti ? {} : { cursor: 'pointer', transition: 'border-color .15s ease, transform .12s ease' });
+    const resTimeStyle = { fontFamily: MON, fontWeight: 600, fontSize: '22px', letterSpacing: '.5px', color: 'var(--text)', whiteSpace: 'nowrap' };
+
+    // ---- list header ----
+    // separate facts stay separate elements instead of one string joined by spaces
+    const subLabelStyle = Object.assign({ fontFamily: OSW, fontWeight: 600, fontSize: '10.5px', letterSpacing: '2.2px', color: 'var(--dim)', whiteSpace: 'nowrap' }, bootIn(230, -8));
+    const subValueStyle = Object.assign({ fontFamily: MON, fontWeight: 600, fontSize: '14px', letterSpacing: '.3px', color: 'var(--muted)', whiteSpace: 'nowrap' }, bootIn(230, -8));
+    const subItem = (label, value) => ({ key: label, label, value, labelStyle: subLabelStyle, valueStyle: subValueStyle });
+    // counts already live in the anchor; the list header adds only the exceptions after a session
+    let listTitle = 'QUEUE', listSubs = [];
+    if (phase === 'complete') {
+      listTitle = 'RESULTS';
+      if (partialN) listSubs.push(subItem('PARTIAL', String(partialN)));
+      if (skipN) listSubs.push(subItem('SKIPPED', String(skipN)));
+      if (failN - partialN) listSubs.push(subItem('FAILED', String(failN - partialN)));
+    }
+    const listTitleStyle = Object.assign({ fontFamily: OSW, fontWeight: 700, fontSize: '17px', letterSpacing: '3.5px', color: 'var(--text)', whiteSpace: 'nowrap' }, bootIn(210, -8));
+    const abtn = { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1px', cursor: 'pointer', padding: '6px 14px 7px', background: 'var(--panel)', border: '1px solid var(--line)', clipPath: 'polygon(7% 0,100% 0,93% 100%,0 100%)', color: 'var(--muted)', boxShadow: '3px 3px 0 rgba(0,0,0,.32)', whiteSpace: 'nowrap', transition: 'transform .13s ease, border-color .16s ease, color .16s ease' };
+    const addFileStyle = Object.assign({}, abtn, { transform: 'rotate(-0.6deg)', opacity: run ? 1 : 0, transition: abtn.transition + ', opacity .3s ease ' + bdelay(4) + 'ms' });
+    const addFolderStyle = Object.assign({}, abtn, { transform: 'rotate(0.6deg)', opacity: run ? 1 : 0, transition: abtn.transition + ', opacity .3s ease ' + bdelay(5) + 'ms' });
+
+    const outputsFor = (id) => {
+      const nm = this.song(id).name, tt = s.tst[id];
+      const fileS = (dim) => ({ fontFamily: dim ? JP : MON, fontWeight: dim ? 700 : 500, fontSize: dim ? '12px' : '13.5px', color: dim ? 'var(--muted)' : 'var(--text)', whiteSpace: 'nowrap' });
+      const tg = (k, blank) => Object.assign(tagS(k), { minWidth: '52px', textAlign: 'center', boxSizing: 'border-box', opacity: blank ? 0 : 1 });
+      if (!tt) return [{ key: 'result', jp: model.result[1], file: nm + ' - ' + model.result[2] + '.flac', fileStyle: fileS(false), tagStyle: tg('done') }];
+      const out = [];
+      this.T.forEach(t => {
+        const o = tt[t]; if (!o) return;
+        const L = tShort(t), reused = o.k === 'reused', n = o.n || 0;
+        if ((o.k === 'done' || reused) && n > 0) {
+          const files = t === 'inst' ? [nm + ' - Instrumental.flac'] : (t === 'snd' ? (Array.isArray(o.files) && o.files.length ? o.files : [nm + ' - ' + L + '.flac']) : Array.from({ length: n }).map((_, j) => nm + ' - BGM ' + String(j + 1).padStart(2, '0') + '.flac'));
+          const shown = files.slice(0, files.length > 3 ? 2 : 3);
+          shown.forEach((fl, j) => out.push({ key: t + j, jp: j === 0 ? L : '', file: fl, fileStyle: fileS(false), tagStyle: tg(reused ? 'have' : 'done', j > 0) }));
+          if (files.length > shown.length) out.push({ key: t + 'more', jp: '', file: 'ほか ' + (files.length - shown.length) + ' 曲', fileStyle: fileS(true), tagStyle: tg('done', true) });
+        } else if (o.k === 'none' || reused) out.push({ key: t, jp: L, file: t === 'snd' ? '指定した音は見つかりませんでした' : 'BGM は見つかりませんでした', fileStyle: fileS(true), tagStyle: tg('none') });
+        else if (o.k === 'held') out.push({ key: t, jp: L, file: '品質の基準に届かなかったため、保存していません', fileStyle: fileS(true), tagStyle: tg('held') });
+        else if (!(t === 'snd' && Array.isArray(o.items) && o.items.length)) out.push({ key: t, jp: L, file: o.k === 'unsupported' ? 'この音源には対応していません' : '作成できませんでした。再試行できます', fileStyle: fileS(true), tagStyle: tg(o.k === 'unsupported' ? 'unsup' : 'fail') });
+        // each wanted sound that did not become a file says why, in the user's own words
+        if (t === 'snd' && Array.isArray(o.items)) {
+          const why = { none: '見つかりませんでした', held: '聞こえましたが、きれいに取り出せませんでした', unsupported: 'まだ扱えない言葉です', failed: '作成できませんでした' };
+          const whyOf = x => x.removal_status === 'unchanged' ? '取り除く音を確認できなかったため、元の音声を保存しました' : x.reason === 'removal_not_verified' ? '取り除く音を確認できなかったため、保存していません' : (x.k === 'unsupported' && x.reason === 'scope_not_supported') ? '左右の位置や音量の指定はまだ扱えません' : why[x.k];
+          const heard = x => (x.heard_as && x.heard_as.length ? '（' + x.heard_as.join('、') + ' として探しました）' : '');
+          const hint = x => (x.k === 'unsupported' && x.suggestions && x.suggestions.length ? '　もしかして: ' + x.suggestions.join('、') : '');
+          o.items.filter(x => why[x.k] || x.removal_status === 'unchanged').slice(0, 4).forEach((x, j) => out.push({ key: t + 'why' + j, jp: out.some(y => typeof y.key === 'string' && y.key.indexOf(t) === 0) ? '' : L,
+            file: (x.text || x.label) + '（' + whyOf(x) + '）' + (x.k === 'unsupported' && x.reason !== 'scope_not_supported' && x.unknown && x.unknown.length ? '（' + x.unknown.join('、') + '）' : heard(x)) + hint(x),
+            fileStyle: fileS(true), tagStyle: tg(x.k === 'none' ? 'none' : (x.k === 'held' ? 'held' : (x.k === 'unsupported' ? 'unsup' : 'fail')), j > 0 || out.length > 0) }));
+        }
+      });
+      return out;
+    };
+
+    // ---- layout pass ----
+    const anySel = !!s.selId;
+    const heightOf = (id, kind) => {
+      const open = s.selId === id && phase !== 'processing';
+      if (open) return this.H_OPEN_HEAD + this.H_OPEN_BODY;
+      if (phase === 'processing' && kind === 'queue' && s.queue[s.ci] === id && !s.allDone) return this.H_CUR;
+      return this.H_ROW;
+    };
+    const items = s.queue.map(id => ({ id, kind: 'queue', h: heightOf(id, 'queue') }));
+    const showHistHead = false;
+    const tops = {};
+    let acc = 2;
+    items.forEach(it => { tops[it.id] = { top: acc, h: it.h }; acc += it.h + this.GAP; });
+    this._tops = tops;
+    const contentH = Math.max(0, acc - this.GAP);
+    const bandH = s.bandH || 470;
+    const hiddenBelow = items.filter(it => it.kind !== 'head' && tops[it.id].top >= s.scrollTop + bandH - 8).length;
+
+    // secondary spec block: source orientation and trust, deliberately subordinate to the filename.
+    // channel count appears only when it is the reason the source cannot be used.
+    const metaFor = (f) => {
+      const out = [];
+      const push = (n, u, warn) => out.push({
+        key: u + n, n, u,
+        wrapStyle: { display: 'flex', alignItems: 'baseline', gap: '4px', paddingLeft: '11px', position: 'relative', flexShrink: 0 },
+        ruleStyle: { position: 'absolute', left: 0, top: '2px', bottom: '1px', width: '1px', background: warn ? 'var(--red)' : 'oklch(1 0 0 / 0.15)' },
+        numStyle: { fontFamily: MON, fontWeight: 600, fontSize: '12.5px', letterSpacing: '.2px', color: warn ? 'oklch(0.82 0.14 27)' : 'var(--muted)', whiteSpace: 'nowrap' },
+        unitStyle: { fontFamily: OSW, fontWeight: 600, fontSize: '9.5px', letterSpacing: '1.4px', color: warn ? 'oklch(0.68 0.13 27)' : 'var(--dim)', whiteSpace: 'nowrap' }
+      });
+      if (f.ch > 2) push(String(f.ch), 'CH', true);
+      return out;
+    };
+
+    const buildRow = (id, i, kind) => {
+      const f = this.song(id);
+      const rh = this.RHYTHM[i % 4];
+      const st = s.st[id] || 'queued';
+      const open = s.selId === id && phase !== 'processing';
+      const isCur = phase === 'processing' && kind === 'queue' && s.queue[s.ci] === id && !s.allDone;
+      const isHist = kind === 'hist';
+      const err = st === 'failed' ? (this.ROW_ERR[f.hard || f.fail || 'target_failed'] || this.ROW_ERR.input_changed) : null;
+      const marked = !isHist && s.marks.indexOf(id) >= 0;
+      const own = !isHist && !!s.ovr[id];
+      const tt = s.tst[id] || null;
+      const wantSet = this.want(id);
+      const hv = this.haveOf(id);
+      const whole = st === 'failed' && !!(f.hard || f.fail);
+      const editable = phase === 'ready' && !isHist && st === 'queued';
+      const haveW = wantSet.filter(t => hv[t] !== undefined), needW = wantSet.filter(t => hv[t] === undefined);
+      const back = (anySel && !open && phase !== 'processing') || (phase === 'processing' && !isCur);
+      const rot = open ? 0 : rh.r * irr;
+      const h = tops[id] ? tops[id].h : this.H_ROW;
+      const bi = kind === 'hist' ? s.queue.length + i : i;
+      const bx = run ? 0 : 44;
+      // every source added in one gesture arrives with the same motion, staggered — not just the first
+      const nIdx = (kind === 'queue' && s.newIds) ? s.newIds.indexOf(id) : -1;
+      const wrapStyle = {
+        height: h + 'px', flexShrink: 0,
+        marginLeft: (rh.x * irr) + 'px', marginRight: '2px', position: 'relative',
+        // resting transform is authored in full and animated to continuously — never overridden by a keyframe
+        transform: 'translateX(' + ((open ? -4 : 0) + (marked ? 12 : 0) + bx) + 'px) rotate(' + rot + 'deg)',
+        transformOrigin: 'left center',
+        opacity: run ? 1 : 0,
+        cursor: 'pointer', zIndex: open ? 3 : (nIdx >= 0 ? 3 : (isCur ? 2 : 1)),
+        transition: 'height .26s cubic-bezier(.3,.9,.3,1), opacity ' + (s.boot ? '.3s ease ' + bdelay(bi) + 'ms' : '.2s ease') + ', transform ' + (s.boot ? '.42s cubic-bezier(.2,.85,.25,1) ' + bdelay(bi) + 'ms' : '.2s cubic-bezier(.34,1.4,.64,1)')
+      };
+      let edge = '1px solid var(--line)';
+      if (open) edge = '5px solid var(--red)';
+      else if (isCur) edge = '6px solid ' + (fault ? 'var(--red)' : 'var(--cyan)');
+      else if (st === 'failed') edge = '4px solid var(--red)';
+      else if (st === 'done' && phase === 'complete') edge = '4px solid var(--gold)';
+      const pillStyle = {
+        height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden',
+        background: open ? 'oklch(0.245 0.009 264)' : (isCur ? 'oklch(0.225 0.012 230)' : (isHist ? 'oklch(0.16 0.005 264)' : 'var(--panel)')),
+        border: '1px solid ' + (open ? 'var(--red)' : (isCur ? 'oklch(0.78 0.12 200 / 0.5)' : 'var(--line)')), borderLeft: edge, borderRight: marked ? '4px solid var(--text)' : '1px solid ' + (open ? 'var(--red)' : (isCur ? 'oklch(0.78 0.12 200 / 0.5)' : 'var(--line)')),
+        clipPath: 'polygon(0 0,100% 0,99.4% 100%,0.6% 100%)',
+        boxShadow: open ? '9px 10px 0 rgba(0,0,0,.5)' : (isCur ? '10px 11px 0 rgba(0,0,0,.45)' : rh.sh + 'px ' + rh.sh + 'px 0 rgba(0,0,0,.3)'),
+        opacity: back ? (st === 'queued' && phase === 'processing' ? .26 : .42) : 1,
+        transition: 'background .18s ease, box-shadow .2s ease, border-color .18s ease, opacity .22s ease',
+        // the pill carries the arrival punch while the wrapper holds the authored angle, so the last
+        // animated frame IS the resting frame — one landing, no second angular correction
+        animation: nIdx >= 0 ? 'lssSlap .34s cubic-bezier(.16,.84,.24,1) ' + (nIdx * 70) + 'ms both' : 'none'
+      };
+      const headH = open ? this.H_OPEN_HEAD : (isCur ? 66 : this.H_ROW);
+      const headStyle = { height: headH + 'px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '15px', padding: isCur ? '0 18px' : '0 16px', position: 'relative', zIndex: 1 };
+      let badge = '', badgeStyle = null, hasBadge = false;
+      const bBase = { fontFamily: OSW, fontWeight: 700, fontSize: '13px', letterSpacing: '1.1px', padding: '4px 12px', clipPath: 'polygon(11% 0,100% 0,89% 100%,0 100%)', whiteSpace: 'nowrap' };
+      if (isHist) {
+        hasBadge = true; badge = model.result[0];
+        badgeStyle = Object.assign({}, bBase, { background: 'transparent', border: '1px solid oklch(0.83 0.16 95 / 0.4)', color: 'oklch(0.72 0.1 95)', fontSize: '11.5px', letterSpacing: '1.4px' });
+      } else if (st === 'done' && phase === 'complete' && !tt) {
+        hasBadge = true; badge = model.result[0];
+        badgeStyle = Object.assign({}, bBase, { background: 'var(--gold)', color: 'oklch(0.2 0.02 95)', fontSize: '11.5px', letterSpacing: '1.4px', animation: 'lssTagIn .3s cubic-bezier(.16,.84,.24,1) ' + (110 + Math.min(i, 8) * 46) + 'ms both' });
+      } else if (phase === 'processing' && s.stopReq && !isCur && st === 'queued') {
+        hasBadge = true; badge = 'HOLD';
+        badgeStyle = Object.assign({}, bBase, { background: 'transparent', border: '1px solid var(--dim)', color: 'var(--dim)', fontSize: '12px' });
+      } else if (st === 'skipped') {
+        hasBadge = true; badge = 'SKIPPED';
+        badgeStyle = Object.assign({}, bBase, { background: 'transparent', border: '1px solid var(--dim)', color: 'var(--muted)' });
+      } else if (st === 'failed' && (whole || !tt)) {
+        hasBadge = true; badge = err[0];
+        badgeStyle = Object.assign({}, bBase, err[2] ? { background: 'var(--red)', color: '#fff' } : { background: 'transparent', border: '1px solid var(--red)', color: 'oklch(0.74 0.15 27)' });
+      } else if (st === 'done' && !tt) {
+        hasBadge = true; badge = '✓ DONE';
+        badgeStyle = Object.assign({}, bBase, { background: 'transparent', border: '1px solid oklch(0.78 0.12 200 / 0.5)', color: 'var(--cyan)' });
+      }
+      const rightStyle = { fontFamily: MON, fontWeight: isCur ? 600 : 400, fontSize: open ? '15px' : (isCur ? '16px' : '13.5px'), color: open || isCur ? 'var(--text)' : 'var(--dim)', minWidth: '50px', textAlign: 'right', whiteSpace: 'nowrap', transition: 'color .18s ease, font-size .2s ease' };
+      const openStyle = { flex: open ? '1 1 0px' : '0 0 0px', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '11px', padding: open ? '12px 18px 15px' : '0 18px', borderTop: open ? '1px dashed oklch(1 0 0 / 0.18)' : 'none', opacity: open ? 1 : 0, overflow: 'hidden', transition: 'opacity .18s ease .04s' };
+      const showOuts = isHist || (phase === 'complete' && (st === 'done' || (st === 'failed' && !!tt && !whole)));
+      const hasAction = open && !isHist && (st === 'failed' || (phase === 'ready' && st === 'queued'));
+      const retryable = st === 'failed' && err && err[2];
+      const sp = this.splitPath(showOuts ? f.dir + '\\LSS' : f.dir);
+      const pfs = 12;
+      const stamp = (s.stamps && s.stamps[id]) || (f.on ? { on: f.on, at: f.at } : null);
+      let note = '';
+      if (f.ch > 2) note = f.ch + 'ch の音源は分離できません。ステレオまで対応しています。';
+      else if (err) note = err[1];
+      else if (st === 'skipped') note = '同じ音源をすでに処理済みです。';
+      const tj = (ts) => ts.map(tShort).join('と');
+      if (st === 'failed' && !whole && tt) {
+        const acc = this.T.filter(t => tt[t] && (tt[t].k === 'done' || tt[t].k === 'reused')), bad = this.T.filter(t => tt[t] && tt[t].k === 'failed');
+        note = (acc.length ? tj(acc) + 'は保存しました。' : '') + '再試行するのは ' + tj(bad) + ' だけです。';
+      }
+      else if (editable && haveW.length && !needW.length) note = 'すべて作成済みのため、処理しません。';
+      else if (editable && haveW.length) note = tj(haveW) + 'は作成済み。' + tj(needW) + ' だけ作ります。';
+      // row tags: in READY only exceptions show (own setting, existing result); afterwards, per-result outcome
+      const tags = [];
+      if (editable) {
+        if (own) tags.push(['個別', 'own']);
+        wantSet.forEach(t => { const has = hv[t] !== undefined; if (own || has) tags.push([has ? tShort(t) + ' 作成済み' : tShort(t), has ? 'have' : 'plan']); });
+      } else if (tt && !whole && st !== 'queued') this.T.forEach(t => { const x = outTag(t, tt[t]); if (x) tags.push(x); });
+      const curTargets = isCur ? wantSet.map(t => { const has = hv[t] !== undefined; return { key: t, t: tShort(t) + (has ? ' 作成済み' : ''), style: tagS(has ? 'have' : (fault ? 'unsup' : 'wait')) }; }) : [];
+      const hasWants = open && editable;
+      const wantBtns = hasWants ? this.T.map(t => {
+        const on = wantSet.indexOf(t) >= 0, has = hv[t] !== undefined, refused = s.rowRefuse === id + t;
+        return { key: t + (refused ? s.refuseKey : ''), t: tShort(t) + (has ? ' 作成済み' : ''), onClick: (e) => { if (e) e.stopPropagation(); this.toggleRowTarget(id, t); },
+          style: { fontFamily: JP, fontWeight: 700, fontSize: '12.5px', letterSpacing: '.5px', padding: '3px 14px', cursor: 'pointer', clipPath: 'polygon(9% 0,100% 0,91% 100%,0 100%)', background: on ? 'var(--red)' : 'transparent', border: '1px solid ' + (on ? 'var(--red)' : 'oklch(1 0 0 / 0.25)'), color: on ? '#fff' : 'var(--muted)', whiteSpace: 'nowrap', transition: 'background .15s ease, color .15s ease, border-color .15s ease, transform .12s ease', animation: refused ? 'lssShake .32s ease-out both' : 'none' } };
+      }) : [];
+      const rowRefused = !!(s.rowRefuse && s.rowRefuse.indexOf(id) === 0);
+      const wantNote = rowRefused ? '1つ以上選んでください' : (own ? 'この音源だけの設定' : '共通設定のまま');
+      const cw = isCur ? curWave(id) : null;
+      return {
+        // a queue position stops meaning anything once the source is in ALREADY SAVED
+        key: id, num: isHist ? '—' : f.num, name: f.name, right: f.dur,
+        fmt: f.fmt, metaParts: metaFor(f),
+        fmtStyle: { fontFamily: OSW, fontWeight: 600, fontSize: '11px', letterSpacing: '1.4px', color: isCur ? 'oklch(0.2 0.03 200)' : 'var(--text)', background: isCur ? 'var(--cyan)' : 'oklch(1 0 0 / 0.1)', border: '1px solid ' + (isCur ? 'var(--cyan)' : 'oklch(1 0 0 / 0.14)'), padding: '1px 8px', clipPath: 'polygon(9% 0,100% 0,91% 100%,0 100%)', whiteSpace: 'nowrap' },
+        showMeta: open || isCur,
+        onClick: (e) => {
+          if (phase === 'ready' && !isHist && e && (e.ctrlKey || e.metaKey)) { this.toggleMark(id); return; }
+          if (phase === 'ready' && !isHist && e && e.shiftKey) { this.rangeMark(id); return; }
+          this.setState(t => ({ selId: t.selId === id ? null : id, ctx: null }));
+        },
+        onMark: (e) => {
+          if (e) e.stopPropagation();
+          if (phase === 'ready' && !isHist) { if (e && e.shiftKey) this.rangeMark(id); else this.toggleMark(id); }
+          else this.setState(t => ({ selId: t.selId === id ? null : id, ctx: null }));
+        },
+        numTip: phase === 'ready' && !isHist ? 'mark' : '',
+        hasTags: tags.length > 0, tagsKey: id + phase + tags.map(x => x[0]).join('|'),
+        tags: tags.map((x, j) => ({ key: id + x[0], t: x[0], style: tagS(x[1], phase === 'complete' ? 110 + Math.min(i, 8) * 46 + j * 40 : 0) })),
+        curTargets, curClock: this.mmss(s.curEl),
+        curClockLabelStyle: { fontFamily: JP, fontWeight: 700, fontSize: '11px', color: 'var(--muted)', whiteSpace: 'nowrap' },
+        curClockStyle: { fontFamily: MON, fontWeight: 600, fontSize: '15px', letterSpacing: '.4px', color: 'var(--text)', whiteSpace: 'nowrap', minWidth: '38px', textAlign: 'right' },
+        hasWants, wantBtns, wantNote, wantNoteKey: 'wn' + id + wantNote,
+        wantNoteStyle: { fontFamily: JP, fontWeight: 700, fontSize: '12px', color: rowRefused ? 'oklch(0.8 0.14 27)' : 'var(--muted)', whiteSpace: 'nowrap', animation: 'lssSwap .18s ease-out both' },
+        hasFollow: hasWants && own, followStyle: smallAct, onFollow: (e) => { if (e) e.stopPropagation(); this.resetRow(id); },
+        wrapStyle, pillStyle, headStyle, rightStyle, openStyle,
+        isCur,
+        steps: isCur ? steps : [],
+        wTop: cw ? cw.wTop : [], wBot: cw ? cw.wBot : [],
+        waveBoxStyle, sweepStyle, waveTopStyle, waveMidStyle, waveBotStyle,
+        // a finished SOURCE lands once: one light pass across the row, gold for saved, red for failed
+        landOn: s.landId === id && phase === 'processing' && !isCur, landKey: 'ld' + s.landKey,
+        landStyle: { position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(100deg, transparent 20%, ' + (st === 'failed' ? 'oklch(0.58 0.2 27 / 0.32)' : 'oklch(0.83 0.16 95 / 0.3)') + ' 50%, transparent 80%)', backgroundSize: '250% 100%', backgroundRepeat: 'no-repeat', animation: 'lssLand .8s cubic-bezier(.3,.6,.3,1) both' },
+        curBodyStyle: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: '10px', justifyContent: 'center', padding: '10px 18px 13px', borderTop: '1px solid oklch(1 0 0 / 0.14)', position: 'relative', zIndex: 1 },
+        hasCurNote: !fault && !!stageDetail(curPh.k),
+        curDetail: stageDetail(curPh.k),
+        curDetailKey: (fault ? 'f' : '') + (curPh.k || 'x'),
+        curDetailStyle: { fontFamily: JP, fontWeight: 700, fontSize: '12.5px', letterSpacing: '.2px', color: 'oklch(0.82 0.1 60)', whiteSpace: 'nowrap', animation: 'lssSwap .2s ease-out both' },
+        numStyle: Object.assign({ fontFamily: ANT, fontSize: open ? '32px' : (isCur ? '30px' : '20px'), lineHeight: 1, minWidth: '40px', boxSizing: 'border-box', textAlign: 'center', padding: '3px 5px', color: open ? 'var(--red)' : (isCur ? 'var(--cyan)' : 'var(--dim)'), cursor: 'pointer', flexShrink: 0, transition: 'font-size .2s ease, color .18s ease, background .15s ease' }, marked ? { background: 'var(--text)', color: 'var(--bg)', clipPath: 'polygon(14% 0,100% 0,86% 100%,0 100%)' } : {}),
+        nameStyle: { fontFamily: SANS, fontSize: open ? '25px' : (isCur ? '23px' : '17px'), fontWeight: open || isCur ? 600 : 500, letterSpacing: open || isCur ? '-.2px' : '0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: open || isCur ? 'var(--text)' : 'oklch(0.86 0.005 264)', transition: 'font-size .2s ease, color .18s ease' },
+        hasBadge, badge, badgeStyle, badgeKey: id + st,
+        hasWave: open && !showOuts,
+        wave: open && !showOuts ? this.wave(id, 120).map(hh => ({ flex: 1, minWidth: 0, height: hh + '%', background: hh > 80 ? 'oklch(0.62 0.15 27)' : 'oklch(0.46 0.012 264)' })) : [],
+        hasOutputs: open && showOuts, outputs: showOuts ? outputsFor(id) : [],
+        pathBoxStyle: Object.assign({}, pathBox(pfs), { cursor: 'pointer', transition: 'border-color .15s ease, transform .12s ease' }), pathRoot: sp.root, pathLeaf: sp.leaf,
+        onOpen: (e) => { if (e) e.stopPropagation(); },
+        pathRootStyle: pathRoot(pfs), pathLeafStyle: pathLeaf(pfs),
+        hasNote: !!note, note,
+        hasStamp: isHist && !!stamp, savedDate: stamp ? stamp.on : '', savedTime: stamp ? stamp.at : '',
+        noteStyle: { fontFamily: JP, fontWeight: 700, fontSize: '12.5px', letterSpacing: '.2px', color: err ? 'oklch(0.78 0.13 27)' : 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+        hasAction,
+        actionEn: (st === 'failed' && retryable) ? 'RETRY' : 'REMOVE',
+        actionJp: (st === 'failed' && retryable) ? '再試行' : '一覧から外す',
+        actionEnStyle: { fontFamily: OSW, fontWeight: 700, fontSize: '13px', letterSpacing: '1.4px' },
+        actionJpStyle: { fontFamily: JP, fontWeight: 700, fontSize: '11px', opacity: .75 },
+        actionStyle: { display: 'flex', alignItems: 'baseline', gap: '8px', cursor: 'pointer', color: 'var(--red)', border: '1px solid var(--red)', background: 'transparent', clipPath: 'polygon(8% 0,100% 0,92% 100%,0 100%)', padding: '6px 13px', whiteSpace: 'nowrap', transition: 'background .15s ease, color .15s ease, transform .12s ease' },
+        onAction: (st === 'failed' && retryable) ? () => this.retry(id) : () => this.removeFile(id)
+      };
+    };
+    const rows = s.queue.map((id, i) => buildRow(id, i, 'queue'));
+    const histRows = [];
+    const histHeadStyle = Object.assign({ display: 'flex', alignItems: 'center', gap: '11px', height: this.H_HIST_HEAD + 'px', flexShrink: 0, marginLeft: '2px' }, { opacity: run ? 1 : 0, transition: 'opacity .3s ease ' + bdelay(s.queue.length) + 'ms' });
+
+    const indId = phase === 'processing' ? curId : s.selId;
+    const indBox = indId && tops[indId] ? tops[indId] : null;
+    const indicatorStyle = {
+      position: 'absolute', left: '-13px', top: (indBox ? indBox.top + 18 : 18) + 'px', width: '10px', height: '10px',
+      background: phase === 'processing' ? (fault ? 'var(--red)' : 'var(--cyan)') : 'var(--red)', transform: 'rotate(45deg)',
+      opacity: indBox ? 1 : 0,
+      transition: 'top .26s cubic-bezier(.34,1.4,.64,1), opacity .18s ease, background .2s ease', zIndex: 4, pointerEvents: 'none'
+    };
+    const bandOuterStyle = { position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', paddingBottom: '20px' };
+    const bandStyle = { position: 'relative', flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: this.GAP + 'px', paddingLeft: '16px', paddingTop: '2px', paddingRight: '16px' };
+
+    const railOn = contentH > bandH + 12;
+    const railTicks = railOn ? items.filter(it => it.kind !== 'head').map((it) => {
+      const b = tops[it.id];
+      const vis = b.top + b.h > s.scrollTop && b.top < s.scrollTop + bandH;
+      const stt = s.st[it.id];
+      let c = 'oklch(1 0 0 / 0.16)';
+      if (s.marks.indexOf(it.id) >= 0) c = 'var(--text)';
+      else if (stt === 'done') c = 'var(--cyan)';
+      else if (stt === 'failed') c = 'var(--red)';
+      else if (it.kind === 'hist') c = 'oklch(0.83 0.16 95 / 0.3)';
+      if (it.id === indId) c = phase === 'processing' ? 'var(--cyan)' : 'var(--red)';
+      return { key: 'r' + it.id, style: { width: vis ? '10px' : '5px', height: '3px', marginLeft: 'auto', background: c, opacity: vis ? 1 : .45, transform: 'skewX(-20deg)', transition: 'width .2s ease, opacity .2s ease, background .2s ease' } };
+    }) : [];
+    const cutOn = hiddenBelow > 0;
+    const cutLabel = '+' + hiddenBelow + ' MORE ▾';
+    const cutSub = '全 ' + nQueue + ' 件' + (markN ? '（' + markN + ' 件を選択中）' : '');
+
+    // ---- EMPTY: authored at the same level as READY, teaches the model, no fake controls ----
+    const showDrop = isEmpty;
+    const emptyStyle = {
+      position: 'relative', flexShrink: 0, cursor: 'pointer', marginRight: '2px',
+      height: '100%', minHeight: '196px',
+      display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '18px',
+      padding: '26px 30px 24px', overflow: 'hidden',
+      background: 'oklch(1 0 0 / 0.016)', border: '1px solid oklch(1 0 0 / 0.09)',
+      clipPath: 'polygon(0 0,100% 0,99% 100%,1% 100%)',
+      transition: 'background .2s ease', animation: 'lssSwap .28s ease-out both'
+    };
+    const brace = (pos) => Object.assign({ position: 'absolute', width: '52px', height: '52px', pointerEvents: 'none', animation: 'lssBrace .34s cubic-bezier(.2,.9,.2,1) .08s both' }, pos);
+    const braceTLStyle = brace({ left: '14px', top: '14px', borderLeft: '4px solid var(--red)', borderTop: '4px solid var(--red)' });
+    const braceBRStyle = brace({ right: '14px', bottom: '14px', borderRight: '4px solid var(--red)', borderBottom: '4px solid var(--red)' });
+    const emptySlabStyle = { position: 'absolute', right: '-60px', top: '-70px', width: '300px', height: '300px', background: 'var(--red)', opacity: .07, transform: 'rotate(22deg)', pointerEvents: 'none' };
+    const emptyTitleStyle = { fontFamily: ANT, fontSize: '62px', lineHeight: .9, letterSpacing: '1px', transform: 'rotate(-2deg)', transformOrigin: 'left center', textShadow: '5px 5px 0 rgba(0,0,0,.35),-3px -3px 0 var(--red)', whiteSpace: 'nowrap', animation: 'lssStamp .44s cubic-bezier(.3,1.4,.6,1) .04s both' };
+    const emptyLineStyle = { fontFamily: JP, fontWeight: 700, fontSize: '17px', letterSpacing: '.8px', color: 'var(--text)', whiteSpace: 'nowrap' };
+    const emptyChevrons = [0, 1, 2].map(i => ({
+      key: 'v' + i,
+      style: { width: '30px', height: '30px', borderRight: '7px solid var(--red)', borderBottom: '7px solid var(--red)', transform: 'rotate(45deg)', opacity: .85 - i * 0.26, animation: 'lssPulse 1.6s ease-in-out ' + (i * 0.18) + 's infinite' }
+    }));
+
+    // ---- footer ----
+    const postDef = [['none','何もしない'],['quit','LSS を終了'],['restart','PC を再起動'],['shutdown','PC をシャットダウン']];
+    const post = {};
+    postDef.forEach(([k]) => {
+      const on = s.post === k;
+      post[k] = {
+        onClick: () => this.setPost(k),
+        style: { position: 'relative', width: '34px', height: '31px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', clipPath: 'polygon(12% 0,100% 0,88% 100%,0 100%)', background: on ? 'var(--red)' : 'var(--panel)', border: '1px solid ' + (on ? 'var(--red)' : 'var(--line)'), color: on ? '#fff' : 'var(--muted)', boxShadow: on ? '3px 3px 0 rgba(0,0,0,.35)' : 'none', transform: on ? 'translateY(-2px)' : 'translateY(0)', transition: 'transform .16s cubic-bezier(.34,1.5,.64,1), background .18s ease, color .18s ease, box-shadow .18s ease' }
+      };
+    });
+    const postLabelWrapStyle = { display: 'flex', alignItems: 'center', minWidth: '144px', overflow: 'hidden' };
+    const postLabelStyle = { fontFamily: JP, fontWeight: 700, fontSize: '12.5px', color: 'var(--text)', whiteSpace: 'nowrap', animation: 'lssSwap .22s cubic-bezier(.2,.9,.2,1) both' };
+    const postLabel = (postDef.find(p => p[0] === s.post) || postDef[0])[1];
+    // the handoff record lives outside the product composition (prototype strip only)
+    const handoffItems = [
+      '作るもの（共通・音源ごと）→ START で凍結',
+      '結果ごとの到達（保存・作成済み・なし・保留・失敗）と BGM 曲数',
+      '作成済みの照会（揃えば処理せず完了）',
+      'RETRY / SKIP は未達の結果だけ',
+      '工程通知: 準備・分離・保存（準備と保存は割合）',
+      '音源の波形概形（処理行の描画）',
+      '最小化＝トレイ格納・完了時の OS 通知',
+      '閉じる＝終了（処理中だけ確認）',
+      'フォルダを開く / パスをコピー',
+      '完了後の動作の実行',
+      'STOP は pause() 相当のみ'
+    ].map((t, i) => ({ key: 'h' + i, t, style: { border: '1px solid oklch(0.5 0.1 55 / 0.35)', padding: '1px 7px', whiteSpace: 'nowrap' } }));
+
+    const KH = {
+      empty: [['A','ファイルを追加'],['⇧A','フォルダを追加']],
+      ready: [['⏎','START'],['1 / 2 / 3','出力'],['Space','選択'],['A','追加'],['Del','外す']],
+      processing: [['Esc','停止'],['A','追加（同じ設定で処理）']],
+      halted: [['A','追加']],
+      complete: [['⏎','READY に戻る']]
+    };
+    const keyHints = ((phase === 'processing' && fault) ? KH.halted : (phase === 'ready' && isEmpty ? KH.empty : (KH[phase] || KH.ready))).map(([k, label], i) => ({
+      key: 'k' + i, k, label,
+      kStyle: { fontFamily: MON, fontWeight: 600, fontSize: '11px', letterSpacing: '.4px', color: 'var(--muted)', background: 'oklch(1 0 0 / 0.07)', border: '1px solid oklch(1 0 0 / 0.12)', padding: '1px 6px', whiteSpace: 'nowrap' },
+      lStyle: { fontFamily: JP, fontWeight: 700, fontSize: '11.5px', color: 'var(--dim)', whiteSpace: 'nowrap' }
+    }));
+
+    // the caption exists only where the label and the anchor do not already say it
+    let primaryLabel = 'START', primaryCaption = '', pColor = 'var(--red)', pActive = true;
+    if (phase === 'ready') {
+      if (isEmpty) pActive = false;
+      else if (s.stopped) primaryLabel = 'RESUME';
+      else if (!pending.length) { pActive = false; primaryCaption = '未処理の音源がありません'; }
+      else if (!work.length) primaryCaption = 'すべて作成済みのため、処理せずに完了します';
+      else if (work.length < pending.length) primaryCaption = work.length + ' 件を処理します（' + (pending.length - work.length) + ' 件は作成済み）';
+    } else if (phase === 'processing') {
+      // HALTED is not a stoppable state: recovery is RETRY / SKIP on the halt card, so the global
+      // action reports the state and offers nothing to press.
+      if (fault) { primaryLabel = 'HALTED'; pColor = 'var(--red)'; pActive = false; primaryCaption = 'RETRY か SKIP を選んでください'; }
+      else if (s.allDone) { primaryLabel = 'ALL DONE'; pColor = 'var(--gold)'; pActive = false; }
+      else if (s.stopReq) { primaryLabel = 'STOPPING'; pColor = 'var(--muted)'; pActive = false; }
+      // STOP itself says it stops; the only thing it cannot say is that nothing is thrown away
+      else { primaryLabel = 'STOP'; pColor = 'var(--muted)'; primaryCaption = '今の 1 件が終わったら停止します'; }
+    } else { primaryLabel = 'BACK TO READY'; pColor = 'var(--gold)'; }
+    const primaryWrapStyle = Object.assign({ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '7px', minWidth: '340px', animation: s.shakeKey ? 'lssShake .32s ease-out both' : 'none' }, s.boot ? bootIn(300, 14) : {});
+    const primaryLabelStyle = {
+      fontFamily: ANT, fontSize: primaryLabel.length > 8 ? '46px' : '60px', lineHeight: 1, letterSpacing: '1.5px', whiteSpace: 'nowrap',
+      color: pActive ? pColor : (phase === 'processing' ? pColor : 'var(--dim)'),
+      opacity: pActive ? 1 : (phase === 'processing' ? .95 : .55),
+      // ALL DONE and STOPPING are states, not refused actions: they take no press and offer no affordance.
+      // a disabled START stays pressable because its refusal shake is real feedback.
+      cursor: pActive ? 'pointer' : (phase === 'ready' ? 'not-allowed' : 'default'),
+      textShadow: pActive ? '3px 3px 0 rgba(0,0,0,.35)' : 'none',
+      transition: 'transform .12s ease, color .2s ease, opacity .2s ease, font-size .2s ease'
+    };
+    const primaryBar1Style = { width: '100%', height: '5px', background: pActive ? pColor : 'var(--dim)', opacity: pActive ? 1 : .4, transform: 'skewX(-14deg)', transition: 'background .2s ease' };
+    const primaryBar2Style = { width: '56%', height: '2px', background: pActive ? pColor : 'var(--dim)', opacity: .5, transform: 'skewX(-14deg)', alignSelf: 'flex-end' };
+    const primaryCaptionStyle = { fontFamily: JP, fontWeight: 700, fontSize: '13.5px', letterSpacing: '.2px', color: pActive ? 'var(--muted)' : 'var(--red)', whiteSpace: 'nowrap' };
+
+    // ---- window: tray (prototype desktop + OS tray + OS notification) and quit ----
+    const nowD = new Date(), p2 = (n) => String(n).padStart(2, '0');
+    const clock = p2(nowD.getHours()) + ':' + p2(nowD.getMinutes());
+    const dateStr = nowD.getFullYear() + '/' + p2(nowD.getMonth() + 1) + '/' + p2(nowD.getDate());
+    const trayIn = s.trayFx !== 'out';
+    const deskStyle = { position: 'absolute', inset: 0, zIndex: 70, overflow: 'hidden', background: 'oklch(0.25 0.014 250)', animation: trayIn ? 'lssFadeIn .2s ease both' : 'lssFadeOut .16s ease .28s both' };
+    const ghostStyle = { position: 'absolute', inset: 0, background: 'var(--bg)', boxShadow: 'inset 0 0 0 2px var(--red)', transformOrigin: 'calc(100% - 123px) calc(100% - 22px)', pointerEvents: 'none', animation: trayIn ? 'lssToTray .38s cubic-bezier(.55,0,.25,1) both' : 'lssFromTray .3s cubic-bezier(.2,.8,.25,1) both' };
+    const trayIconStyle = { position: 'absolute', right: '108px', bottom: '7px', width: '30px', height: '30px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer', borderRadius: '3px', transition: 'background .15s ease', animation: trayIn ? 'lssTagIn .3s cubic-bezier(.16,.84,.24,1) .3s both' : 'none' };
+    const trayGlyphStyle = { width: '8px', height: '15px', background: accent, transform: 'skewX(-14deg)', animation: phase === 'processing' && !fault && !s.allDone ? 'lssPulse 1.6s ease-in-out infinite' : 'none' };
+    const trayBarStyle = { width: '18px', height: '2px', background: 'oklch(1 0 0 / 0.2)', opacity: phase === 'processing' ? 1 : 0, position: 'relative', overflow: 'hidden' };
+    const trayBarFillStyle = { position: 'absolute', left: 0, top: 0, bottom: 0, width: Math.round((nQueue ? processed / nQueue : 0) * 100) + '%', background: accent, transition: 'width .3s ease' };
+    let trayTip = '待機中';
+    if (phase === 'processing') trayTip = fault ? '操作が必要です' : (s.stopReq ? '停止待ち' : '処理中（' + processed + ' / ' + nQueue + '）');
+    if (phase === 'complete') trayTip = '完了';
+    const trayTipStyle = { position: 'absolute', right: '62px', bottom: '52px', padding: '6px 12px', background: 'oklch(0.2 0.01 250)', border: '1px solid oklch(1 0 0 / 0.14)', fontFamily: JP, fontWeight: 700, fontSize: '12px', color: 'oklch(0.92 0.005 250)', whiteSpace: 'nowrap', animation: 'lssSwap .14s ease-out both', pointerEvents: 'none' };
+    const toastTags = resTargets.map(rt => ({ key: rt.key, t: tShort(rt.key) + ' ' + Number(rt.num) + ' ' + rt.u, style: tagS('done') }));
+    if (failN) toastTags.push({ key: 'f', t: '要確認 ' + failN + ' 件', style: tagS('fail') });
+    const toastStyle = { position: 'absolute', right: '14px', bottom: '56px', width: '336px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '8px', padding: '13px 16px 14px', background: 'oklch(0.19 0.006 264)', border: '1px solid oklch(1 0 0 / 0.12)', borderLeft: '4px solid var(--gold)', boxShadow: '6px 8px 0 rgba(0,0,0,.35)', cursor: 'pointer', animation: 'lssToastIn .34s cubic-bezier(.16,.84,.24,1) both', transition: 'transform .15s ease' };
+    const quitCardStyle = { display: 'flex', flexDirection: 'column', gap: '12px', width: '480px', boxSizing: 'border-box', padding: '16px 20px 18px', background: 'oklch(0.2 0.03 25)', border: '1px solid oklch(0.58 0.2 27 / 0.5)', borderTop: '4px solid var(--red)', clipPath: 'polygon(0 0,100% 0,99% 100%,1% 100%)', boxShadow: '8px 10px 0 rgba(0,0,0,.45)', animation: 'lssHalt .32s cubic-bezier(.16,.84,.24,1) both', cursor: 'default' };
+    const qa = (fill) => ({ display: 'flex', alignItems: 'baseline', gap: '8px', cursor: 'pointer', padding: '7px 15px', clipPath: 'polygon(8% 0,100% 0,92% 100%,0 100%)', background: fill ? 'var(--red)' : 'transparent', border: '1px solid ' + (fill ? 'var(--red)' : 'oklch(1 0 0 / 0.35)'), color: fill ? '#fff' : 'var(--text)', whiteSpace: 'nowrap', transition: 'border-color .15s ease, transform .12s ease' });
+    const quitActions = [
+      { key: 'q', en: 'QUIT', jp: '終了する', style: qa(true), onClick: () => this.quit(), hasKey: false, k: '' },
+      { key: 't', en: 'TO TRAY', jp: 'トレイで続ける', style: qa(false), onClick: () => this.toTray(), hasKey: false, k: '' },
+      { key: 'c', en: 'CANCEL', jp: '戻る', style: qa(false), onClick: () => this.setState({ quitAsk: false }), hasKey: true, k: 'Esc' }
+    ];
+    const quitLine = fault ? '中断中の 1 件は保存されません。' : '処理中の 1 件は中断され、保存されません。';
+
+    const demoBtn = { border: '1px solid oklch(0.2 0.005 264 / 0.25)', borderRadius: '4px', padding: '3px 9px', cursor: 'pointer', color: 'oklch(0.42 0.006 264)', whiteSpace: 'nowrap', transition: 'border-color .15s ease, color .15s ease' };
+    const baseQueue = this.BASEQ;
+    const both = ['inst','bgm'];
+    const demoButtons = [
+      { label: 'EMPTY', onClick: () => this.resetReady({ queue: [] }) },
+      { label: 'READY', onClick: () => this.resetReady() },
+      { label: '伴奏+BGM', onClick: () => this.resetReady({ bdef: both }) },
+      { label: 'BGM ONLY', onClick: () => this.resetReady({ bdef: ['bgm'] }) },
+      { label: 'OVERRIDES', onClick: () => this.resetReady({ ovr: { f3: ['bgm'], f5: both, f8: both } }) },
+      { label: 'MIXED', onClick: () => this.resetReady({ ovr: { f3: ['bgm'], f5: both }, marks: ['f2','f3','f5'], markAnchor: 'f5' }) },
+      { label: 'BATCH 24', onClick: () => this.resetReady({ queue: baseQueue.concat(this.GEN.map((_, i) => 'g' + (i + 9)).slice(0, 16)) }) },
+      { label: 'PROCESSING', onClick: () => this.start() },
+      { label: '初回取得', onClick: () => this.resetReady({ mcached: false, dlDone: false }, () => this.start()) },
+      { label: 'HALT', onClick: () => { if (this.state.phase !== 'processing') this.resetReady({ bdef: both }, () => { this.start(); this._t.h = setTimeout(() => this.raiseFault('insufficient_output_space'), 1400); }); else this.raiseFault('insufficient_output_space'); } },
+      { label: 'COMPLETE', onClick: () => {
+          clearInterval(this._iv);
+          const frozen = {}; baseQueue.forEach(id => { frozen[id] = both; });
+          const base = Object.assign({}, this.state, { queue: baseQueue, bdef: both, ovr: {}, have: this.HAVE0(), frozen });
+          const st = {}, tst = {}, have = {};
+          baseQueue.forEach(id => { const f = this.song(id); const o = this.outcome(id, f.hard ? 'hard' : (f.fail ? 'fail' : 'ok'), base); st[id] = o.agg; tst[id] = o.tst; have[id] = o.have; });
+          this.setState({ queue: baseQueue, bdef: both, ovr: {}, frozen, frozenDef: both, st, tst, have, elapsed: 214000, allDone: false, fault: null, selId: null, marks: [] });
+          this.wipeTo('complete');
+        } },
+      { label: '全部作成済み', onClick: () => this.resetReady({ queue: ['f2','f4'] }, () => this.start()) },
+      { label: 'トレイで処理', onClick: () => this.resetReady({ bdef: both }, () => { this.start(); this._t.tr = setTimeout(() => this.toTray(), 1200); }) },
+      { label: '処理中に閉じる', onClick: () => this.resetReady({ bdef: both }, () => { this.start(); this._t.tr = setTimeout(() => this.requestQuit(), 1200); }) },
+      { label: '⟲ 起動から', onClick: () => { this.resetReady(); this.runBoot(); } }
+    ].map(b => ({ label: b.label, onClick: b.onClick, style: demoBtn }));
+
+    return {
+      accentRed: red, debugOn: this.props.debugTools ?? true, demoButtons,
+      setFrameRef: this.setFrameRef,
+      wipeOn: s.wipeOn, wipeKeyStr: 'w' + s.wipeKey, wipeWrapStyle, wipePanelStyle, wipeBladeStyle,
+      topBarStyle, statusMarkStyle, chrome,
+      onMin: (e) => { if (e) e.stopPropagation(); this.toTray(); },
+      onClose: (e) => { if (e) e.stopPropagation(); this.requestQuit(); },
+      quitAskOn: s.quitAsk && s.win === 'open', quitCardStyle, quitLine, quitActions,
+      onQuitCancel: () => this.setState({ quitAsk: false }), stopProp: (e) => { if (e) e.stopPropagation(); },
+      trayOn: s.win === 'tray', deskStyle, deskKey: 'd' + s.deskKey, ghostStyle,
+      toastOn: s.toast && trayIn, toastStyle, toastTags, clock, dateStr,
+      onRestore: (e) => { if (e) e.stopPropagation(); this.restore(); },
+      trayTipOn: s.trayHover && trayIn && !s.toast, trayTip, trayTipStyle, trayIconStyle, trayGlyphStyle, trayBarStyle, trayBarFillStyle,
+      onTrayEnter: () => this.setState({ trayHover: true }), onTrayLeave: () => this.setState({ trayHover: false }),
+      quitOn: s.win === 'quit', onRelaunch: () => this.relaunch(),
+      tipOn: !!tip, tipText: tip ? tip.text : '', tipStyle, tipKeyStr: 't' + s.tipKey, tipSwapKey: tip ? tip.id : 'none',
+      ctxOn: !!ctx, ctxStyle, ctxKeyStr: 'c' + s.ctxKey, ctxBodyStyle, ctxContentKey: 'cc' + (ctxRowId || 'root'),
+      ctxItems, ctxHead, ctxHeadStyle, ctxFoot, ctxFootNoteStyle,
+      ctxFootWrapStyle: (ctxFootIsPath || ctxFoot) ? ctxFootWrap : { display: 'none' },
+      ctxFootIsPath, ctxFootIsNote: !ctxFootIsPath && !!ctxFoot, ctxPathBoxStyle: pathBox(11), ctxPathRoot, ctxPathLeaf,
+      ctxPathRootStyle: pathRoot(11), ctxPathLeafStyle: pathLeaf(11), pathTickStyle,
+      onContext: this.onContext, onFrameClick: this.onFrameClick,
+      onEnterFrame: () => { this._hot = true; },
+      onLeaveFrame: () => { this._hot = false; this.exitTip(); },
+      onFrameMove: this.onFrameMove,
+      anchorNum, anchorUnit, anchorState, anchorJp, hasAnchorJp: !!anchorJp,
+      anchorJp2, showAnchorSecond: !!anchorJp2, anchorJp2Style, anchorJp2Key: 'a2' + anchorJp2,
+      anchorNumStyle, anchorUnitStyle, anchorBadgeStyle,
+      anchorSubStyle, anchorRuleStyle, anchorStateStyle, anchorJpStyle,
+      anchorKey: phase + (s.stampOn ? '-st' : '-r') + (s.boot ? '-b' : ''), anchorSubKey: phase + anchorState,
+      showOutput: phase === 'ready', outCardStyle,
+      resultEnStyle, resultJpStyle, resultBar1Style, resultBar2Style, resultBar3Style, fmtBadgeStyle,
+      outPathRoot, outPathLeaf, pathBoxStyle: pathBox(13), pathRootStyle: pathRoot(13), pathLeafStyle: pathLeaf(13),
+      outMulti, outDestCount, outDestNote, resMulti, resDestCount, resDestNote, destCountStyle, destNoteStyle,
+      fieldLabelStyle,
+      savedLabelStyle, savedDateStyle, savedRuleStyle, savedTimeStyle,
+      showPipeline: phase === 'processing' && !fault, queueSegs,
+      elapsedLabelStyle, elapsedStyle, elapsedValue,
+      showFault: !!fault, faultCardStyle, faultKeyStr: 'f' + s.faultKey, faultTagStyle, faultCodeStyle, faultJpStyle,
+      faultRefStyle: (fault && fault.ref) ? faultRefStyle : { display: 'none' },
+      faultCode: fault ? fault.code : '', faultJp: fault ? fault.jp : '', faultSafe: fault ? fault.safe : '', faultSafeStyle,
+      hasFaultMetrics: faultMetrics.length > 0, faultMetrics,
+      faultRef: fault ? fault.ref : '', faultActions,
+      showResult: phase === 'complete', resultStyle,
+      resPathRoot: resSp.root, resPathLeaf: resSp.leaf, resPathBoxStyle, resPathTip: resMulti ? '' : 'open', onOpenRes: (e) => { if (e) e.stopPropagation(); },
+      resTime: s.elapsed ? this.mmss(s.elapsed) : '処理なし', resTimeStyle: s.elapsed ? resTimeStyle : Object.assign({}, resTimeStyle, { fontFamily: JP, fontSize: '15px' }),
+      listTitle, listTitleStyle, listSubs,
+      showAdd: phase !== 'complete', addFileStyle, addFolderStyle,
+      onAddFile: () => this.addFile(), onAddFolder: () => this.addFolder(),
+      rows, histRows, showHistHead, histHeadStyle,
+      indicatorStyle, bandOuterStyle, bandStyle, setBandRef: this.setBandRef, onBandScroll: this.onBandScroll,
+      railOn, railTicks, cutOn, cutLabel, cutSub,
+      showDrop, emptyStyle, braceTLStyle, braceBRStyle, emptySlabStyle, emptyTitleStyle, emptyLineStyle, emptyChevrons,
+      showPost: phase === 'ready' && !isEmpty, post, postLabel, postLabelStyle, postLabelWrapStyle, postLabelKey: 'pl' + s.post,
+      handoffItems,
+      keyHints,
+      primaryLabel, primaryCaption, hasPrimaryCaption: !!primaryCaption, primaryWrapStyle, primaryLabelStyle, primaryBar1Style, primaryBar2Style, primaryCaptionStyle,
+      primaryHot: pActive || phase === 'ready', primaryInert: !(pActive || phase === 'ready'),
+      primaryKey: 'p' + s.shakeKey + phase, onPrimary: () => this.primary(),
+      bulkOn: bulk, wantLabel, wantLabelJp, wantLabelStyle, wantLabelJpStyle, wantLabelKey: bulk ? 'wb' : 'wd',
+      slabs, snd, scopeNote, scopeNoteStyle, scopeNoteKey: 'sn' + scopeNote, scopeHint, hasScopeHint: !!scopeHint,
+      hasScopeReset: bulk && ownMarked > 0, scopeResetStyle: smallAct, onScopeReset: (e) => { if (e) e.stopPropagation(); this.resetMarks(); },
+      clearMarksStyle, onClearMarks: (e) => { if (e) e.stopPropagation(); this.clearMarks(); },
+      frozenTags, frozenNote, frozenNoteStyle, hasFrozenNote: !!frozenNote,
+      hasForecast: !!s.forecast, forecastValue: s.forecast || '',
+      resTargets
+    };
+  }
+}
+</script>
+</body>
+</html>

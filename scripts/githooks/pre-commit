@@ -1,0 +1,5 @@
+#!/bin/sh
+# Secret scan of the staged diff (scripts/githooks/pre_commit.py). Enabled by `git config core.hooksPath scripts/githooks`.
+HERE=$(cd "$(dirname "$0")" && pwd)
+. "$HERE/_python.sh"
+exec "$LSS_PY" -I "$HERE/pre_commit.py" "$@"

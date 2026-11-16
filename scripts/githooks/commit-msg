@@ -1,0 +1,5 @@
+#!/bin/sh
+# Commit subjects are English (scripts/githooks/commit_msg.py). $1 is the commit message file.
+HERE=$(cd "$(dirname "$0")" && pwd)
+. "$HERE/_python.sh"
+exec "$LSS_PY" -I "$HERE/commit_msg.py" "$@"

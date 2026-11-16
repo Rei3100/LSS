@@ -1,0 +1,90 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh pr merge --auto --squash *)",
+      "Bash(\"$LSS_PRIVATE_ROOT/bin/lss-gh.cmd\" *)",
+      "Bash(\"$LSS_PRIVATE_ROOT/bin/deploy-gated.cmd\" *)",
+      "PowerShell(gh pr merge --auto --squash *)",
+      "PowerShell(\"$env:LSS_PRIVATE_ROOT/bin/lss-gh.cmd\" *)",
+      "PowerShell(\"$env:LSS_PRIVATE_ROOT/bin/deploy-gated.cmd\" *)"
+    ],
+    "deny": [
+      "Bash(gh pr merge *--admin*)",
+      "Bash(gh pr merge *--repo*)",
+      "Bash(gh pr merge * -R *)",
+      "Bash(gh pr merge *--body*)",
+      "Bash(gh pr merge * -b *)",
+      "Bash(gh pr merge *--subject*)",
+      "Bash(gh pr merge * -t *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr comment *)",
+      "Bash(gh pr edit *)",
+      "Bash(gh pr review *)",
+      "Bash(gh pr close *)",
+      "Bash(gh issue create *)",
+      "Bash(gh issue comment *)",
+      "Bash(gh issue edit *)",
+      "Bash(gh issue close *)",
+      "Bash(gh label *)",
+      "Bash(gh release *)",
+      "Bash(gh gist *)",
+      "Bash(gh api *-X *)",
+      "Bash(gh api *-X=*)",
+      "Bash(gh api *--method*)",
+      "Bash(gh api *-f *)",
+      "Bash(gh api *-F *)",
+      "Bash(gh api *--field*)",
+      "Bash(gh api *--raw-field*)",
+      "Bash(gh api *--input*)",
+      "Bash(git push *--force*)",
+      "Bash(git push *-f *)",
+      "Bash(git push *--no-verify*)",
+      "Bash(git commit *--no-verify*)",
+      "PowerShell(gh pr merge *--admin*)",
+      "PowerShell(gh pr merge *--repo*)",
+      "PowerShell(gh pr merge * -R *)",
+      "PowerShell(gh pr merge *--body*)",
+      "PowerShell(gh pr merge * -b *)",
+      "PowerShell(gh pr merge *--subject*)",
+      "PowerShell(gh pr merge * -t *)",
+      "PowerShell(gh pr create *)",
+      "PowerShell(gh pr comment *)",
+      "PowerShell(gh pr edit *)",
+      "PowerShell(gh pr review *)",
+      "PowerShell(gh pr close *)",
+      "PowerShell(gh issue create *)",
+      "PowerShell(gh issue comment *)",
+      "PowerShell(gh issue edit *)",
+      "PowerShell(gh issue close *)",
+      "PowerShell(gh label *)",
+      "PowerShell(gh release *)",
+      "PowerShell(gh gist *)",
+      "PowerShell(gh api *-X *)",
+      "PowerShell(gh api *-X=*)",
+      "PowerShell(gh api *--method*)",
+      "PowerShell(gh api *-f *)",
+      "PowerShell(gh api *-F *)",
+      "PowerShell(gh api *--field*)",
+      "PowerShell(gh api *--raw-field*)",
+      "PowerShell(gh api *--input*)",
+      "PowerShell(git push *--force*)",
+      "PowerShell(git push *-f *)",
+      "PowerShell(git push *--no-verify*)",
+      "PowerShell(git commit *--no-verify*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Grep|Glob|Edit|MultiEdit|Write|Bash|PowerShell|exec_command|shell_command|shell|functions.exec_command|functions.shell_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py -3 -I \"${CLAUDE_PROJECT_DIR}/scripts/hooks/cookie_privacy_guard.py\" || { echo 'Access denied: privacy guard unavailable.' >&2; exit 2; }",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

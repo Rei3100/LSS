@@ -1,0 +1,15 @@
+model_id	output	content	basis	note
+becruily_deux_inst	Vocals	lead_vocals,backing_vocals	duality-name-convention	Adopted default (Vocals/Instrumental duality). Declared content equals what the name rule already gives, so single-pass plans and Recipe IDs are unchanged; the declaration only lets cross-pass algebra use this pass.
+becruily_deux_inst	Instrumental	drums,bass,guitar,piano,other_instruments	duality-complement	Complement of Vocals in the same pass.
+becruily_karaoke_bs_roformer	Vocals	lead_vocals	model-card	becruily/bs-roformer-karaoke@f7849ae: lead vocal only (used as the lead node of the SOUND route). Not adopted: needs local measurement on the full mix; output names must equal the pinned config (sha 1d3b58b4) or the planner refuses.
+becruily_karaoke_bs_roformer	Instrumental	backing_vocals,drums,bass,guitar,piano,other_instruments	model-card	Karaoke complement: backing vocals + all instruments in the same pass.
+scnet_xl_ihf_4stem	drums	drums	musdb18-4stem-convention	ZFTurbo MSST v1.0.15 SCNet XL IHF (config instruments drums/bass/other/vocals, sha 54ddcb8a). Used by the SOUND route; not adopted for the stem route.
+scnet_xl_ihf_4stem	bass	bass	musdb18-4stem-convention	MUSDB18 bass.
+scnet_xl_ihf_4stem	other	guitar,piano,other_instruments	musdb18-4stem-convention	MUSDB18 other = every instrument except drums and bass.
+scnet_xl_ihf_4stem	vocals	lead_vocals,backing_vocals	musdb18-4stem-convention	MUSDB18 vocals = all singing (lead + backing).
+bs_roformer_sw_6stem	vocals	lead_vocals,backing_vocals	model-card	6-stem BS-RoFormer SW (bass/drums/piano/guitar/other/vocals per ledger note). Config URL not pinned yet; not adopted.
+bs_roformer_sw_6stem	drums	drums	model-card	6-stem drums.
+bs_roformer_sw_6stem	bass	bass	model-card	6-stem bass.
+bs_roformer_sw_6stem	guitar	guitar	model-card	6-stem guitar.
+bs_roformer_sw_6stem	piano	piano	model-card	6-stem piano.
+bs_roformer_sw_6stem	other	other_instruments	model-card	6-stem other = instruments except drums/bass/guitar/piano.

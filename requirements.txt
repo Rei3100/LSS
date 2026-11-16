@@ -1,0 +1,11 @@
+# torch/torchaudioはsetup-venv.ps1がD-2の順序で個別インストールする（このファイルには含めない）。
+audio-separator[gpu]
+matplotlib
+omegaconf
+mutagen
+pyloudnorm
+pywebview
+# 単話BGM候補の解析器（vendor/sfc_locoformer）がimport時に読む。musical帯域では計算に使わない。
+spafe==0.3.3
+yt-dlp[default]
+-r requirements-scene.txt

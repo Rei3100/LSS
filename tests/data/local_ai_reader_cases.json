@@ -1,0 +1,27 @@
+{
+  "source": "release-evidence/local-ai-practical-20261026/queue-ornith-1.0-9b-nothinking/probe.json",
+  "model": "ornith-1.0-9b Q4_K_M; constrained JSON; enable_thinking=false",
+  "cases": [
+    {
+      "label": "valid single request",
+      "expected": true,
+      "actual": true,
+      "pass": true,
+      "rows": "{\"id\":\"req-1\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}],\"max_tokens\":1024}"
+    },
+    {
+      "label": "valid with schema and duplicate id",
+      "expected": false,
+      "actual": false,
+      "pass": true,
+      "rows": "{\"id\":\"req-1\",\"messages\":[{\"role\":\"system\",\"content\":\"Be helpful\"}],\"schema\":{\"type\":\"object\"},\"max_tokens\":512}\n{\"id\":\"req-1\",\"messages\":[{\"role\":\"user\",\"content\":\"Hi again\"}],\"max_tokens\":256}"
+    },
+    {
+      "label": "missing messages field",
+      "expected": false,
+      "actual": false,
+      "pass": true,
+      "rows": "{\"id\":\"req-2\",\"max_tokens\":1024}"
+    }
+  ]
+}

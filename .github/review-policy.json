@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "mode": "local-records",
+  "bot": {"login": null, "id": null, "app_id": null},
+  "completion_pattern": null,
+  "note": "Local independent records are an omission check, not forgery resistance. Bot mode requires a pinned GitHub bot node ID, login, app database ID and completion pattern; an unconfigured bot policy fails closed."
+}

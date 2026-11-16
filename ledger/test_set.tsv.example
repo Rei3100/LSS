@@ -1,0 +1,3 @@
+song_id	title	artist	mix_path	stem_target	reference_path	reference_method	in_public_benchmark	genre	era	loudness_note	selection_reason	added_at
+example_song_01	Example Song 1	Example Artist	<実ファイルの絶対パスに置き換え>\mix.flac	Instrumental	<実ファイルの絶対パスに置き換え>\instrumental.flac	paired_instrumental_release	false	example_genre	2025		公式インストゥルメンタルが同時収録された曲	2026-08-14
+example_song_02	Example Song 2	Example Artist	<実ファイルの絶対パスに置き換え>\mix.flac	Instrumental	<実ファイルの絶対パスに置き換え>\instrumental.flac	paired_instrumental_release	false	example_genre	2025		公式インストゥルメンタルが同時収録された曲	2026-08-14

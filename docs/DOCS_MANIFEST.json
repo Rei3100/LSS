@@ -1,0 +1,110 @@
+{
+    "schema_version": 2,
+    "generation": "2026-10-16-intent-alignment",
+    "basis": "2026-10-08 redesigned owner tree, corrected 2026-10-10 against the live repo, installed EXE and Evidence (current/validation snapshots, release runbook, relocation procedure, checker root); 2026-10-16: aligned with the user's design philosophy (scene-based naming, 2ch input, identity/knowledge layers, intent self-check)",
+    "authority": "repo docs are intent contracts, not live executable proof",
+    "owner_count": 22,
+    "owners": [
+        {"path":"docs/dev/CI.md","class":"development","sha256":"283676a5fa632c440400123e7855ea64317b87301001d59098c2187dd96b6a62"},
+        {
+            "path": "AGENTS.md",
+            "class": "entrypoint",
+            "sha256": "60720ea95847c151b79d91cc3bdd48a8f59a9dd9b78a2920cd5ea83fce91a531"
+        },
+        {
+            "path": "ARCHITECTURE.md",
+            "class": "architecture",
+            "sha256": "7af8c2b115acdf51c07580bb56648da489383e0dce030e2456316adec1cb5a73"
+        },
+        {
+            "path": "docs/dev/AGENT_PLAYBOOK.md",
+            "class": "development_support",
+            "sha256": "7b01c24392790f96cd9c356404cf7962106d9a19d1ff7b03b0c67cea9ca67e4c"
+        },
+        {
+            "path": "docs/dev/CORPUS_AND_EVIDENCE.md",
+            "class": "development_support",
+            "sha256": "e3b05eb654b8e63bd68d51bceccabe1ca83e700e1f19ec0f0f720bc923dc7c85"
+        },
+        {
+            "path": "docs/dev/DATA_LIFECYCLE.md",
+            "class": "development_support",
+            "sha256": "273afbff098430b44279763da5e0939802b131841864632669eedab6e6bb7870"
+        },
+        {
+            "path": "docs/engine/LISTENING_AND_PRESENTATION.md",
+            "class": "engineering_contract",
+            "sha256": "a719bbad86f90b10f6744afcdf25caee80318412915cd26153046649d928c765"
+        },
+        {
+            "path": "docs/engine/LOCAL_RUNTIME.md",
+            "class": "engineering_contract",
+            "sha256": "0aa0634b68304ccd45be25fe93e1e190175851728d5d0aef68ae926d5f6e61f3"
+        },
+        {
+            "path": "docs/engine/QUALITY_AND_DECISIONS.md",
+            "class": "engineering_contract",
+            "sha256": "7261797e720e5729e6609ce0d924b0d2eff23abd2180a197b429bd20c28e1f39"
+        },
+        {
+            "path": "docs/engine/RECOVERY_AND_REFERENCES.md",
+            "class": "engineering_contract",
+            "sha256": "d37ce0b994d02398127c3dccf9395c76778f320e245a7f333f432c52bc30242f"
+        },
+        {
+            "path": "docs/engine/SOURCE_TO_ASSET.md",
+            "class": "engineering_contract",
+            "sha256": "4ecf73953296cbbc92008ac712eac0c1d23b1f2d242d1e232de839332c1ca974"
+        },
+        {
+            "path": "docs/engine/WANTED_SOUND.md",
+            "class": "engineering_contract",
+            "sha256": "f2e516e7ecadb6f3b7bc7aa2f6cee7cd42189e56d0793abc73b4c5bf7089ed48"
+        },
+        {
+            "path": "docs/product/BGM_AND_AVAILABILITY.md",
+            "class": "product_contract",
+            "sha256": "511ba6ea4e2860410ed46b0e4daeaa1192c4f051ce5da27078aef56b49b73f2b"
+        },
+        {
+            "path": "docs/product/IDENTITY_AND_CURRENTBEST.md",
+            "class": "product_contract",
+            "sha256": "1f04f5e912e6b220759d02c1d749f619882277a7ec39a1f3e1e187ed24d8031b"
+        },
+        {
+            "path": "docs/product/PRODUCT_INTENT.md",
+            "class": "product_contract",
+            "sha256": "a921625951930a8204af53b1dfd3fdb4980c922a0ae7bd52129c83ab8c033147"
+        },
+        {
+            "path": "docs/product/USER_JOURNEYS.md",
+            "class": "product_contract",
+            "sha256": "d53c4f8abd74ee3fe474a777135b4c8cdbab2d4d9e9a64df03f30cab0fc2ad06"
+        },
+        {
+            "path": "docs/research/FRONTIER.md",
+            "class": "research",
+            "sha256": "844ab9833faa870702e60510d9d79cc3b14811aa792b80a7e528df1e07a1e53c"
+        },
+        {
+            "path": "docs/scripts/check_docs.ps1",
+            "class": "tool",
+            "sha256": "af352bbc7384ab5adaa7be4f97cb53f3d48c66bac1e9321b44bfca1fdc33fba5"
+        },
+        {
+            "path": "docs/research/TECHNOLOGY.md",
+            "class": "research",
+            "sha256": "7f7ef1a8d7fc302a428e41496a1c94b3071a2f28121c845d79ba847819561c9b"
+        },
+        {
+            "path": "docs/research/technology_ledger.json",
+            "class": "research",
+            "sha256": "1d1d46d1d62aaff820c23138fb53bc9f14c582310a1f13e111b476241cb690c4"
+        },
+        {
+            "path": "docs/dev/RESEARCH_TESTS.md",
+            "class": "development_support",
+            "sha256": "0a557925c5d2d7f73f886e84982ac2e19366d8605fc55ac097eda3c8c4a1fc02"
+        }
+    ]
+}

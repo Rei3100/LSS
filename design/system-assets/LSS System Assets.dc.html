@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:oklch(0.13 0.004 264); --panel:oklch(0.195 0.006 264); --panel2:oklch(0.235 0.006 264);
+    --line:oklch(1 0 0 / 0.13); --line2:oklch(1 0 0 / 0.07);
+    --text:oklch(0.96 0.003 264); --muted:oklch(0.7 0.008 264); --dim:oklch(0.56 0.008 264);
+    --red:#D73431; --cyan:#43C7DE; --gold:#E5A82A; --bone:#F1F2F4; --ink:#101013;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text)}
+  *{box-sizing:border-box}
+  a{color:var(--red);text-decoration:none}
+  a:hover{color:var(--bone)}
+</style>
+</helmet>
+<div style="background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;padding:0 0 90px;max-width:1280px;margin:0 auto">
+
+  <div style="position:relative;overflow:hidden;padding:54px 40px 40px;border-bottom:1px solid var(--line)">
+    <div style="position:absolute;right:-60px;top:-30px;width:340px;height:150px;background:var(--red);opacity:.1;transform:skewX(-14deg)"></div>
+    <div style="position:absolute;left:-14px;bottom:-42px;font-family:'Anton',sans-serif;font-size:150px;line-height:.78;letter-spacing:-5px;color:oklch(1 0 0 / 0.03)">LSS</div>
+    <div style="position:relative;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="width:30px;height:4px;background:var(--red);transform:skewX(-14deg)"></span>
+        <span style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12.5px;letter-spacing:3.4px;color:var(--muted)">SYSTEM VISUAL ASSETS</span>
+      </div>
+      <div style="font-family:'Anton',sans-serif;font-size:74px;line-height:.86;letter-spacing:-1px;text-transform:uppercase">One cut,<br>two planes</div>
+      <div style="display:flex;flex-wrap:wrap;gap:26px;align-items:flex-end;margin-top:6px">
+        <div style="max-width:560px;font-size:14.5px;line-height:1.6;color:var(--muted);text-wrap:pretty">The reduced LSS grammar for surfaces that cannot be expressive: app icon, tray icon, cursor family, tray menu. Geometry is defined on integer pixel grids, redrawn per size, and validated at 16 px.</div>
+        <div style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:12px;color:var(--dim);line-height:1.8">小さい面では特徴を1つに絞る<br>色だけで状態を伝えない</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== REDUCE + EXPLORE ===================== -->
+  <div style="padding:44px 40px 0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <span style="font-family:'Anton',sans-serif;font-size:34px;color:var(--red);line-height:1">00</span>
+      <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:19px;letter-spacing:2.6px">REDUCE, EXPLORE, COMPARE</span>
+    </div>
+    <div style="max-width:720px;font-size:13.5px;line-height:1.65;color:var(--muted);margin-bottom:22px">The main UI carries eight traits at once: parallelogram cuts, hard offset shadows, per-row rotation, oversized numerals, skewed bars, dot texture, bilingual pairs, slap motion. At 16 px, seven of them become noise. The candidates below were each drawn at real size before judging.</div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px">
+
+      <div style="flex:1 1 210px;min-width:200px;background:var(--panel);border:1px solid var(--line);padding:16px 16px 14px;clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)">
+        <div style="display:flex;align-items:center;gap:10px;height:40px">
+          <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><polygon points="6,3 26,3 26,29 6,29" fill="#1A1A1F"></polygon><polygon points="10,7 22,7 22,14 10,14" fill="#D73431"></polygon><polygon points="10,18 22,18 22,25 10,25" fill="#F1F2F4"></polygon></svg>
+          <svg width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><polygon points="6,3 26,3 26,29 6,29" fill="#1A1A1F"></polygon><polygon points="10,7 22,7 22,14 10,14" fill="#D73431"></polygon><polygon points="10,18 22,18 22,25 10,25" fill="#F1F2F4"></polygon></svg>
+        </div>
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2px;margin-top:10px">A · STACKED SPLIT</div>
+        <div style="font-size:12px;line-height:1.55;color:var(--dim);margin-top:5px">Two orthogonal bars inside a tile. Survives, but reads as a generic list or equalizer. No LSS angle.</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1.6px;color:var(--red);margin-top:8px">REJECTED · NOT DISTINCT</div>
+      </div>
+
+      <div style="flex:1 1 210px;min-width:200px;background:var(--panel);border:1px solid var(--line);padding:16px 16px 14px;clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)">
+        <div style="display:flex;align-items:center;gap:10px;height:40px">
+          <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="#D73431"></polygon><polygon points="16,9 23,13 23,20 16,24 9,20 9,13" fill="#0B0B0D"></polygon><polygon points="16,13 20,15 20,19 16,21 12,19 12,15" fill="#F1F2F4"></polygon></svg>
+          <svg width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><polygon points="16,2 29,9 29,23 16,30 3,23 3,9" fill="#D73431"></polygon><polygon points="16,9 23,13 23,20 16,24 9,20 9,13" fill="#0B0B0D"></polygon><polygon points="16,13 20,15 20,19 16,21 12,19 12,15" fill="#F1F2F4"></polygon></svg>
+        </div>
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2px;margin-top:10px">B · NESTED ISOLATION</div>
+        <div style="font-size:12px;line-height:1.55;color:var(--dim);margin-top:5px">Wanted element held inside a mixture. Good concept; the inner ring collapses into a smudge under 24 px.</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1.6px;color:var(--red);margin-top:8px">REJECTED · DIES AT 16 PX</div>
+      </div>
+
+      <div style="flex:1 1 210px;min-width:200px;background:var(--panel);border:1px solid var(--line);padding:16px 16px 14px;clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)">
+        <div style="display:flex;align-items:center;gap:10px;height:40px">
+          <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><polygon points="12,3 27,3 20,29 5,29" fill="#D73431"></polygon><polygon points="14,11 25,11 23,18 12,18" fill="#0B0B0D"></polygon><polygon points="15,12 24,12 22,17 13,17" fill="#F1F2F4"></polygon></svg>
+          <svg width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><polygon points="12,3 27,3 20,29 5,29" fill="#D73431"></polygon><polygon points="14,11 25,11 23,18 12,18" fill="#0B0B0D"></polygon><polygon points="15,12 24,12 22,17 13,17" fill="#F1F2F4"></polygon></svg>
+        </div>
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2px;margin-top:10px">C · KERFED SLAB</div>
+        <div style="font-size:12px;line-height:1.55;color:var(--dim);margin-top:5px">One slab with a cut through it. Strong silhouette, but the cut alone does not say separation — nothing moves apart.</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1.6px;color:var(--gold);margin-top:8px">PARTIAL · BASIS FOR D</div>
+      </div>
+
+      <div style="flex:1 1 210px;min-width:200px;background:var(--panel2);border:1px solid var(--red);padding:16px 16px 14px;clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)">
+        <div style="display:flex;align-items:center;gap:10px;height:40px">
+          <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><polygon points="12,4 29,4 27,12 9,17" fill="#D73431"></polygon><polygon points="5,19 23,14 20,28 3,28" fill="#F1F2F4"></polygon></svg>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><polygon points="6,2 14,2 12,7 4,7" fill="#D73431"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg>
+        </div>
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2px;margin-top:10px;color:var(--red)">D · DISPLACED PLANES</div>
+        <div style="font-size:12px;line-height:1.55;color:var(--muted);margin-top:5px">One leaning block, cut once, the two halves slid apart along the cut. Separation is the silhouette itself, not a detail inside it.</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1.6px;color:var(--cyan);margin-top:8px">SELECTED</div>
+      </div>
+
+      <div style="flex:1 1 210px;min-width:200px;background:var(--panel);border:1px solid var(--line);padding:16px 16px 14px;clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)">
+        <div style="display:flex;align-items:center;gap:10px;height:40px">
+          <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><text x="16" y="25" font-family="Anton, sans-serif" font-size="26" fill="#D73431" text-anchor="middle">L</text><polygon points="4,14 28,10 28,13 4,17" fill="#0B0B0D"></polygon></svg>
+          <svg width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><text x="16" y="25" font-family="Anton, sans-serif" font-size="26" fill="#D73431" text-anchor="middle">L</text><polygon points="4,14 28,10 28,13 4,17" fill="#0B0B0D"></polygon></svg>
+        </div>
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2px;margin-top:10px">E · CUT LETTERFORM</div>
+        <div style="font-size:12px;line-height:1.55;color:var(--dim);margin-top:5px">Letter sliced by the same kerf. Becomes an illegible blob at tray size and puts type where type cannot be read.</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1.6px;color:var(--red);margin-top:8px">REJECTED · TYPE AT 16 PX</div>
+      </div>
+
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:0;margin-top:18px;border:1px solid var(--line);background:var(--panel)">
+      <div style="flex:1 1 100%;display:grid;grid-template-columns:minmax(150px,1.4fr) repeat(5,minmax(70px,1fr));font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:1.5px;color:var(--dim);border-bottom:1px solid var(--line);padding:9px 14px;gap:8px">
+        <span>CRITERION</span><span>A</span><span>B</span><span>C</span><span style="color:var(--red)">D</span><span>E</span>
+      </div>
+      <div style="flex:1 1 100%;display:grid;grid-template-columns:minmax(150px,1.4fr) repeat(5,minmax(70px,1fr));font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);padding:9px 14px;gap:8px;border-bottom:1px solid var(--line2)">
+        <span style="font-family:'IBM Plex Sans',sans-serif">Survives 16 px</span><span>yes</span><span>no</span><span>yes</span><span style="color:var(--cyan)">yes</span><span>no</span>
+      </div>
+      <div style="flex:1 1 100%;display:grid;grid-template-columns:minmax(150px,1.4fr) repeat(5,minmax(70px,1fr));font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);padding:9px 14px;gap:8px;border-bottom:1px solid var(--line2)">
+        <span style="font-family:'IBM Plex Sans',sans-serif">Says separation</span><span>weak</span><span>yes</span><span>weak</span><span style="color:var(--cyan)">yes</span><span>no</span>
+      </div>
+      <div style="flex:1 1 100%;display:grid;grid-template-columns:minmax(150px,1.4fr) repeat(5,minmax(70px,1fr));font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);padding:9px 14px;gap:8px;border-bottom:1px solid var(--line2)">
+        <span style="font-family:'IBM Plex Sans',sans-serif">Distinct silhouette</span><span>no</span><span>mid</span><span>yes</span><span style="color:var(--cyan)">yes</span><span>no</span>
+      </div>
+      <div style="flex:1 1 100%;display:grid;grid-template-columns:minmax(150px,1.4fr) repeat(5,minmax(70px,1fr));font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);padding:9px 14px;gap:8px">
+        <span style="font-family:'IBM Plex Sans',sans-serif">Works on 4 surfaces</span><span>mid</span><span>no</span><span>mid</span><span style="color:var(--cyan)">yes</span><span>no</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== A. PRINCIPLE ===================== -->
+  <div style="padding:52px 40px 0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <span style="font-family:'Anton',sans-serif;font-size:34px;color:var(--red);line-height:1">A</span>
+      <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:19px;letter-spacing:2.6px">CORE VISUAL PRINCIPLE</span>
+    </div>
+    <div style="max-width:760px;font-size:13.5px;line-height:1.65;color:var(--muted)">Three rules, and nothing else, carry LSS at system scale. Everything in the main UI that is not on this list is deliberately left out of these assets.</div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:22px;margin-top:24px;align-items:flex-start">
+      <div style="flex:0 0 auto;background:var(--panel);border:1px solid var(--line);padding:20px">
+        <svg width="300" height="300" viewBox="0 0 256 256" aria-label="Construction diagram of the LSS mark">
+          <rect x="0" y="0" width="256" height="256" fill="#0B0B0D"></rect>
+          <sc-if value="{{ showConstruction }}" hint-placeholder-val="{{ true }}">
+            <g>
+              <rect x="24" y="24" width="208" height="208" fill="none" stroke="#43C7DE" stroke-opacity="0.28" stroke-width="1" stroke-dasharray="4 4"></rect>
+              <line x1="80" y1="40" x2="40" y2="216" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1"></line>
+              <line x1="216" y1="40" x2="176" y2="216" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1"></line>
+              <line x1="40" y1="40" x2="216" y2="40" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1"></line>
+              <line x1="40" y1="216" x2="216" y2="216" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1"></line>
+              <line x1="56" y1="144" x2="202" y2="104" stroke="#43C7DE" stroke-opacity="0.7" stroke-width="1.5"></line>
+            </g>
+          </sc-if>
+          <polygon points="104,44 240,44 226,108 80,148" fill="#0B0B0D" fill-opacity="0.9"></polygon>
+          <polygon points="52,160 198,120 172,232 36,232" fill="#0B0B0D" fill-opacity="0.9"></polygon>
+          <polygon points="94,34 230,34 216,98 70,138" fill="#D73431"></polygon>
+          <polygon points="42,150 188,110 162,222 26,222" fill="#F1F2F4"></polygon>
+          <sc-if value="{{ showConstruction }}" hint-placeholder-val="{{ true }}">
+            <g font-family="IBM Plex Mono, monospace" font-size="10" fill="#43C7DE">
+              <text x="120" y="122">kerf 14 u</text>
+              <text x="30" y="18">safe zone 24 u</text>
+              <text x="196" y="250" text-anchor="end">lean −14°</text>
+            </g>
+          </sc-if>
+        </svg>
+      </div>
+
+      <div style="flex:1 1 340px;min-width:300px;display:flex;flex-direction:column;gap:12px">
+        <div style="background:var(--panel);border-top:3px solid var(--red);padding:14px 16px">
+          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:2.2px">1 · THE LEAN</div>
+          <div style="font-size:13px;line-height:1.6;color:var(--muted);margin-top:5px">Every vertical edge leans −14°, the same shear the main UI uses on bars and badges. Nothing in this system is upright, and nothing is rounded. Corners stay sharp at every size.</div>
+        </div>
+        <div style="background:var(--panel);border-top:3px solid var(--red);padding:14px 16px">
+          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:2.2px">2 · ONE CUT</div>
+          <div style="font-size:13px;line-height:1.6;color:var(--muted);margin-top:5px">A single straight cut at 15° from horizontal crosses the block. One cut only — a second cut halves the mass of each plane and the shape stops reading below 32 px.</div>
+        </div>
+        <div style="background:var(--panel);border-top:3px solid var(--red);padding:14px 16px">
+          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:2.2px">3 · DISPLACEMENT</div>
+          <div style="font-size:13px;line-height:1.6;color:var(--muted);margin-top:5px">The two planes slide apart along the cut, leaving a kerf of open ground. The upper plane is red, the lower is bone: two-tone, so the mark still separates in grayscale and at low attention.</div>
+        </div>
+        <div style="background:oklch(1 0 0 / 0.04);border:1px dashed var(--line);padding:14px 16px">
+          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:2.2px;color:var(--dim)">LEFT OUT ON PURPOSE</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.7;color:var(--dim);margin-top:5px">per-row rotation · dot texture · oversized numerals · bilingual pairs · gradients · blur · hard shadow below 48 px</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== B. APP ICON ===================== -->
+  <div style="padding:52px 40px 0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <span style="font-family:'Anton',sans-serif;font-size:34px;color:var(--red);line-height:1">B</span>
+      <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:19px;letter-spacing:2.6px">APPLICATION ICON</span>
+    </div>
+    <div style="max-width:760px;font-size:13.5px;line-height:1.65;color:var(--muted)">Four hand-drawn masters, not one file downscaled: 256/64/48 share the cut-quad geometry, 32 and 24 drop the offset shadow and thicken the kerf, 20 and 16 abandon the cut quad for two parallel bars.</div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-top:26px">
+      <div style="background:var(--panel);border:1px solid var(--line);padding:18px;display:flex;flex-direction:column;align-items:center;gap:12px">
+        <svg width="256" height="256" viewBox="0 0 256 256" aria-label="LSS app icon 256px">
+          <polygon points="104,44 240,44 226,108 80,148" fill="#08080A"></polygon>
+          <polygon points="52,160 198,120 172,232 36,232" fill="#08080A"></polygon>
+          <polygon points="94,34 230,34 216,98 70,138" fill="#D73431"></polygon>
+          <polygon points="42,150 188,110 162,222 26,222" fill="#F1F2F4"></polygon>
+        </svg>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:1px">256 · MASTER</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px">
+        <div style="background:var(--panel);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px">
+          <svg width="64" height="64" viewBox="0 0 256 256" aria-label="64px"><polygon points="104,44 240,44 226,108 80,148" fill="#08080A"></polygon><polygon points="52,160 198,120 172,232 36,232" fill="#08080A"></polygon><polygon points="94,34 230,34 216,98 70,138" fill="#D73431"></polygon><polygon points="42,150 188,110 162,222 26,222" fill="#F1F2F4"></polygon></svg>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim)">64</div>
+        </div>
+        <div style="background:var(--panel);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px">
+          <svg width="48" height="48" viewBox="0 0 256 256" aria-label="48px"><polygon points="104,44 240,44 226,108 80,148" fill="#08080A"></polygon><polygon points="52,160 198,120 172,232 36,232" fill="#08080A"></polygon><polygon points="94,34 230,34 216,98 70,138" fill="#D73431"></polygon><polygon points="42,150 188,110 162,222 26,222" fill="#F1F2F4"></polygon></svg>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim)">48</div>
+        </div>
+        <div style="background:var(--panel);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px">
+          <svg width="32" height="32" viewBox="0 0 32 32" aria-label="32px"><polygon points="12,4 29,4 27,12 9,17" fill="#D73431"></polygon><polygon points="5,19 23,14 20,28 3,28" fill="#F1F2F4"></polygon></svg>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim)">32</div>
+        </div>
+        <div style="background:var(--panel);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px">
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-label="24px"><polygon points="9,3 22,3 20,9 7,13" fill="#D73431"></polygon><polygon points="4,15 17,10 15,21 2,21" fill="#F1F2F4"></polygon></svg>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim)">24</div>
+        </div>
+        <div style="background:var(--panel);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px">
+          <svg width="20" height="20" viewBox="0 0 20 20" aria-label="20px"><polygon points="7,3 18,3 17,8 6,11" fill="#D73431"></polygon><polygon points="3,13 14,10 13,17 2,17" fill="#F1F2F4"></polygon></svg>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim)">20</div>
+        </div>
+        <div style="background:var(--panel);border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-label="16px"><polygon points="6,2 14,2 12,7 4,7" fill="#D73431"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim)">16</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:22px">
+      <div style="flex:1 1 300px;background:var(--panel);border:1px solid var(--line);padding:16px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2px;color:var(--muted)">WHY REDRAW · 16 PX COMPARISON</div>
+        <div style="display:flex;gap:26px;align-items:flex-end;margin-top:14px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+            <svg width="16" height="16" viewBox="0 0 256 256"><polygon points="104,44 240,44 226,108 80,148" fill="#08080A"></polygon><polygon points="52,160 198,120 172,232 36,232" fill="#08080A"></polygon><polygon points="94,34 230,34 216,98 70,138" fill="#D73431"></polygon><polygon points="42,150 188,110 162,222 26,222" fill="#F1F2F4"></polygon></svg>
+            <svg width="64" height="64" viewBox="0 0 256 256" style="image-rendering:pixelated;opacity:.95"><polygon points="104,44 240,44 226,108 80,148" fill="#08080A"></polygon><polygon points="52,160 198,120 172,232 36,232" fill="#08080A"></polygon><polygon points="94,34 230,34 216,98 70,138" fill="#D73431"></polygon><polygon points="42,150 188,110 162,222 26,222" fill="#F1F2F4"></polygon></svg>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--red)">master downscaled</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="6,2 14,2 12,7 4,7" fill="#D73431"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg>
+            <svg width="64" height="64" viewBox="0 0 16 16" style="image-rendering:pixelated"><polygon points="6,2 14,2 12,7 4,7" fill="#D73431"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--cyan)">redrawn on 16 grid</div>
+          </div>
+        </div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:12px">The shadow and the cut angle turn into grey fringing at 16 px. The redrawn version keeps only the two bars, the lean, and a 2 px kerf, snapped to whole pixels.</div>
+      </div>
+
+      <div style="flex:1 1 300px;background:var(--panel);border:1px solid var(--line);padding:16px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2px;color:var(--muted)">GROUND TESTS</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
+          <div style="width:70px;height:70px;background:#000;display:grid;place-items:center;border:1px solid var(--line2)"><svg width="32" height="32" viewBox="0 0 32 32"><polygon points="12,4 29,4 27,12 9,17" fill="#D73431"></polygon><polygon points="5,19 23,14 20,28 3,28" fill="#F1F2F4"></polygon></svg></div>
+          <div style="width:70px;height:70px;background:#fff;display:grid;place-items:center;border:1px solid var(--line2)"><svg width="32" height="32" viewBox="0 0 32 32"><polygon points="14,6 31,6 29,14 11,19" fill="#08080A"></polygon><polygon points="7,21 25,16 22,30 5,30" fill="#08080A"></polygon><polygon points="12,4 29,4 27,12 9,17" fill="#D73431"></polygon><polygon points="5,19 23,14 20,28 3,28" fill="#F1F2F4"></polygon></svg></div>
+          <div style="width:70px;height:70px;background:#808085;display:grid;place-items:center;border:1px solid var(--line2)"><svg width="32" height="32" viewBox="0 0 32 32"><polygon points="12,4 29,4 27,12 9,17" fill="#D73431"></polygon><polygon points="5,19 23,14 20,28 3,28" fill="#F1F2F4"></polygon></svg></div>
+          <div style="width:70px;height:70px;background:#D73431;display:grid;place-items:center;border:1px solid var(--line2)"><svg width="32" height="32" viewBox="0 0 32 32"><polygon points="12,4 29,4 27,12 9,17" fill="#08080A"></polygon><polygon points="5,19 23,14 20,28 3,28" fill="#F1F2F4"></polygon></svg></div>
+          <div style="width:70px;height:70px;background:var(--panel2);display:grid;place-items:center;border:1px solid var(--line2);filter:grayscale(1)"><svg width="32" height="32" viewBox="0 0 32 32"><polygon points="12,4 29,4 27,12 9,17" fill="#D73431"></polygon><polygon points="5,19 23,14 20,28 3,28" fill="#F1F2F4"></polygon></svg></div>
+        </div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:12px">On white, the bone plane needs the 2 u black backing plane to keep its edge. On red ground, the upper plane inverts to ink. Grayscale still separates, because value — not hue — carries the split.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== C. TRAY ICON ===================== -->
+  <div style="padding:52px 40px 0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <span style="font-family:'Anton',sans-serif;font-size:34px;color:var(--red);line-height:1">C</span>
+      <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:19px;letter-spacing:2.6px">SYSTEM TRAY ICON</span>
+    </div>
+    <div style="max-width:760px;font-size:13.5px;line-height:1.65;color:var(--muted)">Mostly monochrome with one accent plane. The ink plane follows the taskbar theme; the accent plane carries state. State is also carried by geometry — kerf width, lateral offset, lean direction — so it survives grayscale, peripheral vision and colour-blind perception.</div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:24px">
+      <div style="flex:1 1 420px;min-width:340px;background:var(--panel);border:1px solid var(--line);padding:0;overflow:hidden">
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2px;color:var(--muted);padding:13px 16px;border-bottom:1px solid var(--line)">FOUR STATES · 16 PX ACTUAL, 6× ENLARGED</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr)">
+
+          <div style="border-right:1px solid var(--line2);padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:12px">
+            <svg width="96" height="96" viewBox="0 0 16 16" style="image-rendering:pixelated"><polygon points="6,2 14,2 12,7 4,7" fill="#F1F2F4"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg>
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="6,2 14,2 12,7 4,7" fill="#F1F2F4"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg>
+            <div style="text-align:center">
+              <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:1.8px">READY</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-top:3px">kerf 2 · offset 2</div>
+            </div>
+          </div>
+
+          <div style="border-right:1px solid var(--line2);padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:12px">
+            <svg width="96" height="96" viewBox="0 0 16 16" style="image-rendering:pixelated"><polygon points="7,2 15,2 13,7 5,7" fill="#43C7DE"></polygon><polygon points="3,9 11,9 9,14 1,14" fill="#F1F2F4"></polygon></svg>
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="7,2 15,2 13,7 5,7" fill="#43C7DE"></polygon><polygon points="3,9 11,9 9,14 1,14" fill="#F1F2F4"></polygon></svg>
+            <div style="text-align:center">
+              <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:1.8px;color:var(--cyan)">PROCESSING</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-top:3px">offset 4 · cyan</div>
+            </div>
+          </div>
+
+          <div style="border-right:1px solid var(--line2);padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:12px">
+            <svg width="96" height="96" viewBox="0 0 16 16" style="image-rendering:pixelated"><polygon points="6,1 14,1 12,6 4,6" fill="#E5A82A"></polygon><polygon points="4,10 12,10 10,15 2,15" fill="#F1F2F4"></polygon></svg>
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="6,1 14,1 12,6 4,6" fill="#E5A82A"></polygon><polygon points="4,10 12,10 10,15 2,15" fill="#F1F2F4"></polygon></svg>
+            <div style="text-align:center">
+              <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:1.8px;color:var(--gold)">COMPLETE</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-top:3px">kerf 4 · gold</div>
+            </div>
+          </div>
+
+          <div style="padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:12px">
+            <svg width="96" height="96" viewBox="0 0 16 16" style="image-rendering:pixelated"><polygon points="4,2 12,2 14,7 6,7" fill="#D73431"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg>
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="4,2 12,2 14,7 6,7" fill="#D73431"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg>
+            <div style="text-align:center">
+              <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:1.8px;color:var(--red)">HALTED</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);margin-top:3px">lean reversed</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 16px;border-top:1px solid var(--line);font-size:12.5px;line-height:1.55;color:var(--dim)">HALTED flips the upper plane's lean, so the two planes form a wedge instead of a parallel pair. That break in rhythm is visible at the edge of vision before the colour registers.</div>
+      </div>
+
+      <div style="flex:1 1 300px;min-width:280px;display:flex;flex-direction:column;gap:14px">
+        <sc-if value="{{ showDark }}" hint-placeholder-val="{{ true }}">
+          <div style="background:var(--panel);border:1px solid var(--line);padding:14px 16px">
+            <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:11.5px;letter-spacing:2px;color:var(--muted)">DARK TASKBAR · 100%</div>
+            <div style="margin-top:12px;background:#1C1C20;border-top:1px solid oklch(1 0 0 / 0.08);height:48px;display:flex;align-items:center;justify-content:flex-end;gap:16px;padding:0 14px">
+              <svg width="16" height="16" viewBox="0 0 16 16" opacity=".55"><polygon points="2,4 14,4 14,6 2,6" fill="#F1F2F4"></polygon><polygon points="2,8 14,8 14,10 2,10" fill="#F1F2F4"></polygon></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" opacity=".55"><circle cx="8" cy="8" r="6" fill="none" stroke="#F1F2F4" stroke-width="1.4"></circle></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="7,2 15,2 13,7 5,7" fill="#43C7DE"></polygon><polygon points="3,9 11,9 9,14 1,14" fill="#F1F2F4"></polygon></svg>
+              <span style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;color:#D8D8DC">14:32</span>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ showLight }}" hint-placeholder-val="{{ true }}">
+          <div style="background:var(--panel);border:1px solid var(--line);padding:14px 16px">
+            <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:11.5px;letter-spacing:2px;color:var(--muted)">LIGHT TASKBAR · 100%</div>
+            <div style="margin-top:12px;background:#F3F3F5;border-top:1px solid rgba(0,0,0,.1);height:48px;display:flex;align-items:center;justify-content:flex-end;gap:16px;padding:0 14px">
+              <svg width="16" height="16" viewBox="0 0 16 16" opacity=".55"><polygon points="2,4 14,4 14,6 2,6" fill="#101013"></polygon><polygon points="2,8 14,8 14,10 2,10" fill="#101013"></polygon></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" opacity=".55"><circle cx="8" cy="8" r="6" fill="none" stroke="#101013" stroke-width="1.4"></circle></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="7,2 15,2 13,7 5,7" fill="#1E7F92"></polygon><polygon points="3,9 11,9 9,14 1,14" fill="#101013"></polygon></svg>
+              <span style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;color:#25252A">14:32</span>
+            </div>
+          </div>
+        </sc-if>
+        <div style="background:var(--panel);border:1px solid var(--line);padding:14px 16px">
+          <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:11.5px;letter-spacing:2px;color:var(--muted)">DPI SCALING · 16 / 20 / 24 PX</div>
+          <div style="display:flex;align-items:flex-end;gap:22px;margin-top:14px">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:7px"><svg width="16" height="16" viewBox="0 0 16 16"><polygon points="6,2 14,2 12,7 4,7" fill="#F1F2F4"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">100%</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:7px"><svg width="20" height="20" viewBox="0 0 20 20"><polygon points="7,3 18,3 16,9 5,9" fill="#F1F2F4"></polygon><polygon points="5,11 16,11 14,17 3,17" fill="#F1F2F4"></polygon></svg><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">125%</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:7px"><svg width="24" height="24" viewBox="0 0 24 24"><polygon points="9,3 21,3 19,10 7,10" fill="#F1F2F4"></polygon><polygon points="5,13 17,13 15,20 3,20" fill="#F1F2F4"></polygon></svg><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">150%</span></div>
+          </div>
+          <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:12px">Each scale gets its own integer grid: kerf 2 / 2 / 3 px, bar height 5 / 6 / 7 px. Never one bitmap resampled.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:14px">
+      <div style="flex:1 1 340px;background:oklch(1 0 0 / 0.04);border:1px dashed var(--line);padding:14px 16px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;color:var(--dim)">MOTION · RESTRAINED</div>
+        <div style="font-size:12.5px;line-height:1.6;color:var(--muted);margin-top:5px">No continuous animation. PROCESSING alternates the lateral offset between 3 and 4 px on a 1.2 s step — two frames, no easing, readable as a slow pulse and invisible as a distraction. COMPLETE plays the offset opening to kerf 4 once, then holds.</div>
+      </div>
+      <div style="flex:1 1 340px;background:oklch(1 0 0 / 0.04);border:1px dashed var(--line);padding:14px 16px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;color:var(--dim)">STATES NOT MADE</div>
+        <div style="font-size:12.5px;line-height:1.6;color:var(--muted);margin-top:5px">No per-stage icons (PREPARE / SEPARATE / SAVE) and no progress ring in the tray: at 16 px they are indistinguishable from PROCESSING, and progress belongs in the menu where there is room for digits.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== D. CURSORS ===================== -->
+  <div style="padding:52px 40px 0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <span style="font-family:'Anton',sans-serif;font-size:34px;color:var(--red);line-height:1">D</span>
+      <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:19px;letter-spacing:2.6px">CURSOR FAMILY</span>
+    </div>
+    <div style="max-width:760px;font-size:13.5px;line-height:1.65;color:var(--muted)">The pointing geometry is conventional and untouched: tip at top-left, hotspot at (0,0), bone fill, 1.5 px ink edge. LSS identity lives entirely in a red backing plane offset 2 px down-right and a flat −14° tail cut. Four cursors only, each tied to a real interaction in the app.</div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:26px">
+
+      <div style="flex:1 1 230px;min-width:210px;background:var(--panel);border:1px solid var(--line);padding:16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+          <div>
+            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:2px">DEFAULT</div>
+            <div style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11px;color:var(--dim);margin-top:2px">通常</div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--cyan)">32×32</div>
+        </div>
+        <div style="margin-top:14px;background:var(--bg);border:1px solid var(--line2);height:150px;display:grid;place-items:center;position:relative">
+          <svg width="128" height="128" viewBox="0 0 32 32" style="image-rendering:pixelated">
+            <polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#D73431"></polygon>
+            <polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4" stroke-linejoin="miter"></polygon>
+            <sc-if value="{{ showHotspotGuides }}" hint-placeholder-val="{{ true }}">
+              <g><line x1="1" y1="1" x2="1" y2="9" stroke="#43C7DE" stroke-width="0.7"></line><line x1="1" y1="1" x2="9" y2="1" stroke="#43C7DE" stroke-width="0.7"></line><circle cx="1" cy="1" r="1.6" fill="none" stroke="#43C7DE" stroke-width="0.7"></circle></g>
+            </sc-if>
+          </svg>
+          <div style="position:absolute;right:10px;bottom:8px;display:flex;align-items:center;gap:8px">
+            <svg width="32" height="32" viewBox="0 0 32 32"><polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#D73431"></polygon><polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon></svg>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">1×</span>
+          </div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:10px">hotspot 0,0</div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:6px">Used everywhere. The red plane never reaches the tip, so the pointing pixel stays bone-on-ink.</div>
+      </div>
+
+      <div style="flex:1 1 230px;min-width:210px;background:var(--panel);border:1px solid var(--line);padding:16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+          <div>
+            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:2px">INTERACTIVE</div>
+            <div style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11px;color:var(--dim);margin-top:2px">押せる</div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--cyan)">32×32</div>
+        </div>
+        <div style="margin-top:14px;background:var(--bg);border:1px solid var(--line2);height:150px;display:grid;place-items:center;position:relative">
+          <svg width="128" height="128" viewBox="0 0 32 32" style="image-rendering:pixelated">
+            <polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#D73431"></polygon>
+            <polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon>
+            <polygon points="20,16 30,16 28,21 18,21" fill="#D73431" stroke="#101013" stroke-width="1"></polygon>
+            <polygon points="18,23 28,23 26,28 16,28" fill="#F1F2F4" stroke="#101013" stroke-width="1"></polygon>
+            <sc-if value="{{ showHotspotGuides }}" hint-placeholder-val="{{ true }}">
+              <g><line x1="1" y1="1" x2="1" y2="9" stroke="#43C7DE" stroke-width="0.7"></line><line x1="1" y1="1" x2="9" y2="1" stroke="#43C7DE" stroke-width="0.7"></line><circle cx="1" cy="1" r="1.6" fill="none" stroke="#43C7DE" stroke-width="0.7"></circle></g>
+            </sc-if>
+          </svg>
+          <div style="position:absolute;right:10px;bottom:8px;display:flex;align-items:center;gap:8px">
+            <svg width="32" height="32" viewBox="0 0 32 32"><polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#D73431"></polygon><polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon><polygon points="20,16 30,16 28,21 18,21" fill="#D73431" stroke="#101013" stroke-width="1"></polygon><polygon points="18,23 28,23 26,28 16,28" fill="#F1F2F4" stroke="#101013" stroke-width="1"></polygon></svg>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">1×</span>
+          </div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:10px">hotspot 0,0</div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:6px">The mark itself, at 12 px, clipped to the lower-right quadrant. Replaces the system hand; arrow geometry is unchanged so precision is identical.</div>
+      </div>
+
+      <div style="flex:1 1 230px;min-width:210px;background:var(--panel);border:1px solid var(--line);padding:16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+          <div>
+            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:2px">WORKING</div>
+            <div style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11px;color:var(--dim);margin-top:2px">処理中</div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--cyan)">32×32</div>
+        </div>
+        <div style="margin-top:14px;background:var(--bg);border:1px solid var(--line2);height:150px;display:grid;place-items:center;position:relative">
+          <svg width="128" height="128" viewBox="0 0 32 32" style="image-rendering:pixelated">
+            <polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#D73431"></polygon>
+            <polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon>
+            <polygon points="21,15 31,15 29,20 19,20" fill="#43C7DE" stroke="#101013" stroke-width="1"></polygon>
+            <polygon points="17,24 27,24 25,29 15,29" fill="#43C7DE" stroke="#101013" stroke-width="1"></polygon>
+            <sc-if value="{{ showHotspotGuides }}" hint-placeholder-val="{{ true }}">
+              <g><line x1="1" y1="1" x2="1" y2="9" stroke="#43C7DE" stroke-width="0.7"></line><line x1="1" y1="1" x2="9" y2="1" stroke="#43C7DE" stroke-width="0.7"></line><circle cx="1" cy="1" r="1.6" fill="none" stroke="#43C7DE" stroke-width="0.7"></circle></g>
+            </sc-if>
+          </svg>
+          <div style="position:absolute;right:10px;bottom:8px;display:flex;align-items:center;gap:8px">
+            <svg width="32" height="32" viewBox="0 0 32 32"><polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#D73431"></polygon><polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon><polygon points="21,15 31,15 29,20 19,20" fill="#43C7DE" stroke="#101013" stroke-width="1"></polygon><polygon points="17,24 27,24 25,29 15,29" fill="#43C7DE" stroke="#101013" stroke-width="1"></polygon></svg>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">1×</span>
+          </div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:10px">hotspot 0,0</div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:6px">Cyan badge with a wider kerf. The pointer stays usable — this is not a busy cursor. The badge kerf steps 4→5 px once per second; the arrow never moves.</div>
+      </div>
+
+      <div style="flex:1 1 230px;min-width:210px;background:var(--panel);border:1px solid var(--line);padding:16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+          <div>
+            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:2px">DROP SOURCE</div>
+            <div style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11px;color:var(--dim);margin-top:2px">ここに入る</div>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--cyan)">32×32</div>
+        </div>
+        <div style="margin-top:14px;background:var(--bg);border:1px solid var(--line2);height:150px;display:grid;place-items:center;position:relative">
+          <svg width="128" height="128" viewBox="0 0 32 32" style="image-rendering:pixelated">
+            <polygon points="10,24 30,24 26,31 6,31" fill="#D73431" stroke="#101013" stroke-width="1"></polygon>
+            <polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#101013"></polygon>
+            <polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon>
+            <sc-if value="{{ showHotspotGuides }}" hint-placeholder-val="{{ true }}">
+              <g><line x1="1" y1="1" x2="1" y2="9" stroke="#43C7DE" stroke-width="0.7"></line><line x1="1" y1="1" x2="9" y2="1" stroke="#43C7DE" stroke-width="0.7"></line><circle cx="1" cy="1" r="1.6" fill="none" stroke="#43C7DE" stroke-width="0.7"></circle></g>
+            </sc-if>
+          </svg>
+          <div style="position:absolute;right:10px;bottom:8px;display:flex;align-items:center;gap:8px">
+            <svg width="32" height="32" viewBox="0 0 32 32"><polygon points="10,24 30,24 26,31 6,31" fill="#D73431" stroke="#101013" stroke-width="1"></polygon><polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#101013"></polygon><polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon></svg>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">1×</span>
+          </div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:10px">hotspot 0,0</div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:6px">Only during a valid drag over the list. A landing plane sits under the arrow, showing where the SOURCE will go. Invalid drag keeps the system no-drop cursor.</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:14px">
+      <div style="flex:1 1 420px;min-width:320px;background:var(--panel);border:1px solid var(--line);padding:16px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2px;color:var(--muted)">CONTRAST TESTS · OVER REAL LSS SURFACES</div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
+          <div style="width:84px;height:64px;background:#0B0B0D;position:relative;border:1px solid var(--line2)"><svg width="32" height="32" viewBox="0 0 32 32" style="position:absolute;left:22px;top:14px"><polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#D73431"></polygon><polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon></svg></div>
+          <div style="width:84px;height:64px;background:#D73431;position:relative;border:1px solid var(--line2)"><svg width="32" height="32" viewBox="0 0 32 32" style="position:absolute;left:22px;top:14px"><polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#101013"></polygon><polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon></svg></div>
+          <div style="width:84px;height:64px;background:#F1F2F4;position:relative;border:1px solid var(--line2)"><svg width="32" height="32" viewBox="0 0 32 32" style="position:absolute;left:22px;top:14px"><polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#D73431"></polygon><polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon></svg></div>
+          <div style="width:84px;height:64px;background:#43C7DE;position:relative;border:1px solid var(--line2)"><svg width="32" height="32" viewBox="0 0 32 32" style="position:absolute;left:22px;top:14px"><polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#101013"></polygon><polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon></svg></div>
+          <div style="width:84px;height:64px;background:#E5A82A;position:relative;border:1px solid var(--line2)"><svg width="32" height="32" viewBox="0 0 32 32" style="position:absolute;left:22px;top:14px"><polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#101013"></polygon><polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon></svg></div>
+        </div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:12px">Over saturated LSS surfaces (red slab, cyan running row, gold saved badge) the backing plane switches to ink. Bone body plus ink edge is the invariant; the plane's colour is not load-bearing.</div>
+      </div>
+      <div style="flex:1 1 300px;min-width:280px;background:oklch(1 0 0 / 0.04);border:1px dashed var(--line);padding:16px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;color:var(--dim)">NOT CUSTOMISED</div>
+        <div style="font-size:12.5px;line-height:1.6;color:var(--muted);margin-top:6px">Text I-beam, resize arrows, and no-drop keep Windows defaults. They carry no LSS meaning, they are the cursors users scrutinise most for precision, and a styled I-beam makes caret placement ambiguous. Restraint here is what keeps the four custom cursors legible as a family.</div>
+        <div style="display:flex;align-items:center;gap:14px;margin-top:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim)">
+          <span>hotspot precision: unchanged</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== E. TRAY MENU ===================== -->
+  <div style="padding:52px 40px 0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <span style="font-family:'Anton',sans-serif;font-size:34px;color:var(--red);line-height:1">E</span>
+      <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:19px;letter-spacing:2.6px">TRAY CONTEXT MENU</span>
+    </div>
+    <div style="max-width:760px;font-size:13.5px;line-height:1.65;color:var(--muted)">236 px wide, 30 px rows, drawn at real size. Branding is confined to three places: a 3 px red cap rule, the mark in the header, and the −14° selection plane. Rows themselves are upright and orthogonal, because this surface is read, not admired. No models, recipes, providers or metrics appear anywhere.</div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:18px;margin-top:26px;align-items:flex-start">
+
+      <!-- READY -->
+      <div style="flex:0 0 auto">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:2.2px;color:var(--muted);margin-bottom:10px">READY</div>
+        <div style="width:236px;background:#141418;border:1px solid oklch(1 0 0 / 0.14);border-top:3px solid var(--red);box-shadow:6px 6px 0 rgba(0,0,0,.45);padding:0 0 4px">
+          <div style="display:flex;align-items:center;gap:9px;padding:11px 12px 9px">
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="6,2 14,2 12,7 4,7" fill="#D73431"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg>
+            <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:3px">LSS</span>
+            <span style="flex:1"></span>
+            <span style="font-family:'Oswald',sans-serif;font-weight:600;font-size:10.5px;letter-spacing:1.6px;color:var(--muted)">READY</span>
+          </div>
+          <div style="padding:0 12px 10px">
+            <div style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:11px;color:var(--dim)">2 件 待機中</div>
+          </div>
+          <div style="height:1px;background:oklch(1 0 0 / 0.12);margin:0 0 4px"></div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:var(--text)" style-hover="background:oklch(1 0 0 / 0.06)">
+            <span>Open LSS</span>
+            <span style="flex:1"></span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim)">Enter</span>
+          </div>
+          <div style="height:1px;background:oklch(1 0 0 / 0.12);margin:4px 0"></div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:#E88A86" style-hover="background:#D73431;color:#0B0B0D">
+            <span>Quit LSS</span>
+          </div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim);margin-top:9px;line-height:1.6">normal · hover both rows<br>236 × 148 px</div>
+      </div>
+
+      <!-- PROCESSING -->
+      <div style="flex:0 0 auto">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:2.2px;color:var(--cyan);margin-bottom:10px">PROCESSING</div>
+        <div style="width:236px;background:#141418;border:1px solid oklch(1 0 0 / 0.14);border-top:3px solid var(--red);box-shadow:6px 6px 0 rgba(0,0,0,.45);padding:0 0 4px">
+          <div style="display:flex;align-items:center;gap:9px;padding:11px 12px 9px">
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="7,2 15,2 13,7 5,7" fill="#43C7DE"></polygon><polygon points="3,9 11,9 9,14 1,14" fill="#F1F2F4"></polygon></svg>
+            <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:3px">LSS</span>
+            <span style="flex:1"></span>
+            <span style="font-family:'Oswald',sans-serif;font-weight:600;font-size:10.5px;letter-spacing:1.6px;color:var(--cyan)">PROCESSING</span>
+          </div>
+          <div style="padding:0 12px 10px;display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:17px;color:var(--text);line-height:1">3</span>
+              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1.4px;color:var(--dim)">/ 12 SOURCES</span>
+            </div>
+            <div style="font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">04 – Night Bus Home.flac</div>
+            <div style="height:4px;background:oklch(1 0 0 / 0.1);overflow:hidden;transform:skewX(-14deg)">
+              <div style="width:38%;height:100%;background:var(--cyan)"></div>
+            </div>
+            <div style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:10.5px;color:var(--dim)">分離中。残り時間は出せません</div>
+          </div>
+          <div style="height:1px;background:oklch(1 0 0 / 0.12);margin:0 0 4px"></div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:var(--text)" style-hover="background:oklch(1 0 0 / 0.06)">
+            <span>Open LSS</span>
+          </div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:#E88A86" style-hover="background:#D73431;color:#0B0B0D">
+            <span>Stop after this SOURCE</span>
+          </div>
+          <div style="height:1px;background:oklch(1 0 0 / 0.12);margin:4px 0"></div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;gap:8px;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:oklch(0.45 0.008 264)">
+            <span>Quit LSS</span>
+            <span style="flex:1"></span>
+            <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:10px;color:oklch(0.42 0.008 264)">処理中は不可</span>
+          </div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim);margin-top:9px;line-height:1.6">disabled row · destructive row<br>236 × 226 px</div>
+      </div>
+
+      <!-- COMPLETE -->
+      <div style="flex:0 0 auto">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:2.2px;color:var(--gold);margin-bottom:10px">COMPLETE</div>
+        <div style="width:236px;background:#141418;border:1px solid oklch(1 0 0 / 0.14);border-top:3px solid var(--red);box-shadow:6px 6px 0 rgba(0,0,0,.45);padding:0 0 4px">
+          <div style="display:flex;align-items:center;gap:9px;padding:11px 12px 9px">
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="6,1 14,1 12,6 4,6" fill="#E5A82A"></polygon><polygon points="4,10 12,10 10,15 2,15" fill="#F1F2F4"></polygon></svg>
+            <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:3px">LSS</span>
+            <span style="flex:1"></span>
+            <span style="font-family:'Oswald',sans-serif;font-weight:600;font-size:10.5px;letter-spacing:1.6px;color:var(--gold)">DONE</span>
+          </div>
+          <div style="padding:0 12px 11px;display:flex;flex-direction:column;gap:6px">
+            <div style="font-family:'Anton',sans-serif;font-size:19px;line-height:1.05;letter-spacing:.3px;color:var(--gold)">SESSION<br>COMPLETE</div>
+            <div style="display:flex;align-items:baseline;gap:6px;margin-top:2px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:var(--text);line-height:1">12</span>
+              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1.4px;color:var(--dim)">SAVED</span>
+              <span style="width:1px;height:11px;background:var(--line)"></span>
+              <span style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:10.5px;color:var(--dim)">保存先に出ました</span>
+            </div>
+          </div>
+          <div style="height:1px;background:oklch(1 0 0 / 0.12);margin:0 0 4px"></div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:var(--text);background:oklch(1 0 0 / 0.06);outline:2px solid var(--red);outline-offset:-2px">
+            <span style="position:absolute;left:0;top:4px;bottom:4px;width:3px;background:var(--red)"></span>
+            <span>Open save folder</span>
+          </div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:var(--text)">
+            <span>Open LSS</span>
+          </div>
+          <div style="height:1px;background:oklch(1 0 0 / 0.12);margin:4px 0"></div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:#E88A86">
+            <span>Quit LSS</span>
+          </div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim);margin-top:9px;line-height:1.6">keyboard focus on row 1<br>236 × 218 px</div>
+      </div>
+
+      <!-- HALTED -->
+      <div style="flex:0 0 auto">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:2.2px;color:var(--red);margin-bottom:10px">HALTED</div>
+        <div style="width:236px;background:#141418;border:1px solid oklch(1 0 0 / 0.14);border-top:3px solid var(--red);box-shadow:6px 6px 0 rgba(0,0,0,.45);padding:0 0 4px">
+          <div style="display:flex;align-items:center;gap:9px;padding:11px 12px 9px">
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="4,2 12,2 14,7 6,7" fill="#D73431"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg>
+            <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:3px">LSS</span>
+            <span style="flex:1"></span>
+            <span style="font-family:'Oswald',sans-serif;font-weight:600;font-size:10.5px;letter-spacing:1.6px;color:var(--red)">HALTED</span>
+          </div>
+          <div style="padding:0 12px 11px;display:flex;flex-direction:column;gap:6px">
+            <div style="font-family:'Anton',sans-serif;font-size:19px;line-height:1.05;color:var(--red)">STOPPED<br>ON 1 SOURCE</div>
+            <div style="font-family:'IBM Plex Sans',sans-serif;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">07 – Harbour Lights.mp3</div>
+            <div style="font-family:'Noto Sans JP',sans-serif;font-weight:700;font-size:10.5px;color:var(--dim);line-height:1.5">この1件は分離できませんでした。<br>やり直すか、飛ばしてください</div>
+          </div>
+          <div style="height:1px;background:oklch(1 0 0 / 0.12);margin:0 0 4px"></div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:var(--text)" style-hover="background:oklch(1 0 0 / 0.06)">
+            <span>Retry this SOURCE</span>
+          </div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:var(--text)" style-hover="background:oklch(1 0 0 / 0.06)">
+            <span>Skip and continue</span>
+          </div>
+          <div style="height:1px;background:oklch(1 0 0 / 0.12);margin:4px 0"></div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:var(--text)">
+            <span>Open LSS</span>
+          </div>
+          <div style="position:relative;height:30px;display:flex;align-items:center;padding:0 12px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;color:#E88A86" style-hover="background:#D73431;color:#0B0B0D">
+            <span>Quit LSS</span>
+          </div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim);margin-top:9px;line-height:1.6">no diagnostics, no error codes<br>236 × 262 px</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:22px">
+      <div style="flex:1 1 340px;min-width:300px;background:var(--panel);border:1px solid var(--line);padding:16px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2px;color:var(--muted)">ROW STATES · ENLARGED 2×</div>
+        <div style="display:flex;flex-direction:column;gap:0;margin-top:14px;width:100%;max-width:472px;background:#141418;border:1px solid oklch(1 0 0 / 0.14)">
+          <div style="height:60px;display:flex;align-items:center;padding:0 24px;font-size:25px;color:var(--text)">Open LSS<span style="flex:1"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--dim)">normal</span></div>
+          <div style="height:60px;display:flex;align-items:center;padding:0 24px;font-size:25px;color:var(--text);background:oklch(1 0 0 / 0.06);position:relative"><span style="position:absolute;left:0;top:0;bottom:0;width:4px;background:oklch(1 0 0 / 0.3)"></span>Open LSS<span style="flex:1"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--dim)">hover</span></div>
+          <div style="height:60px;display:flex;align-items:center;padding:0 24px;font-size:25px;color:var(--text);background:oklch(1 0 0 / 0.06);outline:4px solid var(--red);outline-offset:-4px;position:relative"><span style="position:absolute;left:0;top:8px;bottom:8px;width:6px;background:var(--red)"></span>Open LSS<span style="flex:1"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--red)">focus</span></div>
+          <div style="height:60px;display:flex;align-items:center;padding:0 24px;font-size:25px;color:oklch(0.45 0.008 264)">Quit LSS<span style="flex:1"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--dim)">disabled</span></div>
+          <div style="height:60px;display:flex;align-items:center;padding:0 24px;font-size:25px;color:#0B0B0D;background:#D73431">Quit LSS<span style="flex:1"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:#2A0A08">destructive hover</span></div>
+        </div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:12px">Hover is a flat wash plus a bone edge bar. Keyboard focus adds a 2 px red inset outline and a red edge bar — never the same treatment as hover, so tab position is unambiguous while the mouse is also over the menu.</div>
+      </div>
+      <div style="flex:1 1 300px;min-width:280px;background:var(--panel);border:1px solid var(--line);padding:16px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:600;font-size:12px;letter-spacing:2px;color:var(--muted)">SCALING · 100 / 125 / 150%</div>
+        <div style="display:flex;gap:14px;align-items:flex-start;margin-top:14px;flex-wrap:wrap">
+          <div style="display:flex;flex-direction:column;gap:7px;align-items:center">
+            <div style="width:118px;background:#141418;border:1px solid oklch(1 0 0 / 0.14);border-top:2px solid var(--red)">
+              <div style="height:22px;display:flex;align-items:center;gap:5px;padding:0 6px"><svg width="8" height="8" viewBox="0 0 16 16"><polygon points="6,2 14,2 12,7 4,7" fill="#D73431"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg><span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:7px;letter-spacing:1.5px">LSS</span></div>
+              <div style="height:1px;background:oklch(1 0 0 / 0.12)"></div>
+              <div style="height:15px;display:flex;align-items:center;padding:0 6px;font-size:6.5px;color:var(--text)">Open LSS</div>
+              <div style="height:15px;display:flex;align-items:center;padding:0 6px;font-size:6.5px;color:#E88A86">Quit LSS</div>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">100% · row 30</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;align-items:center">
+            <div style="width:148px;background:#141418;border:1px solid oklch(1 0 0 / 0.14);border-top:3px solid var(--red)">
+              <div style="height:27px;display:flex;align-items:center;gap:6px;padding:0 8px"><svg width="10" height="10" viewBox="0 0 16 16"><polygon points="6,2 14,2 12,7 4,7" fill="#D73431"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg><span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:1.8px">LSS</span></div>
+              <div style="height:1px;background:oklch(1 0 0 / 0.12)"></div>
+              <div style="height:19px;display:flex;align-items:center;padding:0 8px;font-size:8px;color:var(--text)">Open LSS</div>
+              <div style="height:19px;display:flex;align-items:center;padding:0 8px;font-size:8px;color:#E88A86">Quit LSS</div>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">125% · row 38</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;align-items:center">
+            <div style="width:177px;background:#141418;border:1px solid oklch(1 0 0 / 0.14);border-top:4px solid var(--red)">
+              <div style="height:33px;display:flex;align-items:center;gap:7px;padding:0 9px"><svg width="12" height="12" viewBox="0 0 16 16"><polygon points="6,2 14,2 12,7 4,7" fill="#D73431"></polygon><polygon points="4,9 12,9 10,14 2,14" fill="#F1F2F4"></polygon></svg><span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:10px;letter-spacing:2.2px">LSS</span></div>
+              <div style="height:1px;background:oklch(1 0 0 / 0.12)"></div>
+              <div style="height:23px;display:flex;align-items:center;padding:0 9px;font-size:9.5px;color:var(--text)">Open LSS</div>
+              <div style="height:23px;display:flex;align-items:center;padding:0 9px;font-size:9.5px;color:#E88A86">Quit LSS</div>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)">150% · row 45</span>
+          </div>
+        </div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:12px">Everything scales except the hairline separator, which stays 1 physical px, and the cap rule, which rounds to 3 / 4 / 4 px.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== F. SYSTEM RELATIONSHIP ===================== -->
+  <div style="padding:52px 40px 0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <span style="font-family:'Anton',sans-serif;font-size:34px;color:var(--red);line-height:1">F</span>
+      <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:19px;letter-spacing:2.6px">ONE SYSTEM, REAL SCALE</span>
+    </div>
+    <div style="max-width:760px;font-size:13.5px;line-height:1.65;color:var(--muted)">Desktop at 100%: taskbar icon, tray icon in PROCESSING, the open tray menu, and the working cursor — all at true relative size.</div>
+
+    <div style="margin-top:24px;border:1px solid var(--line);background:linear-gradient(160deg,#16161B,#0D0D10);padding:0;position:relative;overflow:hidden">
+      <div style="height:330px;position:relative">
+        <div style="position:absolute;left:26px;top:24px;display:flex;flex-direction:column;align-items:center;gap:7px;width:78px">
+          <svg width="48" height="48" viewBox="0 0 256 256"><polygon points="104,44 240,44 226,108 80,148" fill="#08080A"></polygon><polygon points="52,160 198,120 172,232 36,232" fill="#08080A"></polygon><polygon points="94,34 230,34 216,98 70,138" fill="#D73431"></polygon><polygon points="42,150 188,110 162,222 26,222" fill="#F1F2F4"></polygon></svg>
+          <span style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;color:#D8D8DC;text-shadow:0 1px 2px rgba(0,0,0,.6)">LSS</span>
+        </div>
+
+        <div style="position:absolute;right:18px;bottom:64px;width:236px;background:#141418;border:1px solid oklch(1 0 0 / 0.14);border-top:3px solid var(--red);box-shadow:6px 6px 0 rgba(0,0,0,.5);padding:0 0 4px">
+          <div style="display:flex;align-items:center;gap:9px;padding:11px 12px 9px">
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="7,2 15,2 13,7 5,7" fill="#43C7DE"></polygon><polygon points="3,9 11,9 9,14 1,14" fill="#F1F2F4"></polygon></svg>
+            <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;letter-spacing:3px">LSS</span>
+            <span style="flex:1"></span>
+            <span style="font-family:'Oswald',sans-serif;font-weight:600;font-size:10.5px;letter-spacing:1.6px;color:var(--cyan)">PROCESSING</span>
+          </div>
+          <div style="padding:0 12px 10px;display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;align-items:baseline;gap:6px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:17px;color:var(--text);line-height:1">3</span>
+              <span style="font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1.4px;color:var(--dim)">/ 12 SOURCES</span>
+            </div>
+            <div style="height:4px;background:oklch(1 0 0 / 0.1);overflow:hidden;transform:skewX(-14deg)"><div style="width:38%;height:100%;background:var(--cyan)"></div></div>
+          </div>
+          <div style="height:1px;background:oklch(1 0 0 / 0.12);margin:0 0 4px"></div>
+          <div style="height:30px;display:flex;align-items:center;padding:0 12px;font-size:12.5px;color:var(--text);background:oklch(1 0 0 / 0.06);position:relative"><span style="position:absolute;left:0;top:0;bottom:0;width:3px;background:oklch(1 0 0 / 0.3)"></span>Open LSS</div>
+          <div style="height:30px;display:flex;align-items:center;padding:0 12px;font-size:12.5px;color:#E88A86">Stop after this SOURCE</div>
+        </div>
+
+        <svg width="32" height="32" viewBox="0 0 32 32" style="position:absolute;right:196px;bottom:150px;filter:drop-shadow(2px 3px 2px rgba(0,0,0,.5))">
+          <polygon points="3,3 3,23 9,18 13,28 17,26 13,16 20,16" fill="#D73431"></polygon>
+          <polygon points="1,1 1,21 7,16 11,26 15,24 11,14 18,14" fill="#F1F2F4" stroke="#101013" stroke-width="1.4"></polygon>
+          <polygon points="21,15 31,15 29,20 19,20" fill="#43C7DE" stroke="#101013" stroke-width="1"></polygon>
+          <polygon points="17,24 27,24 25,29 15,29" fill="#43C7DE" stroke="#101013" stroke-width="1"></polygon>
+        </svg>
+
+        <div style="position:absolute;left:0;right:0;bottom:0;height:48px;background:#1C1C20;border-top:1px solid oklch(1 0 0 / 0.08);display:flex;align-items:center;padding:0 14px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <svg width="24" height="24" viewBox="0 0 256 256"><polygon points="94,34 230,34 216,98 70,138" fill="#D73431"></polygon><polygon points="42,150 188,110 162,222 26,222" fill="#F1F2F4"></polygon></svg>
+            <span style="width:24px;height:24px;background:oklch(1 0 0 / 0.08)"></span>
+            <span style="width:24px;height:24px;background:oklch(1 0 0 / 0.08)"></span>
+          </div>
+          <span style="flex:1"></span>
+          <div style="display:flex;align-items:center;gap:16px">
+            <svg width="16" height="16" viewBox="0 0 16 16" opacity=".55"><polygon points="2,4 14,4 14,6 2,6" fill="#F1F2F4"></polygon><polygon points="2,8 14,8 14,10 2,10" fill="#F1F2F4"></polygon></svg>
+            <svg width="16" height="16" viewBox="0 0 16 16"><polygon points="7,2 15,2 13,7 5,7" fill="#43C7DE"></polygon><polygon points="3,9 11,9 9,14 1,14" fill="#F1F2F4"></polygon></svg>
+            <span style="font-size:11px;color:#D8D8DC">14:32</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:14px">
+      <div style="flex:1 1 220px;background:var(--panel);border-left:3px solid var(--red);padding:13px 15px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:2px;color:var(--muted)">SHARED · ALL FOUR</div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:4px">−14° lean, sharp corners, bone / ink / red triad, hard offset shadow above 48 px.</div>
+      </div>
+      <div style="flex:1 1 220px;background:var(--panel);border-left:3px solid var(--cyan);padding:13px 15px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:2px;color:var(--muted)">DELIBERATELY DIFFERENT</div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:4px">Icon keeps the cut quad; tray reduces to two bars; cursor keeps only the backing plane; menu keeps only the cap rule and the mark.</div>
+      </div>
+      <div style="flex:1 1 220px;background:var(--panel);border-left:3px solid var(--gold);padding:13px 15px">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:2px;color:var(--muted)">STATE, ONE VOCABULARY</div>
+        <div style="font-size:12.5px;line-height:1.55;color:var(--dim);margin-top:4px">Cyan is only running, gold is only saved, red is only LSS itself and danger — identical to the main UI.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== G. SPEC ===================== -->
+  <div style="padding:52px 40px 0">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <span style="font-family:'Anton',sans-serif;font-size:34px;color:var(--red);line-height:1">G</span>
+      <span style="font-family:'Oswald',sans-serif;font-weight:700;font-size:19px;letter-spacing:2.6px">PRACTICAL SPECIFICATION</span>
+    </div>
+    <div style="max-width:760px;font-size:13.5px;line-height:1.65;color:var(--muted)">Units below are icon grid units (u) on the stated grid, or device-independent px at 100% scaling. Nothing here binds the design to a toolkit.</div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:24px">
+
+      <div style="flex:1 1 330px;min-width:300px;background:var(--panel);border:1px solid var(--line)">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:2.2px;padding:12px 15px;border-bottom:1px solid var(--line)">MARK GEOMETRY</div>
+        <div style="padding:6px 15px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:2.05;color:var(--muted)">
+          <div>grid · 256 u master, redraw at 32 / 24 / 20 / 16</div>
+          <div>lean · −14° on all vertical edges</div>
+          <div>cut · 15° from horizontal, single</div>
+          <div>displacement · ±14 u (5.5% of grid)</div>
+          <div>kerf · 14 u @256 · 2 px @32/24/20/16</div>
+          <div>safe zone · 24 u inset @256 (9.4%)</div>
+          <div>optical padding · 2 px @32, 1 px @16</div>
+          <div>backing plane · +10 u, #08080A, ≥48 px only</div>
+          <div>corner radius · 0 at every size</div>
+        </div>
+      </div>
+
+      <div style="flex:1 1 330px;min-width:300px;background:var(--panel);border:1px solid var(--line)">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:2.2px;padding:12px 15px;border-bottom:1px solid var(--line)">TRAY ICON</div>
+        <div style="padding:6px 15px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:2.05;color:var(--muted)">
+          <div>sizes · 16 / 20 / 24 px, one asset each</div>
+          <div>bar height · 5 / 6 / 7 px</div>
+          <div>bar width · 8 / 11 / 12 px</div>
+          <div>lean offset · 2 / 2 / 2 px per bar</div>
+          <div>ink · #F1F2F4 dark bar · #101013 light bar</div>
+          <div>accent · cyan #43C7DE, gold #E5A82A, red #D73431</div>
+          <div>light-taskbar cyan · darken to #1E7F92</div>
+          <div>states · READY / PROCESSING / COMPLETE / HALTED</div>
+          <div>motion · 2-frame step, 1.2 s, PROCESSING only</div>
+        </div>
+      </div>
+
+      <div style="flex:1 1 330px;min-width:300px;background:var(--panel);border:1px solid var(--line)">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:2.2px;padding:12px 15px;border-bottom:1px solid var(--line)">CURSORS</div>
+        <div style="padding:6px 15px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:2.05;color:var(--muted)">
+          <div>canvas · 32×32 @100%, 40×40 @125%, 48×48 @150%</div>
+          <div>arrow · 18 × 26 px, tip angle 38°</div>
+          <div>hotspot · 0,0 — all four cursors</div>
+          <div>edge · 1.5 px #101013, miter joins</div>
+          <div>backing plane · +2,+2 px, red or ink</div>
+          <div>badge · 12 px mark, lower-right quadrant</div>
+          <div>badge kerf · 2 px click · 4 px working</div>
+          <div>custom set · default, interactive, working, drop</div>
+          <div>system defaults kept · I-beam, resize, no-drop</div>
+        </div>
+      </div>
+
+      <div style="flex:1 1 330px;min-width:300px;background:var(--panel);border:1px solid var(--line)">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:2.2px;padding:12px 15px;border-bottom:1px solid var(--line)">TRAY MENU</div>
+        <div style="padding:6px 15px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:2.05;color:var(--muted)">
+          <div>width · 236 px · min 236 · max 300</div>
+          <div>row height · 30 px (38 @125%, 45 @150%)</div>
+          <div>row padding · 12 px horizontal</div>
+          <div>cap rule · 3 px #D73431, top edge</div>
+          <div>border · 1 px oklch(1 0 0 / 0.14)</div>
+          <div>shadow · 6,6 px hard, no blur</div>
+          <div>separator · 1 physical px, 4 px margin</div>
+          <div>hover · wash 6% + 3 px bone edge bar</div>
+          <div>focus · 2 px red inset outline + red edge bar</div>
+          <div>disabled · oklch(0.45) text, no wash, JP reason</div>
+          <div>destructive · #E88A86 → fill #D73431 / ink text</div>
+        </div>
+      </div>
+
+      <div style="flex:1 1 330px;min-width:300px;background:var(--panel);border:1px solid var(--line)">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:2.2px;padding:12px 15px;border-bottom:1px solid var(--line)">TYPOGRAPHY IN THE MENU</div>
+        <div style="padding:6px 15px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:2.05;color:var(--muted)">
+          <div>brand / state tag · Oswald 600–700, 10.5–13 px, ls 1.6–3 px</div>
+          <div>completion heading · Anton 19 px, gold</div>
+          <div>row labels · IBM Plex Sans 12.5 px</div>
+          <div>counts &amp; paths · IBM Plex Mono 15–17 px</div>
+          <div>Japanese support · Noto Sans JP 700, 10.5–11 px</div>
+          <div>never mixed inside one string</div>
+          <div>minimum menu text · 10.5 px @100%</div>
+        </div>
+      </div>
+
+      <div style="flex:1 1 330px;min-width:300px;background:var(--panel);border:1px solid var(--line)">
+        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:2.2px;padding:12px 15px;border-bottom:1px solid var(--line)">STATE BEHAVIOUR</div>
+        <div style="padding:6px 15px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:2.05;color:var(--muted)">
+          <div>EMPTY · tray icon = READY form, menu omits counts</div>
+          <div>PROCESSING · Quit disabled, Stop offered</div>
+          <div>COMPLETE · SESSION COMPLETE + saved count</div>
+          <div>HALTED · Retry / Skip, no codes or model names</div>
+          <div>menu open · 0.15 s, no re-open on retarget</div>
+          <div>tray icon change · instant, no crossfade</div>
+          <div>redundant cue · shape always changes with colour</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:22px;background:oklch(1 0 0 / 0.04);border:1px dashed var(--line);padding:16px 18px">
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;letter-spacing:2.2px;color:var(--dim)">VERIFY ON HARDWARE</div>
+      <div style="font-size:13px;line-height:1.65;color:var(--muted);margin-top:6px;max-width:860px;text-wrap:pretty">Kerf survival at 16 px on a 150% display with fractional scaling; cyan accent legibility on light taskbars at low brightness; cursor edge contrast over the red START slab in motion; menu width against the longest localised row; whether the 2-frame PROCESSING step is perceived as motion or as flicker at 1.2 s.</div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showConstruction&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Diagrams&quot;},&quot;showHotspotGuides&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Diagrams&quot;},&quot;taskbar&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;both&quot;,&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;both&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Diagrams&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const tb = this.props.taskbar ?? "both";
+    return {
+      showConstruction: this.props.showConstruction ?? true,
+      showHotspotGuides: this.props.showHotspotGuides ?? true,
+      showDark: tb === "both" || tb === "dark",
+      showLight: tb === "both" || tb === "light",
+    };
+  }
+}
+</script>
+</body>
+</html>

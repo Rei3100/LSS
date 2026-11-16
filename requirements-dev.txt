@@ -1,0 +1,9 @@
+pytest
+auraloss
+pyinstaller
+# scripts/build_system_assets.py（WebView2 の DevTools Protocol でアイコン等を焼く）
+websocket-client
+# scripts/dev.py test の並列実行（ファイル単位）
+pytest-xdist
+# Local validation of development-only Strata draft schemas.
+jsonschema>=4.23,<5

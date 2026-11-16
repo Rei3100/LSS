@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "about": "Public storage rules and read-only admission defaults. Machine locations and cleanup selections come from config/storage_policy.local.json below LSS_PRIVATE_ROOT. Deletion and relocation require that overlay and nonempty protection lists.",
+  "hot_volume": "C:\\",
+  "disposable": {
+    "about": "Regenerable by definition: pytest temporary roots, Python caches, WebView2 profiles of test cases. Deleted, never carried to the HDD; receipt in local_state_root.",
+    "names": [
+      "__pycache__",
+      ".pytest_cache",
+      "EBWebView"
+    ],
+    "prefixes": [
+      "pytest-of-",
+      "pytest-"
+    ]
+  },
+  "move_to_hdd": false,
+  "scratch_runs": {
+    "about": "Finished acceptance and post-deploy runs are deleted on the SSD every hourly pass once idle: copied packages, models, media, audio and databases go; JSON/Markdown/log Evidence up to keep_max_mb stays in place. Links inside a run are never entered.",
+    "globs": [],
+    "min_idle_hours": 2,
+    "keep_suffixes": [
+      ".json",
+      ".jsonl",
+      ".md",
+      ".txt",
+      ".log",
+      ".csv",
+      ".tsv"
+    ],
+    "keep_max_mb": 20
+  },
+  "unused_local_models": {
+    "about": "Delete only idle folders explicitly marked retired with complete lss-model.json provenance and verified per-file SHA256, no saved profile/preset, tracked script/config or process reference, and no keep entry. UNKNOWN stays with a reason in receipts/status. Nested .cache is ordinary content requiring the same provenance; it is never implicitly disposable. Never archive to HDD.",
+    "roots": [],
+    "keep": [
+      "coder",
+      "qwen36"
+    ],
+    "min_idle_hours": 2,
+    "profile_dirs": []
+  },
+  "start_free_gb": 60,
+  "target_free_gb": 100,
+  "scheduled_cadence": {
+    "ssd_every_hours": 1,
+    "hdd_every_hours": 24
+  },
+  "storage_budget": {
+    "about": "Development job admission: free GB minus outstanding peak-growth estimates must cover floor_gb plus the new estimate. Estimates remain reserved until child-tree exit; default_job_gb is a provisional conservative baseline, not a measured bound. Larger jobs declare --storage-gb or queue storage_gb. Active lexical/resolved paths protect movers; only explicit archive_paths request completion archival.",
+    "floor_gb": 30,
+    "default_job_gb": 5
+  },
+  "min_idle_hours": 2,
+  "pressure_free_gb": 40,
+  "pressure_min_idle_hours": 1,
+  "worktree_idle_hours": 6,
+  "dirty_worktree_idle_hours": 48,
+  "dirty_worktree_about": "A worktree with uncommitted or untracked work is retired once nothing in it has been written for this many hours: every untracked file, every modified tracked file and the full diff against HEAD (UNCOMMITTED.patch) are archived and verified first, the branch is kept.",
+  "retire_commit_hours": 24,
+  "run_only_while_developing": {
+    "about": "Legacy auto admission only. The OS scheduled entry runs without an agent; idle ages, process and storage-reservation guards still protect active work.",
+    "processes": [
+      "claude.exe",
+      "codex.exe"
+    ],
+    "recent_git_hours": 3
+  },
+  "stage": {
+    "about": "Verified read-only reference cache on the configured SSD, with LRU eviction and a 120 GB cap. Capacity checks use the resolved cache volume. Eviction and cache replacement require the machine overlay; permanent model stores are not cache entries.",
+    "max_gb": 120,
+    "evict_first_below_free_gb": 120,
+    "min_free_after_gb": 80,
+    "grace_minutes": 10
+  },
+  "worktree_promote": {
+    "about": "storage_tiers.py promote moves a worktree to the machine-configured SSD root after a verified copy, repairs git registration and leaves a junction at the old path. The free-space floor and active-commit age apply to the configured volume.",
+    "min_free_after_gb": 80,
+    "active_commit_hours": 48,
+    "regenerable_dirs": [
+      "__pycache__",
+      ".pytest_cache",
+      "EBWebView"
+    ],
+    "regenerable_dir_prefixes": [
+      "pytest-of-"
+    ]
+  },
+  "min_candidate_gb": 0.2,
+  "candidates": [],
+  "never": [
+    ".venv",
+    ".models",
+    ".providers",
+    ".git",
+    ".state/web"
+  ],
+  "delete_package_copies": true,
+  "protected_packages_about": "Package copies (LSS.exe + _internal) are rebuilt from their commit and deleted, except these, every package path named in .state/releases/**/*product*.json, and builds of FROZEN-* candidates without a closing verdict file.",
+  "protected_packages": [],
+  "frozen_roots": [],
+  "model_stores_about": "Canonical model stores stay. A stray model is a duplicate only after matching SHA256 with a canonical original; filename and size only narrow candidates.",
+  "model_stores": [],
+  "superseded_models_about": "In a canonical model store on the SSD, an acquisition revision `<name>-r<N>` is superseded once a later revision of the same name holds a weight file and no staging leftover; an abandoned download (`.staging*` directory or `*.part` file) is a leftover. Both are re-downloadable: deleted when idle and named by no running process, with a receipt.",
+  "superseded_models": true,
+  "temp_orphans": [],
+  "user_cleanups_about": "Machine-selected regenerable leftovers are removed at their configured cadence through tool-owned commands or idle-age rules. Public defaults select nothing. Cleanup preserves user data, settings and package repair sources; NuGet global-packages is never a cleanup target.",
+  "user_cleanups": [],
+  "regenerable_worktree_tops": [
+    "dist",
+    "build",
+    ".models",
+    ".venv"
+  ],
+  "prune_roots_about": "HDD development roots are pruned weekly. Metadata selects regenerable directories; candidate model copies require SHA256 verification before deletion.",
+  "prune_roots": [],
+  "prune_every_hours": 168,
+  "dedupe_min_mb": 64,
+  "scheduler_only": true,
+  "hot_directory_names": [
+    ".venv",
+    "venv",
+    ".models",
+    ".providers",
+    "node_modules"
+  ],
+  "dependency_inventory": null,
+  "retention": {
+    "every_hours": 24,
+    "validation_idle_hours": 72,
+    "legacy_idle_hours": 336,
+    "about": "Scheduler retires dependency-checked old generated validation stems, preserves JSON/hash receipts, and archives verified legacy pre-run.json payloads with junctions under the Product owner lock. Current/held modern runs stay."
+  },
+  "volume_limits": {},
+  "layout": {
+    "minimum_free_gb": 100,
+    "moves": [],
+    "scopes": [],
+    "ensure": [],
+    "prepare_files": [],
+    "enabled": false,
+    "worktree_outputs": false
+  },
+  "dependency_inventory_about": "Disabled in scheduled cleanup: machine-wide dependency inspection does not reclaim bytes and needlessly visits unrelated applications. Explicit read-only inventory remains available; historical errors are retained."
+}

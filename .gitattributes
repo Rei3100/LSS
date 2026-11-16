@@ -1,0 +1,85 @@
+# 署名検証の試験資料はバイト列そのものを保つ（改行変換で署名が壊れる）。
+tests/fixtures/** -text
+autonomy-evidence/*.json -text
+autonomy-evidence/*.xml -text
+autonomy-evidence/audio/*.flac binary
+lss/bgm/memory_refresh.py -text
+# 固定計画・完了記録・内容hash付き履歴もバイト列を保持する。
+.state/validation/**/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Machine Evidence preserves exact copied bytes, including Windows JSON newlines.
+quality-evidence/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+quality-evidence/*.xml -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+quality-evidence/*.log -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+natural-audio-evidence/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Preserve Windows bytes in the packaged-backfill machine receipts and treat CR as line ending in diffs.
+source-role-evidence/package/packaged-backfill/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# 実行環境ID（runtime_id）はprovider配布物とadapterの内容hashを含む。改行変換で
+# bytesが変わると同じ処理の過去の成果を再利用できなくなるので、変換しない。
+vendor/msst/** -text
+lss/harness/infer.py -text
+vendor/sfc_locoformer/** -text
+lss/bgm/sfc_analysis.py -text
+# 単話BGM候補の中身を決める実装。bytesがRecipe IDへ入るので、開発ツリーと配備物で改行を変えない。
+lss/bgm/episode_cues.py -text
+lss/bgm/cue_boundaries.py -text
+lss/bgm/stereo_continuity.py -text
+lss/bgm/music_corroboration.py -text
+lss/bgm/rendered_content.py -text
+lss/bgm/candidate_store.py -text
+lss/bgm/second_pass.py -text
+continuity-evidence/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+continuity-evidence/*.xml -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+continuity-evidence/*.log -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+lss/bgm/vocal_recovery.py -text
+# 歌唱回収の4分類（adapterと同梱実装のbytesが4分類の版に入る）。
+vendor/facing_the_music/** -text
+lss/bgm/four_stem_analysis.py -text
+# 意味判定と公開cueの組み立て（bytesがRecipeへ入る）、タグ付けのadapter（タグ付けの版に入る）。
+lss/bgm/cue_semantics.py -text
+lss/bgm/cue_publication.py -text
+lss/bgm/cue_representation.py -text
+lss/bgm/event_tagging.py -text
+# 対応領域（公開の判断）と公開前の完全性の測定（bytesがRecipeへ入る）。
+lss/bgm/cue_scope.py -text
+lss/bgm/supported_scope.py -text
+lss/bgm/cue_readiness.py -text
+# v12: Recipe IDは改行に依存しない内容hashだが、配備物と開発ツリーのbytesも揃える。
+lss/bgm/dialogue_residual.py -text
+lss/bgm/published_duplicates.py -text
+lss/bgm/current_best.py -text
+# 参照録音との関係の判定と、その材料の録音照合・和声の対応（内容hashが参照の方針の識別子へ入る）。
+lss/bgm/reference_relations.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+lss/bgm/identity.py -text
+lss/bgm/versions.py -text
+# 欲しい音（言葉で指定した音）の分離。同梱実装（upstreamのbytesのまま）とadapterのbytesが
+# 実行環境ID・抽出の版へ入るので、改行を変換しない。
+vendor/sam_audio/** -text
+lss/sound/sam_audio.py -text
+lss/sound/t5_text.py -text
+lss/bgm/recording_support.py -text
+lss/bgm/cue_formation.py -text
+boundary-evidence/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+boundary-evidence/*.xml -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+boundary-evidence/*.log -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+tests/test_application_bgm_reference_relations.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+lss/bgm/reference_reconstruction.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+lss/bgm/reference_store.py -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+lss/bgm/occurrence_support.py -text
+lss/bgm/release_availability.py -text
+lss/bgm/release_availability.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+precision-evidence/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+precision-evidence/*.xml -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+precision-evidence/*.log -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+component-evidence/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+component-evidence/*.xml -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+component-evidence/*.png -text
+removal-evidence/**/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+removal-evidence/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+removal-evidence/*.xml -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# Git hooks run under sh: LF only.
+# Nested machine Evidence preserves copied bytes and permits Windows line endings.
+release-evidence/**/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+release-evidence/**/*.jsonl -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+release-evidence/**/*.log -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+scripts/githooks/* text eol=lf

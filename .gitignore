@@ -1,0 +1,24 @@
+__pycache__/
+*.pyc
+.gate-tests-*/
+.state-guard-tests-*/
+gates/migration-manifest.json.tmp
+.venv/
+bin/
+.models
+vendor/msst/models/
+
+# Claude Design runtime: kept locally for the UI build; held from publication until its redistribution terms are confirmed.
+/design/reference/support.js
+
+# Generated output, local caches and state: never part of the public tree.
+dist/
+build/
+.cache/
+.state/
+.providers/
+/.scene-native/
+/.worktrees/
+/TestCorpus/
+ui_state.json
+/.claude/settings.local.json

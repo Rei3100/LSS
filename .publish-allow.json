@@ -1,0 +1,1972 @@
+{
+  "schema_version": 1,
+  "include": [
+    "docs/dev/CI.md",
+    ".github/*.json",
+    ".github/*.yml",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "README.md",
+    "RIGHTS.md",
+    "THIRD_PARTY_NOTICES.md",
+    "HANDOFF.md",
+    "VERSION",
+    ".gitignore",
+    ".gitattributes",
+    "pytest.ini",
+    "conftest.py",
+    "LSS.pyw",
+    "lss_gui.py",
+    "LSS.spec",
+    "build.ps1",
+    "setup-venv.ps1",
+    "deploy-to-freesoft.ps1",
+    "requirements*.txt",
+    "lss/*.py",
+    "lss/*.ps1",
+    "lss/ui/web/*.js",
+    "lss/ui/web/*.html",
+    "tests/*.py",
+    "scripts/*.py",
+    "scripts/*.ps1",
+    "scripts/githooks/*",
+    "gates/*.py",
+    "gates/README.md",
+    ".githooks/*",
+    ".agents/skills/*/SKILL.md",
+    ".claude/skills/*/SKILL.md",
+    ".github/workflows/*.yml",
+    "scripts/hooks/cookie_privacy_guard.py",
+    "scripts/hooks/shell_scan.py",
+    "scripts/hooks/RULES.json",
+    "tests/test_cookie_privacy_guard.py",
+    ".claude/settings.json",
+    ".codex/hooks.json",
+    ".codex/config.toml",
+    ".codex/rules/lss.rules",
+    "gates/*.cmd",
+    "gates/*.ps1",
+    "gates/*.md",
+    "tests/gates/*.py",
+    "scripts/storage_policy.json",
+    "scripts/local_llm_models.json"
+  ],
+  "deny": [
+    ".git/*",
+    ".state/*",
+    "*-evidence/*",
+    "ep001-truth/*",
+    "FROZEN-*/*",
+    "ledger/test_set.tsv",
+    "ledger/*.bak",
+    "ledger/research_tests.json",
+    "ledger/acquisition_services.tsv",
+    "release-candidate/*",
+    "manual-parity/*",
+    "docs/current/*",
+    "docs/validation/*",
+    "scripts/retired/*",
+    "tests/fixtures/*",
+    "vendor/msst/gui/*",
+    "bin/*",
+    ".env",
+    ".env.*",
+    "*/.env",
+    "*/.env.*",
+    "auth.json",
+    "*/auth.json",
+    "*credential*",
+    "*.log",
+    "*.jsonl",
+    "*.xml",
+    "*cookie*.txt",
+    "*cookie*.json",
+    "*cookie*.db",
+    "*cookie*.sqlite*",
+    "*cookie*.dat",
+    "*cookie*.jar",
+    "*cookie*/*",
+    "*cookies",
+    "*cookie"
+  ],
+  "max_blob_bytes": 8388608,
+  "reviewed_code_paths": [
+    "docs/dev/CI.md",
+    "tests/test_s1_ci.py",
+    "tests/test_env_check_user_layer.py",
+    ".github/workflows/ci.yml",
+    ".github/review-policy.json",
+    ".github/change-classes.yml",
+    "gates/review_gate.py",
+    "scripts/whatsnext.py",
+    "scripts/env_check.py",
+    "scripts/dev_state.py",
+    "tests/test_dev_state_root.py",
+    "scripts/ci.py",
+    "scripts/change_class.py",
+    ".githooks/pre-commit",
+    ".githooks/pre-push",
+    "gates/README.md",
+    "gates/migrate_to_public.py",
+    "gates/public_guard.py",
+    "tests/gates/gate_support.py",
+    "tests/gates/test_migrate_to_public.py",
+    "tests/gates/test_guard_scale.py",
+    ".gitignore",
+    "tests/gates/test_public_guard.py",
+    "lss/bgm/__init__.py",
+    "lss/bgm/activity.py",
+    "lss/bgm/blend.py",
+    "lss/bgm/candidate_store.py",
+    "lss/bgm/content_guard.py",
+    "lss/bgm/cue_boundaries.py",
+    "lss/bgm/cue_extent.py",
+    "lss/bgm/cue_memory.py",
+    "lss/bgm/cue_publication.py",
+    "lss/bgm/cue_readiness.py",
+    "lss/bgm/cue_routing.py",
+    "lss/bgm/cue_segmentation.py",
+    "lss/bgm/cue_selection.py",
+    "lss/bgm/cue_split.py",
+    "lss/bgm/current_best_lineage.py",
+    "lss/bgm/dominance_routing.py",
+    "lss/bgm/effects_recovery.py",
+    "lss/bgm/episode_cues.py",
+    "lss/bgm/episode_usage.py",
+    "lss/bgm/four_stem_analysis.py",
+    "lss/bgm/four_stem_residual.py",
+    "lss/bgm/frame_text.py",
+    "lss/bgm/gpu_execution.py",
+    "lss/bgm/held_results.py",
+    "lss/bgm/identity.py",
+    "lss/bgm/identity_candidates.py",
+    "lss/bgm/identity_joins.py",
+    "lss/bgm/identity_run.py",
+    "lss/bgm/inference_variants.py",
+    "lss/bgm/listening.py",
+    "lss/bgm/memory_refresh.py",
+    "lss/bgm/memory_support.py",
+    "lss/bgm/music_corroboration.py",
+    "lss/bgm/music_facts.py",
+    "lss/bgm/music_gap.py",
+    "lss/bgm/occurrence_contrast.py",
+    "lss/bgm/occurrence_stack.py",
+    "lss/bgm/occurrence_support.py",
+    "lss/bgm/overlap.py",
+    "lss/bgm/parent_preservation.py",
+    "lss/bgm/provider_padding.py",
+    "lss/bgm/provisional_naming.py",
+    "lss/bgm/published_duplicates.py",
+    "lss/bgm/recording_recovery.py",
+    "lss/bgm/recording_support.py",
+    "lss/bgm/recurring_extent.py",
+    "lss/bgm/reference_alignment.py",
+    "lss/bgm/reference_repetition.py",
+    "lss/bgm/reference_residual.py",
+    "lss/bgm/reference_stereo.py",
+    "lss/bgm/reference_store.py",
+    "lss/bgm/references.py",
+    "lss/bgm/refinement.py",
+    "lss/bgm/release_availability.py",
+    "lss/bgm/rendered_content.py",
+    "lss/bgm/role_policy.py",
+    "lss/bgm/routing.py",
+    "lss/bgm/scene_execution.py",
+    "lss/bgm/scene_name_spellings.py",
+    "lss/bgm/scene_runtime.py",
+    "lss/bgm/scene_stop.py",
+    "lss/bgm/second_pass.py",
+    "lss/bgm/self_recurrence.py",
+    "lss/bgm/series_cue_run.py",
+    "lss/bgm/series_identity.py",
+    "lss/bgm/singing_share.py",
+    "lss/bgm/source_visual.py",
+    "lss/bgm/source_visual_backfill.py",
+    "lss/bgm/source_visual_job.py",
+    "lss/bgm/spectral_features.py",
+    "lss/bgm/stereo_continuity.py",
+    "lss/bgm/supported_scope.py",
+    "lss/bgm/versions.py",
+    "lss/bgm/vocal_recovery.py",
+    "lss/bgm/windows_frame_text.ps1",
+    "lss/bgm/work_credits.py",
+    "lss/bgm/work_info.py",
+    "lss/bgm/write_targets.py",
+    "lss/__init__.py",
+    "lss/acquisition/__init__.py",
+    "lss/acquisition/courtesy.py",
+    "lss/acquisition/js_runtime.py",
+    "lss/acquisition/openpgp.py",
+    "lss/acquisition/provider.py",
+    "lss/acquisition/service.py",
+    "lss/acquisition/store.py",
+    "lss/acquisition/ytdlp.py",
+    "lss/application.py",
+    "lss/assets/__init__.py",
+    "lss/assets/backup.py",
+    "lss/assets/catalog.py",
+    "lss/assets/duplicates.py",
+    "lss/assets/held_catalog.py",
+    "lss/assets/history.py",
+    "lss/assets/naming.py",
+    "lss/assets/relocate.py",
+    "lss/assets/reprocess.py",
+    "lss/assets/restore_entry.py",
+    "lss/core/__init__.py",
+    "lss/core/audio_identity.py",
+    "lss/core/audio_input.py",
+    "lss/core/audio_timeline.py",
+    "lss/core/catalog.py",
+    "lss/core/client.py",
+    "lss/core/flac_frames.py",
+    "lss/core/gpu_lease.py",
+    "lss/core/input_order.py",
+    "lss/core/jobs.py",
+    "lss/core/media_metadata.py",
+    "lss/core/model_config.py",
+    "lss/core/models_store.py",
+    "lss/core/presence.py",
+    "lss/core/protocol.py",
+    "lss/core/quitting.py",
+    "lss/core/recipe.py",
+    "lss/core/recipe_registry.py",
+    "lss/core/runtime.py",
+    "lss/core/scratch.py",
+    "lss/core/session.py",
+    "lss/core/storage.py",
+    "lss/core/worker.py",
+    "lss/harness/__init__.py",
+    "lss/harness/adopt.py",
+    "lss/harness/infer.py",
+    "lss/harness/metrics.py",
+    "lss/harness/tsv_io.py",
+    "lss/harness/vram.py",
+    "lss/metadata/__init__.py",
+    "lss/metadata/fetch.py",
+    "lss/metadata/library.py",
+    "lss/metadata/model.py",
+    "lss/metadata/part_envelopes.py",
+    "lss/metadata/project.py",
+    "lss/metadata/resolve.py",
+    "lss/metadata/series_album.py",
+    "lss/metadata/sources/__init__.py",
+    "lss/metadata/sources/itunes.py",
+    "lss/metadata/sources/musicbrainz.py",
+    "lss/metadata/sources/vgmdb.py",
+    "lss/metadata/sources/wikipedia.py",
+    "lss/metadata/version_parts.py",
+    "lss/output/__init__.py",
+    "lss/output/filenames.py",
+    "lss/output/finalizer.py",
+    "lss/output/result_report.py",
+    "lss/output/results.py",
+    "lss/output/scan.py",
+    "lss/output/writer.py",
+    "lss/paths.py",
+    "lss/separation/__init__.py",
+    "lss/separation/intro_cleanup.py",
+    "lss/separation/level_recovery.py",
+    "lss/separation/observation_audio.py",
+    "lss/separation/regions.py",
+    "lss/separation/scene_balance.py",
+    "lss/separation/selective.py",
+    "lss/separation/stem_combination.py",
+    "lss/separation/stem_semantics.py",
+    "lss/sound/__init__.py",
+    "lss/sound/interpret.py",
+    "lss/sound/job.py",
+    "lss/sound/lexicon.py",
+    "lss/sound/plan.py",
+    "lss/sound/safetensors_file.py",
+    "lss/sound/verify.py",
+    "lss/ui/__init__.py",
+    "lss/ui/app.py",
+    "lss/ui/completion.py",
+    "lss/ui/contract.py",
+    "lss/ui/media.py",
+    "lss/ui/presentation.py",
+    "lss/ui/state.py",
+    "lss/ui/system_assets.py",
+    "lss/ui/waveform.py",
+    "lss/ui/web/__init__.py",
+    "lss/ui/web/bridge.js",
+    "lss/ui/web/host.py",
+    "lss/ui/web/page.py",
+    "lss/ui/web/session.py",
+    "lss/ui/web/tray.py",
+    "lss/ui/web/tray_menu.html",
+    "lss/validation/__init__.py",
+    "lss/validation/activity_evidence.py",
+    "lss/validation/activity_quality.py",
+    "lss/validation/bandit_inference_cache.py",
+    "lss/validation/bgm_baseline.py",
+    "lss/validation/bgm_corpus.py",
+    "lss/validation/controlled_mix.py",
+    "lss/validation/episode_discovery.py",
+    "lss/validation/facing_music.py",
+    "lss/validation/held_bgm_alternatives.py",
+    "lss/validation/instrumental_quality.py",
+    "lss/validation/instrumental_scope.py",
+    "lss/validation/occurrence_metrics.py",
+    "lss/validation/recurrence_ground_truth.py",
+    "lss/validation/reference_residual_episode.py",
+    "lss/validation/routed_episode_discovery.py",
+    "lss/validation/sample_alignment.py",
+    "lss/validation/song_component_comparison.py",
+    "lss/validation/stereo_comparison.py",
+    "lss/validation/stereo_quality.py",
+    "lss/validation/variant_receipt.py",
+    ".agents/skills/lss-dev-loop/SKILL.md",
+    ".agents/skills/lss-release/SKILL.md",
+    ".claude/skills/lss-dev-loop/SKILL.md",
+    ".claude/skills/lss-local-draft/SKILL.md",
+    ".claude/skills/lss-release/SKILL.md",
+    ".gitattributes",
+    "ARCHITECTURE.md",
+    "LSS.pyw",
+    "LSS.spec",
+    "VERSION",
+    "build.ps1",
+    "conftest.py",
+    "lss_gui.py",
+    "pytest.ini",
+    "requirements-dev.txt",
+    "requirements-scene.txt",
+    "requirements.txt",
+    "setup-venv.ps1",
+    "lss/bgm/collection_metadata.py",
+    "lss/bgm/cue_formation.py",
+    "lss/bgm/cue_representation.py",
+    "lss/bgm/cue_scope.py",
+    "lss/bgm/cue_semantics.py",
+    "lss/bgm/current_best.py",
+    "lss/bgm/dialogue_residual.py",
+    "lss/bgm/event_tagging.py",
+    "lss/bgm/music_description.py",
+    "lss/bgm/occurrence_quality.py",
+    "lss/bgm/recurrence_asset.py",
+    "lss/bgm/reference_acquisition.py",
+    "lss/bgm/reference_reconstruction.py",
+    "lss/bgm/reference_relations.py",
+    "lss/bgm/scene_job.py",
+    "lss/bgm/scene_models.py",
+    "lss/bgm/scene_native.py",
+    "lss/bgm/series_cues.py",
+    "lss/bgm/series_reuse.py",
+    "lss/bgm/sfc_analysis.py",
+    "lss/bgm/short_cues.py",
+    "lss/bgm/stretch_match.py",
+    "lss/bgm/theme_songs.py",
+    "lss/harness/filters.py",
+    "lss/output/tags.py",
+    "lss/sound/audioset.py",
+    "lss/sound/audioset_relations.py",
+    "lss/sound/extract.py",
+    "lss/sound/intent.py",
+    "lss/sound/pe_frame.py",
+    "lss/sound/sam_audio.py",
+    "lss/sound/t5_text.py",
+    "lss/sound/translate.py",
+    "lss/sound/xling.py",
+    "lss/bgm/scene_names.py",
+    "lss/acquisition/login_profile.py",
+    "lss/harness/fetch.py",
+    "THIRD_PARTY_NOTICES.md",
+    ".agents/skills/lss-local-draft/SKILL.md",
+    "AGENTS.md",
+    "deploy-to-freesoft.ps1",
+    "scripts/acquire_audio_probe.py",
+    "scripts/acquire_memory_reranker.py",
+    "scripts/agent_usage.py",
+    "scripts/audit_bgm_routing_stereo.py",
+    "scripts/batch.py",
+    "scripts/bgm_labeling.py",
+    "scripts/build_candidate_offdrive.ps1",
+    "scripts/check_packaged_scene_bridge.py",
+    "scripts/check_runtime_sources.py",
+    "scripts/codex_focus.py",
+    "scripts/codex_hook_status.py",
+    "scripts/codex_pacing.py",
+    "scripts/compare_bgm_quality.py",
+    "scripts/describe_instrumental_scope.py",
+    "scripts/dev.py",
+    "scripts/dev_allowance_cadence.py",
+    "scripts/dev_allowance_meter.py",
+    "scripts/dev_full_source_followup.py",
+    "scripts/dev_hot_paths.py",
+    "scripts/dev_paced_probe_status.py",
+    "scripts/dev_quiet_mode.py",
+    "scripts/dev_source_frame_evidence.py",
+    "scripts/devmem_rerank.py",
+    "scripts/discover_bgm_activity.py",
+    "scripts/disk_cleanup.py",
+    "scripts/evaluate_bgm_discovery.py",
+    "scripts/freeze_candidate.py",
+    "scripts/git_objects.py",
+    "scripts/githooks/_python.sh",
+    "scripts/githooks/commit-msg",
+    "scripts/githooks/commit_msg.py",
+    "scripts/githooks/pre-commit",
+    "scripts/gpu_run.py",
+    "scripts/hdd_lanes.ps1",
+    "scripts/hidden_run.py",
+    "scripts/infer_bgm_bandit.py",
+    "scripts/infer_bgm_bandit_resumable.py",
+    "scripts/infer_bgm_bandit_short.py",
+    "scripts/infer_bgm_sfc.py",
+    "scripts/lanes.py",
+    "scripts/list_bgm_held_candidates.py",
+    "scripts/list_reprocess_candidates.py",
+    "scripts/local_ai_aider_trial.py",
+    "scripts/local_ai_audio_repair.py",
+    "scripts/local_ai_clap_trial.py",
+    "scripts/local_ai_cpu_trial.py",
+    "scripts/local_ai_memory_dense_pool_trial.py",
+    "scripts/local_ai_memory_minilm_trial.py",
+    "scripts/local_ai_memory_qwen_cpu_trial.py",
+    "scripts/local_ai_memory_reembed_trial.py",
+    "scripts/local_ai_memory_semantic_trial.py",
+    "scripts/local_ai_output.py",
+    "scripts/local_ai_product_replay.py",
+    "scripts/local_ai_queue.py",
+    "scripts/local_ai_replay_r2.py",
+    "scripts/local_ai_storage.py",
+    "scripts/name_bgm_assets.py",
+    "scripts/prepare_analysis_resample.py",
+    "scripts/prepare_japanese_vad_controls.ps1",
+    "scripts/prepare_resumable_bgm_variant_comparison.py",
+    "scripts/probe_bgm_candidate_content.py",
+    "scripts/probe_bgm_cue_extent_product.py",
+    "scripts/probe_bgm_cue_segmentation.py",
+    "scripts/probe_bgm_cue_sized_children.py",
+    "scripts/probe_bgm_disagreement_routing.py",
+    "scripts/probe_bgm_episode_boundary.py",
+    "scripts/probe_bgm_episode_singing.py",
+    "scripts/probe_bgm_facing_music.py",
+    "scripts/probe_bgm_four_stem_residual.py",
+    "scripts/probe_bgm_four_stem_residual_balanced.py",
+    "scripts/probe_bgm_four_stem_residual_quarter.py",
+    "scripts/probe_bgm_identity.py",
+    "scripts/probe_bgm_identity_boundary.py",
+    "scripts/probe_bgm_identity_joins.py",
+    "scripts/probe_bgm_join_dip.py",
+    "scripts/probe_bgm_narrowing_coverage.py",
+    "scripts/probe_bgm_occurrence_contrast.py",
+    "scripts/probe_bgm_occurrence_stack.py",
+    "scripts/probe_bgm_recurring_extent.py",
+    "scripts/probe_bgm_reference_alignment.py",
+    "scripts/probe_bgm_reference_master_variants.py",
+    "scripts/probe_bgm_reference_repetition.py",
+    "scripts/probe_bgm_reference_residual.py",
+    "scripts/probe_bgm_region_alone.py",
+    "scripts/probe_bgm_repeat_recall.py",
+    "scripts/probe_bgm_role_policy_controlled.py",
+    "scripts/probe_bgm_role_policy_episode.py",
+    "scripts/probe_bgm_role_rule.py",
+    "scripts/probe_bgm_self_recurrence.py",
+    "scripts/probe_bgm_singing_band.py",
+    "scripts/probe_bgm_singing_share.py",
+    "scripts/probe_bgm_song_preservation.py",
+    "scripts/probe_instrumental_guarded_ensemble.py",
+    "scripts/probe_instrumental_level_recovery.py",
+    "scripts/probe_instrumental_model.py",
+    "scripts/probe_instrumental_model_gap.py",
+    "scripts/probe_instrumental_repeat.py",
+    "scripts/probe_instrumental_scene_balance.py",
+    "scripts/probe_instrumental_spatial.py",
+    "scripts/probe_instrumental_stem_complement.py",
+    "scripts/probe_instrumental_symmetry.py",
+    "scripts/probe_instrumental_wrong_stem_share.py",
+    "scripts/probe_native_source_cached.py",
+    "scripts/probe_scene_balance_real.py",
+    "scripts/probe_scene_balance_songs.py",
+    "scripts/process_state.py",
+    "scripts/quiet_cpu.py",
+    "scripts/quiet_cpu_rate_probe.py",
+    "scripts/quiet_dev_checks.py",
+    "scripts/record_audio_identity.py",
+    "scripts/relocate_verified.ps1",
+    "scripts/research_tests.py",
+    "scripts/run_bgm_baseline.py",
+    "scripts/run_bgm_dominance_probe.py",
+    "scripts/run_bgm_spatial_probe.py",
+    "scripts/run_local_ai_aider_trial.py",
+    "scripts/run_natural_audio_trial.py",
+    "scripts/score_local_ai_cpu_trial.py",
+    "scripts/state_installed.py",
+    "scripts/state_status.py",
+    "scripts/storage_budget.py",
+    "scripts/storage_inventory.py",
+    "scripts/storage_layout.py",
+    "scripts/storage_paths.py",
+    "scripts/storage_retention.py",
+    "scripts/strata_dev.py",
+    "scripts/strata_evidence.py",
+    "scripts/strata_ledger.py",
+    "scripts/strata_pin.py",
+    "scripts/strata_process_job.py",
+    "scripts/strata_queue.py",
+    "scripts/strata_task.py",
+    "scripts/strata_trial_score.py",
+    "scripts/strata_trials.py",
+    "scripts/strata_update.py",
+    "scripts/summarize_local_ai_repairs.py",
+    "scripts/technology.py",
+    "scripts/validate_instrumental_controls.py",
+    "scripts/validate_product_scratch_lifecycle.py",
+    "scripts/verify_env.py",
+    "scripts/build_system_assets.py",
+    "scripts/devmem.py",
+    "scripts/dsh_local.py",
+    "scripts/hooks/shell_scan.py",
+    "scripts/installed_episode_run.py",
+    "scripts/local_ai_bench.py",
+    "scripts/local_llm.py",
+    "scripts/post_deploy_bgm_check.py",
+    "scripts/prepare_bgm_quality.py",
+    "scripts/probe_bgm_released_stack_truth.py",
+    "scripts/probe_bgm_single_occurrence_bench.py",
+    "scripts/probe_bgm_stack_separator_order.py",
+    "scripts/reference_sets.py",
+    "scripts/release.ps1",
+    "scripts/score_models.py",
+    "scripts/stage.py",
+    "scripts/storage_tiers.py",
+    "tests/test_state_guard.py",
+    "tests/local_tests.py",
+    "tests/__init__.py",
+    "tests/deployed_ui_driver.py",
+    "tests/reference_recall_bench.py",
+    "tests/release_receipts.py",
+    "tests/test_acquire_audio_probe.py",
+    "tests/test_acquisition_gpu.py",
+    "tests/test_acquisition_js_runtime.py",
+    "tests/test_acquisition_ledger_read_safety.py",
+    "tests/test_acquisition_provider.py",
+    "tests/test_activity_quality.py",
+    "tests/test_adopt.py",
+    "tests/test_agent_usage.py",
+    "tests/test_analysis_receipt_claims_independent.py",
+    "tests/test_analysis_scratch_ownership_independent.py",
+    "tests/test_application.py",
+    "tests/test_application_acquisition.py",
+    "tests/test_application_bgm_alternatives.py",
+    "tests/test_application_bgm_candidates.py",
+    "tests/test_application_bgm_current_best.py",
+    "tests/test_application_bgm_evidence_retention.py",
+    "tests/test_application_bgm_history.py",
+    "tests/test_application_bgm_identity.py",
+    "tests/test_application_bgm_late_references.py",
+    "tests/test_application_bgm_memory_refresh.py",
+    "tests/test_application_bgm_outcome_recovery.py",
+    "tests/test_application_bgm_reference_relations.py",
+    "tests/test_application_bgm_reference_residual.py",
+    "tests/test_application_bgm_scope_review.py",
+    "tests/test_application_bgm_series.py",
+    "tests/test_application_bgm_short.py",
+    "tests/test_application_bgm_stereo_continuity.py",
+    "tests/test_application_bgm_visual_backfill.py",
+    "tests/test_asset_backup_integrity.py",
+    "tests/test_asset_catalog.py",
+    "tests/test_asset_catalog_identity_safety.py",
+    "tests/test_asset_catalog_ledger_failure.py",
+    "tests/test_asset_catalog_read_only.py",
+    "tests/test_asset_catalog_rebuild_safety.py",
+    "tests/test_asset_catalog_recurring_coverage.py",
+    "tests/test_asset_duplicates.py",
+    "tests/test_asset_history.py",
+    "tests/test_asset_history_zero_validation.py",
+    "tests/test_asset_ledger_read_failure.py",
+    "tests/test_asset_moved_reprocess_sources.py",
+    "tests/test_asset_processing_provenance.py",
+    "tests/test_asset_relocate.py",
+    "tests/test_asset_relocate_metadata.py",
+    "tests/test_asset_relocation_record_safety.py",
+    "tests/test_asset_state_migration.py",
+    "tests/test_audio_identity.py",
+    "tests/test_audio_input.py",
+    "tests/test_audio_timeline.py",
+    "tests/test_backend_acceptance_gpu.py",
+    "tests/test_bandit_inference_cache.py",
+    "tests/test_batch_runner.py",
+    "tests/test_bgm_activity.py",
+    "tests/test_bgm_baseline.py",
+    "tests/test_bgm_blend.py",
+    "tests/test_bgm_candidate_identity_states.py",
+    "tests/test_bgm_candidate_store.py",
+    "tests/test_bgm_collection_numbering.py",
+    "tests/test_bgm_component_heads.py",
+    "tests/test_bgm_content_guard.py",
+    "tests/test_bgm_corpus.py",
+    "tests/test_bgm_cpu_hotspots.py",
+    "tests/test_bgm_cue_extent.py",
+    "tests/test_bgm_cue_memory.py",
+    "tests/test_bgm_cue_publication.py",
+    "tests/test_bgm_cue_readiness.py",
+    "tests/test_bgm_cue_representation.py",
+    "tests/test_bgm_cue_routing.py",
+    "tests/test_bgm_cue_scope.py",
+    "tests/test_bgm_cue_segmentation.py",
+    "tests/test_bgm_cue_selection.py",
+    "tests/test_bgm_cue_semantics.py",
+    "tests/test_bgm_cue_split.py",
+    "tests/test_bgm_current_best_extent.py",
+    "tests/test_bgm_current_best_lineage.py",
+    "tests/test_bgm_dialogue_residual.py",
+    "tests/test_bgm_disagreement_probe.py",
+    "tests/test_bgm_dominance_probe.py",
+    "tests/test_bgm_dominance_routing.py",
+    "tests/test_bgm_effects_recovery.py",
+    "tests/test_bgm_episode_cues.py",
+    "tests/test_bgm_facing_music_provider.py",
+    "tests/test_bgm_facing_music_recovery.py",
+    "tests/test_bgm_four_stem_analysis.py",
+    "tests/test_bgm_four_stem_residual.py",
+    "tests/test_bgm_frame_text.py",
+    "tests/test_bgm_gpu_execution.py",
+    "tests/test_bgm_held_asset_relocation.py",
+    "tests/test_bgm_held_branch_audition.py",
+    "tests/test_bgm_held_candidate_audition.py",
+    "tests/test_bgm_held_catalog.py",
+    "tests/test_bgm_held_listing.py",
+    "tests/test_bgm_identity.py",
+    "tests/test_bgm_identity_boundary.py",
+    "tests/test_bgm_identity_cache_revision.py",
+    "tests/test_bgm_identity_candidates.py",
+    "tests/test_bgm_identity_evidence_reuse.py",
+    "tests/test_bgm_identity_exact_content.py",
+    "tests/test_bgm_identity_input_changes.py",
+    "tests/test_bgm_identity_joins.py",
+    "tests/test_bgm_identity_origin_cache.py",
+    "tests/test_bgm_identity_run.py",
+    "tests/test_bgm_identity_run_occurrence_quality.py",
+    "tests/test_bgm_identity_short_remainders.py",
+    "tests/test_bgm_inference_probe.py",
+    "tests/test_bgm_inference_variants.py",
+    "tests/test_bgm_key_direction.py",
+    "tests/test_bgm_local_nomination.py",
+    "tests/test_bgm_memory_support.py",
+    "tests/test_bgm_music_corroboration.py",
+    "tests/test_bgm_music_facts.py",
+    "tests/test_bgm_music_gap.py",
+    "tests/test_bgm_occurrence_contrast.py",
+    "tests/test_bgm_occurrence_coverage.py",
+    "tests/test_bgm_occurrence_quality.py",
+    "tests/test_bgm_occurrence_stack.py",
+    "tests/test_bgm_occurrence_support.py",
+    "tests/test_bgm_overlap.py",
+    "tests/test_bgm_parent_preservation.py",
+    "tests/test_bgm_partial_windows.py",
+    "tests/test_bgm_playable_identity.py",
+    "tests/test_bgm_processing_permissions.py",
+    "tests/test_bgm_provisional_naming.py",
+    "tests/test_bgm_published_duplicates.py",
+    "tests/test_bgm_recipe_identity.py",
+    "tests/test_bgm_recording_recovery.py",
+    "tests/test_bgm_recurrence_asset.py",
+    "tests/test_bgm_recurrence_ground_truth.py",
+    "tests/test_bgm_recurring_extent.py",
+    "tests/test_bgm_reference_alignment.py",
+    "tests/test_bgm_reference_master_variants.py",
+    "tests/test_bgm_reference_reconstruction.py",
+    "tests/test_bgm_reference_relations.py",
+    "tests/test_bgm_reference_repetition.py",
+    "tests/test_bgm_reference_residual.py",
+    "tests/test_bgm_reference_stereo.py",
+    "tests/test_bgm_refinement.py",
+    "tests/test_bgm_rendered_content.py",
+    "tests/test_bgm_replacement_writes_lss_tags.py",
+    "tests/test_bgm_role_policy.py",
+    "tests/test_bgm_routing.py",
+    "tests/test_bgm_routing_stereo_audit.py",
+    "tests/test_bgm_second_pass.py",
+    "tests/test_bgm_self_recurrence.py",
+    "tests/test_bgm_series_cue_run.py",
+    "tests/test_bgm_series_cues.py",
+    "tests/test_bgm_series_identity.py",
+    "tests/test_bgm_series_identity_integrity.py",
+    "tests/test_bgm_series_reuse.py",
+    "tests/test_bgm_sfc_css.py",
+    "tests/test_bgm_singing_share.py",
+    "tests/test_bgm_song_preservation.py",
+    "tests/test_bgm_source_visual.py",
+    "tests/test_bgm_source_visual_backfill.py",
+    "tests/test_bgm_source_visual_job.py",
+    "tests/test_bgm_spatial_probe.py",
+    "tests/test_bgm_stereo_continuity.py",
+    "tests/test_bgm_stereo_memory_integration.py",
+    "tests/test_bgm_stretch_match.py",
+    "tests/test_bgm_supported_scope.py",
+    "tests/test_bgm_u11_continuity.py",
+    "tests/test_bgm_unverifiable_retention_independent.py",
+    "tests/test_bgm_variant_receipt.py",
+    "tests/test_bgm_versions.py",
+    "tests/test_bgm_vocal_recovery.py",
+    "tests/test_bgm_voice_refinement.py",
+    "tests/test_catalog.py",
+    "tests/test_check_packaged_scene_bridge.py",
+    "tests/test_check_runtime_sources.py",
+    "tests/test_client.py",
+    "tests/test_codex_focus.py",
+    "tests/test_codex_pacing.py",
+    "tests/test_compare_bgm_quality.py",
+    "tests/test_controlled_mix.py",
+    "tests/test_cooperative_sfc_probe.py",
+    "tests/test_deploy.py",
+    "tests/test_dev.py",
+    "tests/test_dev_allowance_cadence.py",
+    "tests/test_dev_allowance_meter.py",
+    "tests/test_dev_automation.py",
+    "tests/test_dev_full_source_followup.py",
+    "tests/test_dev_memory_binding.py",
+    "tests/test_dev_paced_probe_status.py",
+    "tests/test_dev_quiet_mode.py",
+    "tests/test_dev_select.py",
+    "tests/test_dev_source_frame_evidence.py",
+    "tests/test_development_lifecycle.py",
+    "tests/test_devmem.py",
+    "tests/test_devmem_readonly.py",
+    "tests/test_devmem_rerank.py",
+    "tests/test_discover_bgm_activity.py",
+    "tests/test_disk_cleanup.py",
+    "tests/test_download_publication.py",
+    "tests/test_dsh_local.py",
+    "tests/test_entrypoint.py",
+    "tests/test_episode_discovery.py",
+    "tests/test_episode_discovery_final_identity.py",
+    "tests/test_episode_discovery_recovery.py",
+    "tests/test_evaluate_bgm_discovery.py",
+    "tests/test_event_tagging_stereo.py",
+    "tests/test_fetch.py",
+    "tests/test_filters.py",
+    "tests/test_freeze_candidate_integration.py",
+    "tests/test_git_objects.py",
+    "tests/test_gpu_lease.py",
+    "tests/test_held_bgm_alternatives.py",
+    "tests/test_hook_registration.py",
+    "tests/test_infer.py",
+    "tests/test_input_order.py",
+    "tests/test_input_presence.py",
+    "tests/test_installed_episode_batch.py",
+    "tests/test_instrumental_controls.py",
+    "tests/test_instrumental_guarded_ensemble.py",
+    "tests/test_instrumental_model_probe.py",
+    "tests/test_instrumental_quality.py",
+    "tests/test_instrumental_repeat.py",
+    "tests/test_instrumental_scope.py",
+    "tests/test_instrumental_spatial.py",
+    "tests/test_instrumental_symmetry.py",
+    "tests/test_integration_library_refresh_containment.py",
+    "tests/test_integration_targets.py",
+    "tests/test_intro_cleanup.py",
+    "tests/test_invariant_audit_clone.py",
+    "tests/test_jobs.py",
+    "tests/test_listening_finalizer.py",
+    "tests/test_listening_ownership.py",
+    "tests/test_listening_product.py",
+    "tests/test_listening_reference_naming.py",
+    "tests/test_local_ai_aider_trial.py",
+    "tests/test_local_ai_audio_repair.py",
+    "tests/test_local_ai_bench.py",
+    "tests/test_local_ai_clap_trial.py",
+    "tests/test_local_ai_cpu_trial.py",
+    "tests/test_local_ai_memory_reembed_trial.py",
+    "tests/test_local_ai_memory_semantic_trial.py",
+    "tests/test_local_ai_output.py",
+    "tests/test_local_ai_product_replay.py",
+    "tests/test_local_ai_queue.py",
+    "tests/test_local_ai_replay_r2.py",
+    "tests/test_local_cpu_runtime.py",
+    "tests/test_local_llm_transport.py",
+    "tests/test_local_rerank_contract.py",
+    "tests/test_memory_dense_pool_trial.py",
+    "tests/test_memory_minilm_trial.py",
+    "tests/test_memory_qwen_cpu_trial.py",
+    "tests/test_metadata_contained_regions.py",
+    "tests/test_metadata_integration.py",
+    "tests/test_metadata_part_envelopes.py",
+    "tests/test_metadata_reference_coverage.py",
+    "tests/test_metadata_version_parts.py",
+    "tests/test_metrics.py",
+    "tests/test_model_config_integrity.py",
+    "tests/test_models_store.py",
+    "tests/test_native_probe_gpu_pause.py",
+    "tests/test_native_source_cached_probe.py",
+    "tests/test_occurrence_metrics.py",
+    "tests/test_packaged_worker.py",
+    "tests/test_partial_ownership_independent.py",
+    "tests/test_paths.py",
+    "tests/test_predeploy_scene_native_resume_space.py",
+    "tests/test_probe_audio_understanding.py",
+    "tests/test_processing_capacity.py",
+    "tests/test_provider_padding.py",
+    "tests/test_publication_recovery_io.py",
+    "tests/test_queue_remove_storage_recovery.py",
+    "tests/test_queue_result_storage_recovery.py",
+    "tests/test_queue_storage_recovery.py",
+    "tests/test_quiet_cpu_rate_probe.py",
+    "tests/test_quiet_dev_receipts.py",
+    "tests/test_quiet_storage.py",
+    "tests/test_quit_while_processing.py",
+    "tests/test_recipe.py",
+    "tests/test_recipe_registry.py",
+    "tests/test_reference_recall_benchmark.py",
+    "tests/test_reference_residual_episode.py",
+    "tests/test_reference_result_visibility.py",
+    "tests/test_region_preservation.py",
+    "tests/test_reprocess_candidates.py",
+    "tests/test_reprocess_registry_provenance.py",
+    "tests/test_research_tests.py",
+    "tests/test_restore_entry.py",
+    "tests/test_routed_episode_discovery.py",
+    "tests/test_run_natural_audio_trial.py",
+    "tests/test_runtime.py",
+    "tests/test_sample_alignment.py",
+    "tests/test_scan.py",
+    "tests/test_scene_execution_pacing.py",
+    "tests/test_scene_model_download_lease.py",
+    "tests/test_scene_native.py",
+    "tests/test_scene_native_bootstrap.py",
+    "tests/test_scene_native_download_ranges.py",
+    "tests/test_scene_native_loopback.py",
+    "tests/test_scene_native_packaging.py",
+    "tests/test_scene_native_tls.py",
+    "tests/test_scene_readiness_status.py",
+    "tests/test_scene_runtime_dispatch.py",
+    "tests/test_score_local_ai_cpu_trial.py",
+    "tests/test_score_models.py",
+    "tests/test_score_usages.py",
+    "tests/test_scratch_lifecycle.py",
+    "tests/test_selective_composition.py",
+    "tests/test_separation_gpu.py",
+    "tests/test_separation_level_recovery.py",
+    "tests/test_separation_scene_balance.py",
+    "tests/test_session.py",
+    "tests/test_song_component_comparison.py",
+    "tests/test_sound.py",
+    "tests/test_sound_job.py",
+    "tests/test_sound_queue.py",
+    "tests/test_sound_removal_transients.py",
+    "tests/test_sound_transients.py",
+    "tests/test_sound_words.py",
+    "tests/test_state_status.py",
+    "tests/test_stem_combination.py",
+    "tests/test_stem_semantics.py",
+    "tests/test_stereo_comparison.py",
+    "tests/test_stereo_quality.py",
+    "tests/test_storage_budget.py",
+    "tests/test_storage_jobs.py",
+    "tests/test_storage_local_models.py",
+    "tests/test_storage_retention.py",
+    "tests/test_storage_scheduled.py",
+    "tests/test_storage_tiers_unattended_guard.py",
+    "tests/test_strata_context_nonce.py",
+    "tests/test_strata_contract_trial.py",
+    "tests/test_strata_dev.py",
+    "tests/test_strata_evidence.py",
+    "tests/test_strata_hardware_confirm.py",
+    "tests/test_strata_hardware_tune.py",
+    "tests/test_strata_ledger.py",
+    "tests/test_strata_process_job.py",
+    "tests/test_strata_queue.py",
+    "tests/test_strata_task.py",
+    "tests/test_strata_trial_score.py",
+    "tests/test_strata_trials.py",
+    "tests/test_strata_update.py",
+    "tests/test_strata_vision_binding.py",
+    "tests/test_strata_vision_controls.py",
+    "tests/test_summarize_local_ai_repairs.py",
+    "tests/test_tags.py",
+    "tests/test_technology.py",
+    "tests/test_tsv_io.py",
+    "tests/test_ui_completion.py",
+    "tests/test_ui_lifecycle.py",
+    "tests/test_ui_media.py",
+    "tests/test_ui_state.py",
+    "tests/test_ui_web.py",
+    "tests/test_verified_model_retirement.py",
+    "tests/test_vram.py",
+    "tests/test_worker_gpu_lease.py",
+    "tests/test_worker_input_presence.py",
+    "tests/test_worker_processing_capacity.py",
+    "tests/test_worker_shutdown_boundary.py",
+    "tests/test_worker_startup_recovery.py",
+    "tests/test_worker_stem_combination.py",
+    "tests/test_worker_transport.py",
+    "tests/test_write_targets_junction.py",
+    "tests/test_writer.py",
+    "scripts/fetch_ffmpeg.py",
+    "tests/test_fetch_ffmpeg.py",
+    "scripts/fetch_msst_models.py",
+    "tests/test_fetch_msst_models.py",
+    "tests/test_acquisition_login_profile.py",
+    "tests/test_asset_backup.py",
+    "tests/test_bgm_audioset_class_contract.py",
+    "tests/test_bgm_collection_metadata.py",
+    "tests/test_bgm_cue_episode_parity.py",
+    "tests/test_bgm_cue_formation.py",
+    "tests/test_bgm_episode_gpu.py",
+    "tests/test_bgm_labeling.py",
+    "tests/test_bgm_memory_refresh.py",
+    "tests/test_bgm_references.py",
+    "tests/test_bgm_release_availability.py",
+    "tests/test_bgm_scene_job.py",
+    "tests/test_bgm_scene_name_spellings.py",
+    "tests/test_bgm_scene_names.py",
+    "tests/test_bgm_short_cues.py",
+    "tests/test_bgm_work_credits.py",
+    "tests/test_bgm_work_info.py",
+    "tests/test_bgm_write_targets.py",
+    "tests/test_deployed_backend_acceptance.py",
+    "tests/test_dev_hot_paths.py",
+    "tests/test_integration_scene_fixed_names.py",
+    "tests/test_invariant_audit.py",
+    "tests/test_local_ai_storage.py",
+    "tests/test_local_llm.py",
+    "tests/test_media_metadata.py",
+    "tests/test_metadata_itunes.py",
+    "tests/test_metadata_musicbrainz.py",
+    "tests/test_metadata_project.py",
+    "tests/test_metadata_resolve.py",
+    "tests/test_metadata_series_album.py",
+    "tests/test_metadata_vgmdb.py",
+    "tests/test_metadata_wikipedia.py",
+    "tests/test_peer_full_source_memory_probe.py",
+    "tests/test_predeploy_residual.py",
+    "tests/test_predeploy_scene_order_overlong.py",
+    "tests/test_predeploy_work_info_cache.py",
+    "tests/test_product_independence.py",
+    "tests/test_recording_support.py",
+    "tests/test_reference_discovery.py",
+    "tests/test_reference_store.py",
+    "tests/test_run_local_ai_aider_trial.py",
+    "tests/test_stage.py",
+    "tests/test_storage_layout.py",
+    "tests/test_storage_reclamation.py",
+    "tests/test_storage_schedule_cadence.py",
+    "tests/test_storage_scratch.py",
+    "tests/test_storage_tiers.py",
+    "tests/test_ui_deployed_acceptance.py",
+    "tests/test_ui_presentation.py",
+    "tests/test_ui_stem_acceptance.py",
+    "tests/test_ui_system_assets.py",
+    "tests/test_worker.py",
+    "tests/test_worktree_promote.py",
+    "tests/test_acquisition.py",
+    "tests/test_githooks.py",
+    "tests/test_ui_contract.py",
+    "scripts/hooks/cookie_privacy_guard.py",
+    "scripts/hooks/RULES.json",
+    "tests/test_cookie_privacy_guard.py",
+    ".claude/settings.json",
+    ".codex/hooks.json",
+    ".codex/config.toml",
+    ".codex/rules/lss.rules",
+    "gates/lss_gh.py",
+    "gates/surface_scan.py",
+    "tests/test_surface_scan.py",
+    "gates/lss-gh.cmd",
+    "gates/deploy_gated.py",
+    "gates/deploy-gated.cmd",
+    "gates/install_gates.ps1",
+    "gates/ENTRY_POINTS.md",
+    "tests/gates/test_entry_points.py",
+    "scripts/machine_config.py",
+    "scripts/storage_policy.json",
+    "scripts/local_llm_models.json",
+    "tests/test_machine_config.py",
+    "tests/machine_config_fixtures.py",
+    "tests/gates/test_review_gate.py"
+  ],
+  "approved_paths": {
+    "assets/app.ico": {
+      "blob_oid": "e73759b51d4f8c570a5860fe0b252f2f1bf67ceb",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/fonts/Anton-Regular.ttf": {
+      "blob_oid": "4d65707db9d8663ccfa99cd28cd3a4e0025be178",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/IBMPlexMono-Medium.ttf": {
+      "blob_oid": "7d991ea74c3cf8097c4a5313989c9f0cd11c3b0a",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/IBMPlexMono-Regular.ttf": {
+      "blob_oid": "4254c37f20ba57e829a3315fdc91cda4e63589f5",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/IBMPlexMono-SemiBold.ttf": {
+      "blob_oid": "a48e40a3c0759ed9c21793aa2d10362854f0eaa4",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/IBMPlexSans-Bold.ttf": {
+      "blob_oid": "1d66b1a2e96d5e33d6f5fa8e81e76b4e5621d240",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/IBMPlexSans-Medium.ttf": {
+      "blob_oid": "a3826c4e9ab3f2d6e64e0c9aea7122ea3431e174",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/IBMPlexSans-Regular.ttf": {
+      "blob_oid": "bd6817d5202895da5ac4fad88de3da71e652881a",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/IBMPlexSans-SemiBold.ttf": {
+      "blob_oid": "09ec8cdae8208c26165db0c87da409cda8c26ae4",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/NotoSansJP-Bold.otf": {
+      "blob_oid": "40262777db707145a08795e0e62ab5956eafe4b6",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/Oswald-Bold.ttf": {
+      "blob_oid": "4314b91e6d54f2404a5f54415c7eb98d74d3d6a0",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/Oswald-Medium.ttf": {
+      "blob_oid": "9537cd7e3def356583b8204bbe6987625ae7c396",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/Oswald-Regular.ttf": {
+      "blob_oid": "dc593e1ebdf33e1e9b67f3d9ebc6a1dd268ee303",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/Oswald-SemiBold.ttf": {
+      "blob_oid": "d117772293f1eb3b26500260a4e3a8c62636222f",
+      "reason": "SIL OFL 1.1 font shipped with the product; licence text in assets/fonts/licenses/, listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/fonts/licenses/Anton-OFL.txt": {
+      "blob_oid": "efd0dd80c2deafa962d86926d1f445a9aa7407c4",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
+    },
+    "assets/fonts/licenses/IBMPlex-OFL.txt": {
+      "blob_oid": "01497cc60dc7de39750e702c395530760cb014cf",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
+    },
+    "assets/fonts/licenses/NotoSansJP-OFL.txt": {
+      "blob_oid": "bb90eeabfe9fe13e04117e87b128b7cf8b506842",
+      "reason": "OFL 1.1 text with the upstream Noto Sans JP copyright line added (google/fonts ofl/notosansjp/OFL.txt)"
+    },
+    "assets/fonts/licenses/Oswald-OFL.txt": {
+      "blob_oid": "9d0219e980f80da5a504e3b397d6113adffd8d67",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
+    },
+    "assets/system/app-16.png": {
+      "blob_oid": "479a9b72680a92a13647f74def453fe87bc13cdf",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/app-20.png": {
+      "blob_oid": "7ab10874620d8d3f045dff4b41c9d754ee0549b5",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/app-24.png": {
+      "blob_oid": "6881343fcd24a7642b627283be92bce30e83df8c",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/app-256.png": {
+      "blob_oid": "af6295887cee431286463824e34c47dc213c27d0",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/app-32.png": {
+      "blob_oid": "ecb5746e420e5a861253b0e735f3b64c752e2659",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/app-48.png": {
+      "blob_oid": "f6ec18197bdc0fa79ed861b2e7c649f9c1c51431",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/app-64.png": {
+      "blob_oid": "8fdc12e13d51c7859058e52b93a6d6a68cfa82de",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-default-32-f0.png": {
+      "blob_oid": "343237959b06ac17a2a95ef27a1da9f7e65932e2",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-default-40-f0.png": {
+      "blob_oid": "187a8cc5143b9f32d19a33768dc26a6d6c397fdb",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-default-48-f0.png": {
+      "blob_oid": "1d1cab014c2ce7fc14f6e4748d293960f765d377",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-default-ink-32-f0.png": {
+      "blob_oid": "2318be9bb5487f731370a006603b5d3281075e8c",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-default-ink-40-f0.png": {
+      "blob_oid": "edb457387c168abc2e06d8a258e880193ada3249",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-default-ink-48-f0.png": {
+      "blob_oid": "0a0210016aabbbb3b62b53706830d499fec732f8",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-interactive-32-f0.png": {
+      "blob_oid": "9779ccf631993517dd9578630b745529d30d4a57",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-interactive-40-f0.png": {
+      "blob_oid": "87269aaee72f461ac4462de531c0317223bc24d6",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-interactive-48-f0.png": {
+      "blob_oid": "0353242ed1622f7acaea04fb742290644b180282",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-interactive-ink-32-f0.png": {
+      "blob_oid": "70cfb3b4e82ef311c8c7b9411415bb5f73a4ddab",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-interactive-ink-40-f0.png": {
+      "blob_oid": "af470b10e53e65d2907575f8504046811bf606ab",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-interactive-ink-48-f0.png": {
+      "blob_oid": "dc7ed72a76f4ce6edf09fc92ce17354c035eca24",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-32-f0.png": {
+      "blob_oid": "8144de9b047fc86f51dd1dc278d9c0ef95afa4f3",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-32-f1.png": {
+      "blob_oid": "dd3442f3942374dd0e50f8805a224aec515e795f",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-40-f0.png": {
+      "blob_oid": "09bdca9983e1deff0a1f6013aba0dcf70f8d3fc6",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-40-f1.png": {
+      "blob_oid": "8ddbaef374fa9a65764fb7c8823d915559ab67ee",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-48-f0.png": {
+      "blob_oid": "dcb36c66348c2cfbec5486849b6f84bc727b0dfc",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-48-f1.png": {
+      "blob_oid": "801833029cfc9be07d4f22f554c02f0e52e2eec7",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-ink-32-f0.png": {
+      "blob_oid": "05c5e08a30c0bf4fe7eb4a2aabfbf88ed65d2a00",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-ink-32-f1.png": {
+      "blob_oid": "9f62cde2db0ef71cd7b8ee6da2174dfa2a1dfbaf",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-ink-40-f0.png": {
+      "blob_oid": "5b98b74ceca5583495892adb6ce1c23da787c65d",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-ink-40-f1.png": {
+      "blob_oid": "e68a2df4a2e333a8d02e027214f4daf293028a1a",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-ink-48-f0.png": {
+      "blob_oid": "678f8cc43ab0b60b3c35d0067ce5d444b4097105",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/cursor-working-ink-48-f1.png": {
+      "blob_oid": "c7bdd2d7617529151164a66b55bf133810d1caa0",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-16-f0.png": {
+      "blob_oid": "5393adeee10ab10923b5dd854f4b769d9396f219",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-16-f1.png": {
+      "blob_oid": "b03e257a11bf5af85a17e583d3a12b06aed95d3b",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-16-f2.png": {
+      "blob_oid": "b76fbb7ecf0c85f293d1322e74f890a17c636502",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-20-f0.png": {
+      "blob_oid": "52cd67d7e056d05860d0c640a814023a26de71dc",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-20-f1.png": {
+      "blob_oid": "963be208753f805cd7517e9ca32bfe036a3bc84c",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-20-f2.png": {
+      "blob_oid": "b7752e0868bed7e1d254bcf8bfd733dc1d225c88",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-24-f0.png": {
+      "blob_oid": "d56c048cdaec1aff71370b10444c62f14a1b539a",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-24-f1.png": {
+      "blob_oid": "4811bdfcda791ab2e0b2eef37f8780af460d72d6",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-24-f2.png": {
+      "blob_oid": "65d8d97549b7e321b3d8bed784e9aaf34ce058a7",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-f0.ico": {
+      "blob_oid": "e74894d7df5f99348ddf1eef8cebfeb67a41e74c",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-f1.ico": {
+      "blob_oid": "3c4c3ed091bbb4e007c7d9fd0408fb3fc0bc689b",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-dark-f2.ico": {
+      "blob_oid": "dc9ae7aab0daa8abca93ce9743a4216277a5668b",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-16-f0.png": {
+      "blob_oid": "b4d95320321edb602744fee5281fdd0bb8d7b57c",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-16-f1.png": {
+      "blob_oid": "3a589128a86c88a9ecb07ccdad41d0e3a17271ac",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-16-f2.png": {
+      "blob_oid": "a725495c7ba11137c2571535ac229d4810c20a70",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-20-f0.png": {
+      "blob_oid": "f805b017d902aa5f924e723d6b8ce4abcce20e0a",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-20-f1.png": {
+      "blob_oid": "3424ca887700e8f12f1000bd6da70b2d7b8697d0",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-20-f2.png": {
+      "blob_oid": "9741c17e4726591fc6094106a579f070081053b3",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-24-f0.png": {
+      "blob_oid": "5134a8b713140e6a76751e40bac393aa52390189",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-24-f1.png": {
+      "blob_oid": "a59f21ef7f45bf6454300ee6a21897fcf469c3ab",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-24-f2.png": {
+      "blob_oid": "c7d718a25433777fe36c8293bb5943e213eae9f9",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-f0.ico": {
+      "blob_oid": "fab2d24533f50441e786f3af59276330cbfa6271",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-f1.ico": {
+      "blob_oid": "3d8f2a066c5a89f137f4b7a26ed0990441b4c457",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-complete-light-f2.ico": {
+      "blob_oid": "3bd2749a20f754128bb05ba4f6e5d65c10595043",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-halted-dark-16-f0.png": {
+      "blob_oid": "c41e0184cfb39cdb0a317f1895f4e0de6d66b737",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-halted-dark-20-f0.png": {
+      "blob_oid": "0e26ba97eed3c85b5efb8b8041f27856338dc7d6",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-halted-dark-24-f0.png": {
+      "blob_oid": "c3941971206868e97930dacd2dce542dd41f31b9",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-halted-dark-f0.ico": {
+      "blob_oid": "eb6fb8051382bb8d5fd38b13d26edc8cf121004f",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-halted-light-16-f0.png": {
+      "blob_oid": "4197f721b333482592f2ad9d059e0c9c4a2923e5",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-halted-light-20-f0.png": {
+      "blob_oid": "3cb2fa81d61eb8ba64b37dcee1c48e6a986d9ebd",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-halted-light-24-f0.png": {
+      "blob_oid": "00196a6efb21d9b747319de08634ee5b9832d6f0",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-halted-light-f0.ico": {
+      "blob_oid": "5d320c07ec77adbc56d5f0255d62f6bece7847cf",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-dark-16-f0.png": {
+      "blob_oid": "52073e26abf23799258a63e4e306248e14b9a517",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-dark-16-f1.png": {
+      "blob_oid": "f19193f968456306ed9861e3a32c88e9227db6cd",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-dark-20-f0.png": {
+      "blob_oid": "80db3fab4dd041a869429dc9c0d3a8d5a46f2d77",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-dark-20-f1.png": {
+      "blob_oid": "16bcd0d37c85c7cd3519354752f7c651ac3ef48a",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-dark-24-f0.png": {
+      "blob_oid": "cc6fd433c9faeb989082418a5dfdba77f2838650",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-dark-24-f1.png": {
+      "blob_oid": "0c4825f6ef1c57ce873a7d97ba0773caf1a2d3f1",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-dark-f0.ico": {
+      "blob_oid": "0c88efec610273ce15b504812e0ed1fc642c55d5",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-dark-f1.ico": {
+      "blob_oid": "306d63e90c86d1527ead9f8631c5ae7ebd9a4301",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-light-16-f0.png": {
+      "blob_oid": "cd2374e8b6539e3a0d1a4b4c2d73bb4e27a15326",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-light-16-f1.png": {
+      "blob_oid": "d4c481d1e9f9a8b9a3463ef97c24911c05331aa7",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-light-20-f0.png": {
+      "blob_oid": "1441f977c1d12bb5d58337fbc4565fb576e1e086",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-light-20-f1.png": {
+      "blob_oid": "37ac1a1707a346b78e505aa3cf71cf515b436476",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-light-24-f0.png": {
+      "blob_oid": "71e9e105c385e13fc557e620c472082136aa926b",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-light-24-f1.png": {
+      "blob_oid": "e5f2b005efb2e972b71b42a170500ce9c61e05f2",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-light-f0.ico": {
+      "blob_oid": "2eeaa7a561d8d62dffea79838ef69defe880a7b5",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-processing-light-f1.ico": {
+      "blob_oid": "d4992e0e1618e0d19fba5ddb77984acafd56430c",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-ready-dark-16-f0.png": {
+      "blob_oid": "aa2837622ca14dd26b5c46f1836470b25e17c7db",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-ready-dark-20-f0.png": {
+      "blob_oid": "6888624a29897198f689860c2341d0cb2e63aee5",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-ready-dark-24-f0.png": {
+      "blob_oid": "bbe875f90b03b990fe13b4ed504a240d83154994",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-ready-dark-f0.ico": {
+      "blob_oid": "65322aad4a810c421589f2592e98d3c041b28a85",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-ready-light-16-f0.png": {
+      "blob_oid": "5be9087b47dc02d4e9d2dd81955e04e45504c345",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-ready-light-20-f0.png": {
+      "blob_oid": "a8302d3c6aaf7972ab3c49cdb5210ee6250ece15",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-ready-light-24-f0.png": {
+      "blob_oid": "b3f2c60b1bafd2e1c208d18ffc25d48e5ece168a",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/system/tray-ready-light-f0.ico": {
+      "blob_oid": "030fc7975122084ccc9a5e7b46ec1f066983696e",
+      "reason": "Project-original application icon / cursor artwork shipped with the product; no embedded text or EXIF metadata (checked 2026-11-13)."
+    },
+    "assets/web/LICENSE-react.txt": {
+      "blob_oid": "b96dcb0480a0b0be0727976e5202a1e7b23edc3f",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
+    },
+    "assets/web/react-dom.production.min.js": {
+      "blob_oid": "fb4e099c05623afac0779278631c0712676e2b65",
+      "reason": "React DOM 18.3.1 production build (MIT), listed in THIRD_PARTY_NOTICES.md."
+    },
+    "assets/web/react.production.min.js": {
+      "blob_oid": "9f467cace439d574903ae9d7aa6ef1068552c2f6",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
+    },
+    "design/reference/LSS App.dc.html": {
+      "blob_oid": "ae59af9fafc00fbb633db47a63d96cea3ae0d912",
+      "reason": "Project UI canvas exported from Claude Design (the owner's own design); the app serves it via lss/ui/web/page.py. Demo rows use neutral C:\\Music folders (rewritten 2026-11-14); no names or private data."
+    },
+    "design/system-assets/LSS System Assets.dc.html": {
+      "blob_oid": "c8c5454c65762503b0eb70a72e97134001c2e387",
+      "reason": "Claude Design drawing of the project tray icons and cursors (the owner's own design); tests/test_ui_system_assets.py checks the generated assets against it. Reviewed 2026-11-14: geometry notes only."
+    },
+    "docs/DOCS_MANIFEST.json": {
+      "blob_oid": "873b506147d7ca30c18693b0f40758c3f38326a1",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "docs/dev/AGENT_PLAYBOOK.md": {
+      "blob_oid": "efa8c610dbaff4d1e3998ff27c9e3ee7e17b3982",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "docs/dev/CORPUS_AND_EVIDENCE.md": {
+      "blob_oid": "c8cac37aa1a08521681f28d41883a8d45a058f48",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "docs/dev/DATA_LIFECYCLE.md": {
+      "blob_oid": "d26f6ea36199421787bad384984b261d6814c8a0",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "docs/dev/RESEARCH_TESTS.md": {
+      "blob_oid": "20b47d19679a3d161a39dc94166ebd24eb215a34",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "docs/engine/LISTENING_AND_PRESENTATION.md": {
+      "blob_oid": "3eeba81f86dc2048b9aaeab1d108e6330b3abafc",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "docs/engine/LOCAL_RUNTIME.md": {
+      "blob_oid": "ec11b562d44659f1ad2cedafc559344becc36a59",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "docs/engine/QUALITY_AND_DECISIONS.md": {
+      "blob_oid": "8ef0e9f6cc059ba3296b95d141ef60664be7a59e",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "docs/engine/RECOVERY_AND_REFERENCES.md": {
+      "blob_oid": "b2b8eb95a0cb7609cd2ffb0d47f23733bb7e3a3d",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "docs/engine/SOURCE_TO_ASSET.md": {
+      "blob_oid": "2f21fc16a0fe6a1b750e3e6463206890a467f9d0",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
+    },
+    "docs/engine/WANTED_SOUND.md": {
+      "blob_oid": "a5966e4be40b0fa48021846037e5fc94cd936a07",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
+    },
+    "docs/product/BGM_AND_AVAILABILITY.md": {
+      "blob_oid": "4eee32b929397877bb8fca3a66fde700e423b7b1",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "docs/product/IDENTITY_AND_CURRENTBEST.md": {
+      "blob_oid": "29bae143579657d6035a3296b311c657f4739c53",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
+    },
+    "docs/product/PRODUCT_INTENT.md": {
+      "blob_oid": "ad36ecf22900571d91a07eb7f6c1ed8650d57ad6",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "docs/product/USER_JOURNEYS.md": {
+      "blob_oid": "bd3fd35e22f8adb2da185a4242ae34a65037d0f2",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
+    },
+    "docs/research/FRONTIER.md": {
+      "blob_oid": "7351619870023586fb83af605cd6ebbfe2d2ac39",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11); external leads section of public primary links only (2026-11-15)"
+    },
+    "docs/research/TECHNOLOGY.md": {
+      "blob_oid": "3e8bb930b9b63a9672be14cb1c376cf1356cefbd",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11); regenerated from the ledger after the runtime-contract re-pin and the external leads record (2026-11-15)"
+    },
+    "docs/research/technology_ledger.json": {
+      "blob_oid": "2a119552f5246d00e05a6bbe90a653298e0ac010",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11); external leads record with public primary sources only (2026-11-15)"
+    },
+    "docs/scripts/check_docs.ps1": {
+      "blob_oid": "bbe000089f54a125d94547c187e62236a74c30ed",
+      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+    },
+    "ledger/model_stem_semantics.tsv": {
+      "blob_oid": "dcf03c8ff6f2d9cf73e053d27bf24ed2b76df69b",
+      "reason": "Bundled stem-content declarations the planner reads (lss/separation/stem_semantics.py). Reviewed in full 2026-11-13; unchanged from the private revision."
+    },
+    "ledger/models.tsv": {
+      "blob_oid": "d057d9523017c1d7c8fe694b3fb553d5f39a0ea7",
+      "reason": "Bundled model ledger the product reads (lss/core/models_store.py). Public model URLs, measured metrics and adoption notes; notes neutralised (no song titles, no quoted personal remarks). Reviewed in full 2026-11-13."
+    },
+    "ledger/test_set.tsv.example": {
+      "blob_oid": "aedc0349449eb4f2e8953fc2d8fed1213c3352c3",
+      "reason": "Column example for the untracked ledger/test_set.tsv (scripts/score_models.py). Placeholder rows only."
+    },
+    "lss/acquisition/keys/yt-dlp.asc": {
+      "blob_oid": "b3af31e9aa2476149045e56ebe82c4a9c41cf09c",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b2, 2026-11-11)"
+    },
+    "tests/data/local_ai_reader_cases.json": {
+      "blob_oid": "42644b6cfa87db927f1a27e828dee74837a979a6",
+      "reason": "Content, rights and privacy reviewed (Codex full-text review b4, 2026-11-11)"
+    },
+    "vendor/facing_the_music/LICENSE": {
+      "blob_oid": "f53be9ce92969e77859d83efd6654545e7d79c15",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/facing_the_music/core/__init__.py": {
+      "blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/facing_the_music/core/models/__init__.py": {
+      "blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "reason": "Third-party MIT source published verbatim (upstream package name `models`); restored 2026-11-15 after migration dropped it; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/facing_the_music/core/models/e2e/__init__.py": {
+      "blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "reason": "Third-party MIT source published verbatim (upstream package name `models`); restored 2026-11-15 after migration dropped it; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/facing_the_music/core/models/e2e/bandit/__init__.py": {
+      "blob_oid": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+      "reason": "Third-party MIT source published verbatim (upstream package name `models`); restored 2026-11-15 after migration dropped it; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/facing_the_music/core/models/e2e/bandit/bandsplit.py": {
+      "blob_oid": "64aff6e977534883b75622c40b3127f2894035e7",
+      "reason": "Third-party MIT source published verbatim (upstream package name `models`); restored 2026-11-15 after migration dropped it; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/facing_the_music/core/models/e2e/bandit/maskestim.py": {
+      "blob_oid": "f805a6a4e3a8a086eb1fa2eba3e3fb605caf5f97",
+      "reason": "Third-party MIT source published verbatim (upstream package name `models`); restored 2026-11-15 after migration dropped it; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/facing_the_music/core/models/e2e/bandit/tfmodel.py": {
+      "blob_oid": "97ae747d1f43b4bad9122349996948c160a0a6e7",
+      "reason": "Third-party MIT source published verbatim (upstream package name `models`); restored 2026-11-15 after migration dropped it; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/facing_the_music/core/models/e2e/bandit/utils.py": {
+      "blob_oid": "248bfca1b71ca231fb5b1cb0d06325b27c8b6ce3",
+      "reason": "Third-party MIT source published verbatim (upstream package name `models`); restored 2026-11-15 after migration dropped it; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/.gitignore": {
+      "blob_oid": "fc3be620893c26bfb77941c6b8cb8e66228abca8",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/LICENSE": {
+      "blob_oid": "9d7186e88bca9975edd65956cd499fa60bd04251",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/README.md": {
+      "blob_oid": "1652f0b85533aea5c6d7e5f5ac1238aef772beb1",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/KimberleyJensen/config_vocals_mel_band_roformer_kj.yaml": {
+      "blob_oid": "f7f511025573acaa7a53f75c957b878c0aaa8205",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_apollo.yaml": {
+      "blob_oid": "290547b44d0c5d62d3d3315e7c2e444728139f22",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_bs_mamba2_vocals.yaml": {
+      "blob_oid": "f054e8ca861eae6a370eca28eaf2c409ec35f347",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_dnr_bandit_bsrnn_multi_mus64.yaml": {
+      "blob_oid": "2392ca496e498e57a99d70f1f28f73fe3dd7c432",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_dnr_bandit_v2_mus64.yaml": {
+      "blob_oid": "db74fee27426b6e2204d459070603abcf846e3a6",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_drumsep.yaml": {
+      "blob_oid": "687b5ff0639a476a57a6e24552964759c8ce1ff5",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_htdemucs_6stems.yaml": {
+      "blob_oid": "d06a489ec66794414dedd4c143f6e937b26ce666",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_bs_mamba2.yaml": {
+      "blob_oid": "89154451ca213849592ff4aa4a2d21e132b13cf2",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_bs_roformer.yaml": {
+      "blob_oid": "ff17998d201e7f3d894cdc80671b9ac330023541",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_bs_roformer_384_8_2_485100_sage.yaml": {
+      "blob_oid": "9824f0e8ff86660edbf7eb1b1089f1cc17af7235",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_bs_roformer_with_lora.yaml": {
+      "blob_oid": "6c6dcdbcf7ca2a1c820d6649e3be056c270b8788",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_demucs3_mmi.yaml": {
+      "blob_oid": "08c25c50f8f747d0e4af7acae68b1e47a01f3d0c",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_htdemucs.yaml": {
+      "blob_oid": "ba635367baca0b58a977fa4bb38a1cec99579ca9",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_mdx23c.yaml": {
+      "blob_oid": "73631f7293c8db94c55c7e1db9fdfc79c712d6e0",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_mdx23c_stht.yaml": {
+      "blob_oid": "73631f7293c8db94c55c7e1db9fdfc79c712d6e0",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_mel_band_conformer.yaml": {
+      "blob_oid": "290b5b228aface2e29a1575ab5b9549087588eff",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_mel_band_conformer_all_stems.yaml": {
+      "blob_oid": "52684c5c58552f3ebb3458b1c5247f106fa7fe81",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_mel_band_roformer.yaml": {
+      "blob_oid": "4f5b9e05544f74b53a61dd8256b29d91704ca4fc",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_mel_band_roformer_all_stems.yaml": {
+      "blob_oid": "9f7f323d40ca96c8359089d3258745078a6da2a9",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_mel_band_roformer_sage.yaml": {
+      "blob_oid": "0a36bb5f8c95d594822dcb70dbf03e5b0b9e8e97",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_moises_light.yaml": {
+      "blob_oid": "ccb2b3c04d456f8b0cce919e016cf1602e0e3fb8",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_scnet.yaml": {
+      "blob_oid": "e7dcafdd8d023938f3f680c8e107a18dba6c892b",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_scnet_large.yaml": {
+      "blob_oid": "939ba190c8bb18ea782326c5c90b1c26f460cd36",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_scnet_tran.yaml": {
+      "blob_oid": "4d879d166629406935548b0ebd9f8788cc74bbd0",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_segm_models.yaml": {
+      "blob_oid": "cbec03910a628bd83c6f42f3984f5d9ba732a9fd",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb18_torchseg.yaml": {
+      "blob_oid": "8de81fccd55e4946d6180a1382603cad27e2a7c0",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_musdb_conformers.yaml": {
+      "blob_oid": "41f8886eaba5259147886a394f8ac4f22e3701ec",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_saxophone_conformers.yaml": {
+      "blob_oid": "e8af5a26e583586dd9111b88f307fca5ffbf61ce",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_bandit_bsrnn_multi_mus64.yaml": {
+      "blob_oid": "432ae32c19e6136806a718ca882afc516f2aa1f4",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_bs_conformer.yaml": {
+      "blob_oid": "e0341df1eeee5f2fac7d2e79a8d92e2c8d751919",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_bs_mamba2.yaml": {
+      "blob_oid": "967e01172c1f99306f61053238100f8e18d34963",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_bs_roformer.yaml": {
+      "blob_oid": "98fcb290f86ff37f81f7e45b98c2ed1c14c02c2d",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_htdemucs.yaml": {
+      "blob_oid": "796004a5cbd8a841963b5b41616ffd5cf8b247ea",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_mdx23c.yaml": {
+      "blob_oid": "b241ad5da8e4e4cdeca43a3f09ec64961321ce13",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_mel_band_conformer.yaml": {
+      "blob_oid": "1fb524519a2eddc51421de30824f92a14f285d0f",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_mel_band_roformer.yaml": {
+      "blob_oid": "4fa4385aab64f0cb2c6a424bb6c63bd954f780e0",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_scnet.yaml": {
+      "blob_oid": "1210f9654a6e09b0965937b31e9dcaeaaf2257a0",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_scnet_large.yaml": {
+      "blob_oid": "f34450eb84d2d2b072577504edbf2948efb94158",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_scnet_unofficial.yaml": {
+      "blob_oid": "2d3e604e4992e1f4090da91227c9ecc5e66e9117",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_segm_models.yaml": {
+      "blob_oid": "44711a0658a95289c8d3745a6d78114b937df1fa",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_swin_upernet.yaml": {
+      "blob_oid": "28a837346ea70fa02a1df5245c5048a4676b63c7",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/config_vocals_torchseg.yaml": {
+      "blob_oid": "1ebbeae2770d68c4b2dbdcfd6125a5ca387e6d9b",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/sage/config_musdb18_bs_roformer_384_8_2_485100_sage.yaml": {
+      "blob_oid": "9824f0e8ff86660edbf7eb1b1089f1cc17af7235",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/sage/config_musdb18_mel_band_roformer_sage.yaml": {
+      "blob_oid": "0a36bb5f8c95d594822dcb70dbf03e5b0b9e8e97",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/viperx/model_bs_roformer_ep_317_sdr_12.9755.yaml": {
+      "blob_oid": "135a051897dee27285ac46ee350afe1e1ec02011",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/viperx/model_bs_roformer_ep_937_sdr_10.5309.yaml": {
+      "blob_oid": "d5e9a0b670759dd378af60e09e0a5e3c650cbf7c",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/configs/viperx/model_mel_band_roformer_ep_3005_sdr_11.4360.yaml": {
+      "blob_oid": "7cb922c9c06076e382826decc017ca9d760b9623",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/docs/LoRA.md": {
+      "blob_oid": "52c2bc86606323d98c7530acb1a2b2b58ff6cfe4",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/docs/augmentations.md": {
+      "blob_oid": "5098514fa62ad15ad80e3962341902e5ded204e2",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/docs/bs_roformer_info.md": {
+      "blob_oid": "ad7bfc9f8f57e54de1be42cdcdb14775811ebe36",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/docs/changes.md": {
+      "blob_oid": "9aeba78f94f0b569849ac6560c40f68c82f6206d",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/docs/dataset_types.md": {
+      "blob_oid": "5dc954c4dbd2c10ddbf96f3eb9171862c60549d3",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/docs/ensemble.md": {
+      "blob_oid": "bac03d5edd222ce71138c766f066e232dfdda8e9",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/docs/gui.md": {
+      "blob_oid": "04252c3b19ae92974c47e04f54c756698d3bbddd",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/docs/mel_roformer_experiments.md": {
+      "blob_oid": "3d68b92d4c8725bcc9ce724922e5802d0a60e36e",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/docs/pretrained_models.md": {
+      "blob_oid": "8ec64cb09d94f52a247d9c97c4f4b71233fa65e1",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/docs/test.md": {
+      "blob_oid": "0fb5ea259e079087e923c14d9bd8cd31aa960baa",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/ensemble.py": {
+      "blob_oid": "76fec7b7126d2d6f05ff5850bdbbb72c664bfd86",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/inference.py": {
+      "blob_oid": "25e3997934f7c8897af9f83c6989698dd27aa643",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/pyproject.toml": {
+      "blob_oid": "a0a0afc16ebc33172b332ec49948d5e72cfe1af8",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/requirements.txt": {
+      "blob_oid": "7b654d69d6a2402af8b7349946ae7587e090368e",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/scripts/do_metadata.py": {
+      "blob_oid": "beda8239595f750504bcaa1e3c52942295b66c3a",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/scripts/moises_to_musdb.py": {
+      "blob_oid": "6780c5ab55bd96e9c593233174d16eee98e7b4bd",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/scripts/prepare_weights_for_inference.py": {
+      "blob_oid": "4fb5853f43ce1e8735db887e0abed0416d820515",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/scripts/print_list_of_model_layers.py": {
+      "blob_oid": "052abfb2ca9158b7b676e79cba93fcb29d8bd51c",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/scripts/redact_config.py": {
+      "blob_oid": "5886af8a333f528e2a8d76348876b8a040794fda",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/scripts/stream.py": {
+      "blob_oid": "800c55e252effc1c96f62735b62a50876d440f16",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/scripts/trim.py": {
+      "blob_oid": "e8b4ede396e5c7fc663e205b5d28b43135ae23e1",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/scripts/valid_to_inference.py": {
+      "blob_oid": "935fc9d9b0286942da26449287f4f27daa610f14",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/scripts/watch_all_metrics.py": {
+      "blob_oid": "0b9df18927f8914915e33ff310fe47cd89cad36b",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/tests/admin_test.py": {
+      "blob_oid": "bb782bd877f50064b3a34e183c7bc90998ddf4d5",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/tests/test.py": {
+      "blob_oid": "d05e128674f0850d82a2583527493f77c9d435d4",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/train.py": {
+      "blob_oid": "7cecddc544551e3bb5cd63bc1b3b931e45fa9a75",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/train_accelerate.py": {
+      "blob_oid": "8df2f43ab688ce7cc4da2207b1b402e778dedb11",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/train_ddp.py": {
+      "blob_oid": "c607e391e36d26db31a585d4c6096ba1015538b3",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/utils/audio_utils.py": {
+      "blob_oid": "476deda603fb7a3d3a930b27c2d5b2976afcc6c1",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/utils/dataset.py": {
+      "blob_oid": "62bd181a71dd966311574517b3eb2c8341281f59",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/utils/losses.py": {
+      "blob_oid": "28f70776d4d29e08593c8b3fbb2a41d24b23a6e2",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/utils/metrics.py": {
+      "blob_oid": "e4ded317bc4f588124009e99190bbdf497568e06",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/utils/model_utils.py": {
+      "blob_oid": "aaa9a5a0aacbd5b8dce8e378bbb11ba1d92f4e6c",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/utils/muon.py": {
+      "blob_oid": "574ed0b3dc5cf917c888f5202833a5f7d6acb778",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/utils/settings.py": {
+      "blob_oid": "9f5ac6c97ec56237f22ef05b3c813446d169d6b0",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/valid.py": {
+      "blob_oid": "f31832cbc1c41d158885078cef9b6eccd398ee2b",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/msst/valid_ddp.py": {
+      "blob_oid": "aeade533b1ff5fb9612d7c04410ce1e8cf829226",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sam_audio/LICENSE-DACVAE": {
+      "blob_oid": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sam_audio/LICENSE-SAM": {
+      "blob_oid": "00030caa37d1d1714b2eb0d7f55c50c5805ed4ce",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sam_audio/dacvae/model/base.py": {
+      "blob_oid": "c79fc024c611e6773c20f051c72566985a22905b",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sam_audio/dacvae/model/dacvae.py": {
+      "blob_oid": "ce52f9f17ec8b5bb5e42baa46a2f16ed95160b0f",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sam_audio/dacvae/nn/bottleneck.py": {
+      "blob_oid": "4e27fec559d1f109cfc90db3897503c3707b0a5a",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sam_audio/dacvae/nn/layers.py": {
+      "blob_oid": "789ad6a757ff2d9aacfc405c5e56ea77746d95e6",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sam_audio/dacvae/nn/quantize.py": {
+      "blob_oid": "5fa4438613c79af8e1cf4da5eccfe87bb32856b1",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sam_audio/sam_audio/model/align.py": {
+      "blob_oid": "d9cbd0bf34811e534331f3a5b5fd37ff9ac49478",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sam_audio/sam_audio/model/patcher.py": {
+      "blob_oid": "da3edaa3fb746f9e34cf4e7990c4972f11f143ef",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sam_audio/sam_audio/model/rope.py": {
+      "blob_oid": "f3df0b0e66a88fcd41ac2df8ba24af215d51ad50",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sam_audio/sam_audio/model/transformer.py": {
+      "blob_oid": "1d032f4fe14951f522294a1494d9b39fe0618f0c",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sfc_locoformer/LICENSE": {
+      "blob_oid": "40c4bd0fd4c3bc5534268b12b34ff2894ecd1b94",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sfc_locoformer/spectral_feature_compression/core/model/bandit_split.py": {
+      "blob_oid": "a079b4113cf7362001ad2fd0717d6cd3d5f0eb95",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sfc_locoformer/spectral_feature_compression/core/model/bslocoformer.py": {
+      "blob_oid": "95424e3651c9c4b9d44f2a070ceb990501ec44ff",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sfc_locoformer/spectral_feature_compression/core/model/crossattn_enc_dec.py": {
+      "blob_oid": "50f2f7c1ea66df142dcfb68eb6d07cba298f85b6",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sfc_locoformer/spectral_feature_compression/core/model/enc_dec_base.py": {
+      "blob_oid": "66673934167ea549e64c5bd241852b34d0eb32ac",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    },
+    "vendor/sfc_locoformer/spectral_feature_compression/core/model/model_wrapper.py": {
+      "blob_oid": "4103f5ddc90fcd91ee57fcfe270c9b6843657d15",
+      "reason": "Third-party file published verbatim under its upstream licence; see THIRD_PARTY_NOTICES.md"
+    }
+  },
+  "note": "Candidate patterns use fnmatchcase: star matches slash. Patterns are not approvals. Record code review before adding exact reviewed_code_paths. Individual approvals require path: {blob_oid, reason}; changes invalidate them. Only this policy has a fixed self-path exception; content checks still apply. Binary type exceptions never override priority path exclusions, content rules or the size ceiling. All approval sets start empty."
+}

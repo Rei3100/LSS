@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "protected_roots": [
+    "%LSS_PRIVATE_ROOT%/secrets",
+    "%LSS_COOKIE_ROOT%",
+    "%APPDATA%/Mozilla/Firefox/Profiles",
+    "%LOCALAPPDATA%/Google/Chrome/User Data",
+    "%LOCALAPPDATA%/Microsoft/Edge/User Data",
+    "%USERPROFILE%/.ssh",
+    "%USERPROFILE%/.aws",
+    "%USERPROFILE%/.azure",
+    "%USERPROFILE%/.config/gh",
+    "%USERPROFILE%/.codex/auth.json"
+  ],
+  "protected_names": [
+    "cookie",
+    "cookies",
+    "*cookies*",
+    "credentials",
+    "credentials.*",
+    "*.pem",
+    "*.key",
+    ".env",
+    ".env.*",
+    "auth.json",
+    "login data",
+    "logins.json",
+    "key4.db",
+    "cookie*.txt",
+    "cookie*.json",
+    "cookie*.db",
+    "cookie*.sqlite*"
+  ],
+  "protected_fragments": [
+    "yt-dlpGUI/Cookie",
+    "/Network/Cookies",
+    "/LSS-Private/secrets"
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "about": "Registry for scripts/local_llm.py. Model metadata is public; path and archive_path are supplied by config/local_llm_models.local.json below LSS_PRIVATE_ROOT. Entries without path are unavailable. archive_only entries are excluded from default hot-path checks. size_bytes must match the file. args contains model-specific llama-server flags; the runner owns model, endpoint, context, f16 K/V cache and kind flags. ram_gb is the admission working-set estimate, plus a shared 4 GB reserve. request is merged into chat requests. Historical measurements are observations, not guarantees for another machine.",
+  "models": {
+    "qwen3.5-4b": {
+      "size_bytes": 4482403488,
+      "sha256": "10cc391b403021dd11c614679d2fd92f611c3681d29e29651b717316965d61e1",
+      "kind": "chat",
+      "ctx": 4096,
+      "args": [],
+      "ram_gb": 5,
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "notes": "Experimental reviewed developer drafts; no autonomous application or quality decisions. CPU 4096-context/F16-cache working-set peak 4.74 GB on two historical drafts; admission budgets 5 GB plus the shared reserve. GPU steady working set is not inferred from this CPU measurement."
+    },
+    "gpt-oss-20b": {
+      "size_bytes": 13792639168,
+      "kind": "chat",
+      "ctx": 16384,
+      "args": [
+        "--n-cpu-moe",
+        "6"
+      ],
+      "ram_gb": 13,
+      "request": {
+        "chat_template_kwargs": {
+          "reasoning_effort": "low"
+        }
+      },
+      "notes": "Fastest fitting is n-cpu-moe 5 (52 t/s) but peaks near the 16 GB limit when the desktop uses 3.3 GB; 6 is the safe choice. Cold HDD load 167 s, warm 5-20 s. Invents ids on truncated logs: never an id source. The recorded 167-second cold load belongs to an archive route; it does not describe active SSD startup.",
+      "measured": {
+        "n_cpu_moe": 6,
+        "pp_tps": 1651,
+        "tg_tps": 46.6,
+        "vram_own_gb": 10.4,
+        "ram_working_set_gb": 12.9,
+        "load_cold_s": 167
+      },
+      "sha256": "4e4f9cd88d6456e4f389e7262eca4a8d565211e2b22ece9ca7a8556168ff3c66"
+    },
+    "qwen3.6-35b-a3b": {
+      "size_bytes": 22853663008,
+      "kind": "chat",
+      "ctx": 16384,
+      "args": [
+        "--n-cpu-moe",
+        "24"
+      ],
+      "ram_gb": 21.5,
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "notes": "Drove system free RAM to 63 MB on the 32 GB PC: run only with nothing else heavy open. Effective cold start (health to first useful answer) 5-6 min. Zero hallucinated ids in the pytest triage test.",
+      "measured": {
+        "n_cpu_moe": 24,
+        "pp_tps": 515,
+        "tg_tps": 46,
+        "vram_own_gb": 10.7,
+        "ram_working_set_gb": 21.3,
+        "load_cold_s": 177
+      },
+      "archive_only": true
+    },
+    "ornith-1.0-9b": {
+      "size_bytes": 5629108704,
+      "kind": "chat",
+      "ctx": 16384,
+      "args": [],
+      "ram_gb": 5.6,
+      "request": {},
+      "notes": "Fully on the GPU.",
+      "measured": {
+        "pp_tps": 3270,
+        "tg_tps": 65.5,
+        "vram_own_gb": 5.5,
+        "ram_working_set_gb": 5.5,
+        "load_cold_s": 42.5
+      },
+      "sha256": "5720d1f671b4996481274fffe01868c3c36e87c135cc8538471cc7bd6087b106"
+    },
+    "qwen3-embedding-0.6b": {
+      "size_bytes": 639150592,
+      "sha256": "06507c7b42688469c4e7298b0a1e16deff06caf291cf0a5b278c308249c3e439",
+      "kind": "embedding",
+      "ctx": 8192,
+      "args": [
+        "-b",
+        "8192",
+        "-ub",
+        "8192"
+      ],
+      "ram_gb": 1.5,
+      "request": {},
+      "notes": "Official Qwen/Qwen3-Embedding-0.6B-GGUF Q8_0 (HF lfs sha256 equals this one). Served with --embeddings; /v1/embeddings.",
+      "measured": {}
+    },
+    "qwen3-reranker-0.6b": {
+      "size_bytes": 639153184,
+      "sha256": "22c9979ce4fbcdc5acdc310c6641c32797eff1aa980b8f7a2db8a8ea23429a48",
+      "kind": "rerank",
+      "ctx": 8192,
+      "args": [
+        "-b",
+        "8192",
+        "-ub",
+        "8192"
+      ],
+      "ram_gb": 1.5,
+      "request": {},
+      "notes": "Qwen publishes no GGUF of the reranker; this is the llama.cpp project's own conversion ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF (HF lfs sha256 equals this one). Served with --reranking; /v1/rerank. SSD acquisition verified at revision a02f48bb4f057028298c21fa033da2b30d7742d5; explicit experimental use only, relevance unmeasured and no default adoption.",
+      "measured": {}
+    },
+    "qwen3.5-9b": {
+      "size_bytes": 9527502048,
+      "sha256": "809626574d0cb43d4becfa56169980da2bb448f2299270f7be443cb89d0a6ae4",
+      "kind": "chat",
+      "ctx": 4096,
+      "args": [],
+      "ram_gb": 10.2,
+      "request": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "notes": "Experimental reviewed drafts; not adopted for autonomous code or Product decisions. Pinned unsloth/Qwen3.5-9B-GGUF@3885219b6810b007914f3a7950a8d1b469d598a5 Q8_0, Apache-2.0. RAM10.2GB is a conservative admission estimate from file size, not an observed working set; shared4GB reserve remains. Completed4096-contextGPU trials show9.02-9.12GB process peaks; admission remains10.2GB plus4GBreserve. It does not replace4B repair or Ornith test-vector routes."
+    }
+  }
+}

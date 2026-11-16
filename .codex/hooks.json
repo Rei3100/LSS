@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Grep|Glob|Edit|MultiEdit|Write|Bash|PowerShell|exec_command|shell_command|shell|functions.exec_command|functions.shell_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py -3 -I \"scripts/hooks/cookie_privacy_guard.py\" || { echo 'Access denied: privacy guard unavailable.' >&2; exit 2; }",
+            "commandWindows": "cmd /d /s /c \"py -3 -I scripts/hooks/cookie_privacy_guard.py || (echo Access denied: privacy guard unavailable. 1>&2 & exit /b 2)\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

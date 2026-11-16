@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "default": "C",
+  "classes": {
+    "A": ["docs/*", "tests/test_*.py", "tests/gates/test_*.py", "README.md"],
+    "B": ["lss/*", "scripts/*", "assets/*", "vendor/*"],
+    "C": [".github/*", ".claude/*", ".codex/*", ".agents/*", ".githooks/*", "AGENTS.md", "conftest.py", "pytest.ini", "tests/local_tests.py", "scripts/hooks/*", "scripts/dev.py", "scripts/ci.py", "scripts/change_class.py", "scripts/env_check.py", "scripts/whatsnext.py", "gates/*", "docs/product/*", ".publish-allow.json"]
+  }
+}

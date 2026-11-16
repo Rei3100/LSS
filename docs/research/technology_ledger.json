@@ -1,0 +1,1780 @@
+{
+  "schema_version": 1,
+  "reviewed_at": "2026-11-04",
+  "inspection_base": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+  "installed_model_root": "%LSS_DEPLOY_BASE%/LSS/models",
+  "coverage_boundary": "Curated cross-pipeline roles plus all sections/rows of declared sources, including active research ledgers, legacy model TSV and the five user-supplied guides/map (HTML retained with visible-text derivative). Supplied scores/advice remain reference material, not measured Product state or instructions. Not every raw historical JSON/audio/log; unregistered patterns remain UNKNOWN. Historical running markers are not live process observations.",
+  "sources": [
+    {
+      "id": "intent",
+      "path": "docs/product/PRODUCT_INTENT.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "recipe-contract",
+      "path": "docs/engine/SOURCE_TO_ASSET.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "recovery-contract",
+      "path": "docs/engine/RECOVERY_AND_REFERENCES.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "sound-contract",
+      "path": "docs/engine/WANTED_SOUND.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "quality-contract",
+      "path": "docs/engine/QUALITY_AND_DECISIONS.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "naming-contract",
+      "path": "docs/engine/LISTENING_AND_PRESENTATION.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "runtime-contract",
+      "path": "docs/engine/LOCAL_RUNTIME.md",
+      "scope": "Current versioned owner, SHA-bound: native packaged naming versus source-only Transformers; ASR_UNVERIFIED and scene-grounding gap remain separate. Previous prose is retained in Git.",
+      "previous_snapshot_commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "sha256": "0aa0634b68304ccd45be25fe93e1e190175851728d5d0aef68ae926d5f6e61f3"
+    },
+    {
+      "id": "acceptance-index",
+      "path": "docs/validation/INDEX.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "model-ledger",
+      "path": "ledger/models.tsv",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "model-survey",
+      "path": "model-survey-evidence/SURVEY_20261021.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "sound-bench-index",
+      "path": "release-evidence/wanted-sound/README.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "sound-bench",
+      "path": "release-evidence/wanted-sound/EVIDENCE.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "regional-results",
+      "path": "bgm-region-evidence/RESULTS.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "components",
+      "path": "component-evidence/RESULTS.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "precision",
+      "path": "precision-evidence/RESULTS.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "short-bgm",
+      "path": "short-evidence/RESULTS.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "short-effects",
+      "path": "transient-evidence/RESULTS.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "stereo-tagging",
+      "path": "stereo-tag-evidence/RESULTS.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "scene-observation",
+      "path": "scene-web-evidence/SOURCE_VISUAL_RESULTS.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "scene-runtime",
+      "path": "scene-runtime-evidence/PACKAGE.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "local-development-ai",
+      "path": "release-evidence/local-ai-practical-20261026/RESULTS.md",
+      "commit": "01d6b5b35019f225b0404ebbcec1b3d24beb3b5e",
+      "follow_ref": "main",
+      "scope": "Existing owner/result; historical claims retain their original scope. Runtime and exact artifacts outrank this snapshot."
+    },
+    {
+      "id": "rotation",
+      "path": "evidence/rotation/TRIALS.md",
+      "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+      "follow_ref": "claude/tech-rotation-20261103",
+      "scope": "Research only. Original section, population, table and qualification stay together; not a Product adoption record."
+    },
+    {
+      "id": "exploration",
+      "path": "evidence/explore/REPORT.md",
+      "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+      "follow_ref": "claude/tech-rotation-20261103",
+      "scope": "Research only. Original section, population, table and qualification stay together; not a Product adoption record."
+    },
+    {
+      "id": "exploration-rows",
+      "path": "evidence/explore/table.md",
+      "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+      "follow_ref": "claude/tech-rotation-20261103",
+      "scope": "Research only. Original section, population, table and qualification stay together; not a Product adoption record."
+    },
+    {
+      "id": "selector",
+      "path": "evidence/salvage-select/REPORT.md",
+      "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+      "follow_ref": "claude/tech-rotation-20261103",
+      "scope": "Research only. Original section, population, table and qualification stay together; not a Product adoption record."
+    },
+    {
+      "id": "practitioner-digest",
+      "path": "evidence/salvage-select/practitioner-uvr-guide-digest.md",
+      "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+      "follow_ref": "claude/tech-rotation-20261103",
+      "scope": "Research only. Original section, population, table and qualification stay together; not a Product adoption record."
+    },
+    {
+      "id": "spatial",
+      "path": "research/spatial-recovery-20261103/README.md",
+      "commit": "30b37002b5a56dfc034de76eec33d858e5c5b276",
+      "follow_ref": "codex/spatial-recovery-20261103",
+      "scope": "Research/Development only; distinct pattern cells and exact artifact paths remain in the source."
+    },
+    {
+      "id": "spatial-handoff",
+      "path": "research/spatial-recovery-20261103/HANDOFF-TO-CLAUDE.md",
+      "commit": "30b37002b5a56dfc034de76eec33d858e5c5b276",
+      "follow_ref": "codex/spatial-recovery-20261103",
+      "scope": "Includes prior MuS3D execution locators and failed-intake versus inference distinctions."
+    },
+    {
+      "id": "naming-distinct",
+      "path": "release-evidence/naming-distinct-20261102/README.md",
+      "commit": "72e206279def371823f95aa639b085160962da07",
+      "follow_ref": "claude/cache-headroom-20261102",
+      "scope": "Installed naming observation and separate not-deployed distinct-name improvement."
+    },
+    {
+      "id": "sam-temporal",
+      "path": "release-evidence/technology-ledger-20261104/prior/sam-temporal.md",
+      "sha256": "9fe6de05ecfe9a3d438b627257e0c69e09ad988de7cb763b3e1b8af9ef57314d",
+      "original_path": ".state/validation/sam-audio-temporal-real-r1/REPORT.md",
+      "scope": "Byte-identical historical report snapshot; local raw arrays/code stay at original_path. Old pending checklists are history, not live jobs."
+    },
+    {
+      "id": "sam-repaired",
+      "path": "release-evidence/technology-ledger-20261104/prior/sam-repaired.md",
+      "sha256": "4ed65fe69734a68e8a829e7cc0952637aa07ba1e919b37712aa0d714e1af361d",
+      "original_path": ".state/validation/sam-audio-source-intelligence-r1/evidence-repair-2026-10-02/REPORT.md",
+      "scope": "Byte-identical historical report snapshot; local raw arrays/code stay at original_path. Old pending checklists are history, not live jobs."
+    },
+    {
+      "id": "headroom-repaired",
+      "path": "release-evidence/technology-ledger-20261104/prior/headroom-repaired.md",
+      "sha256": "57cd826127dc13094823e3d93259b3564043d5a1cc51b6d4fa8c64ec00a79d36",
+      "original_path": ".state/validation/bgm-candidate-headroom-r1/evidence-repair-2026-10-02/REPORT.md",
+      "scope": "Byte-identical historical report snapshot; local raw arrays/code stay at original_path. Old pending checklists are history, not live jobs."
+    },
+    {
+      "id": "breadth-history",
+      "path": "release-evidence/technology-ledger-20261104/prior/breadth-history.md",
+      "sha256": "9ff547c9ad852a26cb20339f794e58615e03561eb8cec61d919559d55256e07c",
+      "original_path": ".state/validation/bgm-breadth-sweep-r1/STATE.md",
+      "scope": "Byte-identical historical report snapshot; local raw arrays/code stay at original_path. Old pending checklists are history, not live jobs."
+    },
+    {
+      "id": "supplied-position-map",
+      "path": "release-evidence/development-flow-20261104/references/position-map-visible.md",
+      "sha256": "6eb74a9a5459aca69bf9551882106b165d5e0ee74af9330293b4c13902655c4f",
+      "scope": "SUPPLIED_REFERENCE: practitioner guidance or provisional map, not local execution/adoption evidence. LSS 2ch/local/autonomous/no-agent-listening contracts govern; manual listening, surround and provisional scores do not override them."
+    },
+    {
+      "id": "supplied-unreleased-guide",
+      "path": "release-evidence/development-flow-20261104/references/unreleased-bgm-guide.md",
+      "sha256": "e18ab6e6cb40fba347a7320a19b8c0ed3f3a022aa5b5e4c8cbb14335f38794cd",
+      "scope": "SUPPLIED_REFERENCE: practitioner guidance or provisional map, not local execution/adoption evidence. LSS 2ch/local/autonomous/no-agent-listening contracts govern; manual listening, surround and provisional scores do not override them."
+    },
+    {
+      "id": "supplied-separation-guide",
+      "path": "release-evidence/development-flow-20261104/references/separation-guide.md",
+      "sha256": "6967b1418ea8bf6bec9c5c4a3cc9fbc68e2d2cad4538a600da8f796b25e3325e",
+      "scope": "SUPPLIED_REFERENCE: practitioner guidance or provisional map, not local execution/adoption evidence. LSS 2ch/local/autonomous/no-agent-listening contracts govern; manual listening, surround and provisional scores do not override them."
+    },
+    {
+      "id": "supplied-jukebox",
+      "path": "release-evidence/development-flow-20261104/references/jukebox-excerpts.md",
+      "sha256": "f26ea2c6a6b8d6ecfa85f4c5354929de21897119583e637379fffaa344280e3c",
+      "scope": "SUPPLIED_REFERENCE: practitioner guidance or provisional map, not local execution/adoption evidence. LSS 2ch/local/autonomous/no-agent-listening contracts govern; manual listening, surround and provisional scores do not override them."
+    },
+    {
+      "id": "supplied-recovery-exploration",
+      "path": "release-evidence/development-flow-20261104/references/recovery-exploration.md",
+      "sha256": "227ff0179a4379f75a78895f1a14530c3cdb0844f8086f771f37e9ab968175a6",
+      "scope": "SUPPLIED_REFERENCE: practitioner guidance or provisional map, not local execution/adoption evidence. LSS 2ch/local/autonomous/no-agent-listening contracts govern; manual listening, surround and provisional scores do not override them."
+    },
+    {
+      "id": "reference-template-screen",
+      "path": "research/reference-template-20261105/REPORT.md",
+      "sha256": "c9061b854ce3df483646494b38df4fc518437c90c3b9f7e5b7c63de8c12af7d4",
+      "scope": "Four-case source-local research screen; no Product promotion or episode-recall claim."
+    },
+    {
+      "id": "real-quality-local-20261105",
+      "path": "release-evidence/real-quality-20261105/REPORT.md",
+      "sha256": "5bcbe014972366ef3800933bed15d1351e3478a2f512e58ec5b78d21bbd5046f",
+      "scope": "Development only: 42 reused approximate-reference intervals, historical cached Y10 versus standalone original-mix Musicless. No holdout, runtime chooser or Product default change."
+    },
+    {
+      "id": "frontier-external-leads",
+      "path": "docs/research/FRONTIER.md",
+      "commit": "98f3a4d9ebfe387b9ea7d8150894d12c271a98e4",
+      "follow_ref": "main",
+      "scope": "Section 'External leads not yet tried': public primary pages read on 2026-11-13; nothing downloaded, installed or run in LSS."
+    }
+  ],
+  "technologies": [
+    {
+      "id": "sam-audio",
+      "name": "SAM Audio",
+      "aliases": [
+        "SAM-Audio",
+        "sam_audio",
+        "サムオーディオ",
+        "ログイン",
+        "login",
+        "gated"
+      ],
+      "category": "query-separation",
+      "implementation": "lss/sound/sam_audio.py + t5_text.py; vendored SAM/DACVAE; installed runtime source exists",
+      "adoption": "Named-sound route shipped; SOUND development paused. BGM trials are separate research.",
+      "configuration": "Product base-tv bf16 mirror 5ee10e3; upstream bb4c699; SAM License; public anonymous redistribution. Historical small@20b65f5 is another checkpoint.",
+      "roles": [
+        {
+          "use": "Named sound / 指定音",
+          "input": "recorded source or selected parent",
+          "assembly": "SAM target/residual -> power-ratio mask on original stereo; never publish codec PCM",
+          "population": "20 controlled SFX; 50 MUSDB songs; real Product jobs in sound-bench-index",
+          "observation": "Product specialist routing and independent presence verification; not reliable for arbitrary music instruments.",
+          "decision": "SHIPPED_SCOPED",
+          "reopen": "New role/input/conditioning with wanted-preservation evidence; no re-intake needed.",
+          "sources": [
+            "sound-contract",
+            "sound-bench",
+            "sound-bench-index"
+          ]
+        },
+        {
+          "use": "BGM music cleanup",
+          "input": "13 condition-typed rows; mix or Musicless output",
+          "assembly": "music prompt on mix / on Musicless / subtract explosion or sound-effects estimate",
+          "population": "13 rows, 32 kHz mono scoring; native 44.1 kHz parent projection",
+          "observation": "Whole-music mask harms score; removers trade fidelity for limited interference reduction. Named-sound route remains.",
+          "decision": "NO_GAIN_TESTED_CELLS",
+          "reopen": "Different input, conditioning or assembly must explain why these failures do not apply.",
+          "sources": [
+            "rotation"
+          ]
+        },
+        {
+          "use": "Removed-side musical recovery",
+          "input": "FX-removed side of historical Y10",
+          "assembly": "music prompt; native or +20 dB then undo gain -> source stereo projection -> return into FX",
+          "population": "first 8 s of ep1 408/480.5 and corpus-c ep10 1353.3; 6 calls",
+          "observation": "Native prefix SDR 7.69->7.67, 11.46->11.44, 3.00->2.79; +20 dB also no useful gain.",
+          "decision": "NO_GAIN_TESTED_CELLS",
+          "reopen": "Other input/prompt/conditioning/assembly; reuse six estimates first.",
+          "sources": [
+            "spatial"
+          ]
+        },
+        {
+          "use": "Temporal prompting",
+          "input": "SAM small, text sound effects, oracle positive/wrong anchor",
+          "assembly": "TEXT / CORRECT / WRONG; seed 0, no span predictor, one rerank candidate",
+          "population": "103 calls; corpus-a pooled 16, corpus-b 6 descriptive; confirmation not run",
+          "observation": "Correct-text median capture difference 0; 4/16 improve. TEMPORAL_ROUTE_NOT_SUPPORTED only for this configuration.",
+          "decision": "HELD_SCOPED_NEGATIVE",
+          "reopen": "New checkpoint/anchor source/role with reason prior failure no longer applies; never family-wide rejection.",
+          "sources": [
+            "sam-temporal",
+            "sam-repaired"
+          ]
+        }
+      ],
+      "assets": [
+        {
+          "module": "lss/sound/sam_audio.py",
+          "symbol": "WEIGHTS"
+        },
+        {
+          "module": "lss/sound/t5_text.py",
+          "symbol": "WEIGHTS"
+        },
+        {
+          "module": "lss/sound/t5_text.py",
+          "symbol": "TOKENIZER"
+        }
+      ],
+      "reuse": {
+        "existing_store": "%LSS_DEPLOY_BASE%/LSS/models (observed junction to %LSS_WORK_ROOT%/models/product)",
+        "development_use": "Set LSS_MODEL_DIR to the existing store for the job. The rotation audiosep_bench.py already uses %LSS_WORK_ROOT%/models/product. No new intake or authentication is needed for these cached assets.",
+        "relocation": "If placement must change, verify the existing files, relocate once and update all owning references together; preserve installed runtime access. Do not treat a different directory as a missing technology."
+      }
+    },
+    {
+      "id": "sfc-locoformer",
+      "name": "SFC-Locoformer DnR medium",
+      "aliases": [],
+      "category": "separation",
+      "implementation": "lss/bgm/sfc_analysis.py",
+      "adoption": "Shipped BGM analyzer and SOUND DnR node",
+      "configuration": "spectral_feature_compression@bf61e1e; weights@0827e70a; mono per channel; channel handling explicit",
+      "roles": [
+        {
+          "use": "Speech/music/effects",
+          "input": "finished stereo mix",
+          "assembly": "SFC -> source-relative BGM formation; SOUND selects appropriate parent",
+          "population": "Product and historical target-absent controls",
+          "observation": "Useful analyzer; tonal Music/SFX confusion and target-absent failures remain.",
+          "decision": "SHIPPED_SCOPED",
+          "reopen": "New role must test stereo, target absence and wanted singing, not just SDR.",
+          "sources": [
+            "recipe-contract",
+            "sound-contract",
+            "headroom-repaired"
+          ]
+        }
+      ],
+      "assets": [
+        {
+          "module": "lss/bgm/sfc_analysis.py",
+          "symbol": "WEIGHTS"
+        }
+      ]
+    },
+    {
+      "id": "instrumental-deux",
+      "name": "becruily deux / instrumental specialists",
+      "aliases": [
+        "Mel-RoFormer",
+        "becruily",
+        "伴奏"
+      ],
+      "category": "separation",
+      "implementation": "lss/core/catalog.py; lss/sound/extract.py; lss/separation/selective.py",
+      "adoption": "Shipped INSTRUMENTAL; legacy model TSV states are only that slot",
+      "configuration": "becruily_deux_inst identity in ledger/models.tsv; SOUND instrumental lacks selective_original_composition",
+      "roles": [
+        {
+          "use": "Instrumental",
+          "input": "song or cinematic music parent",
+          "assembly": "vocals split -> selective original composition for INSTRUMENTAL; plain instrumental for SOUND",
+          "population": "50 MUSDB7 tracks; real Instrumental native checks",
+          "observation": "Same model does not make the two targets equivalent; stem semantics and selective stage differ.",
+          "decision": "SHIPPED_SCOPED",
+          "reopen": "New assembly preserving wanted instruments/continuity with exact Recipe identity.",
+          "sources": [
+            "sound-contract",
+            "model-ledger",
+            "acceptance-index"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "bandit",
+      "name": "Facing the Music BandIt / BandIt v2",
+      "aliases": [],
+      "category": "separation",
+      "implementation": "lss/bgm/four_stem_analysis.py; separate research v2 adapters",
+      "adoption": "Shipped singing recovery; direct replacement research not adopted",
+      "configuration": "Facing the Music BandIt split is not BandIt v2 multi/DnR v3",
+      "roles": [
+        {
+          "use": "Wanted singing recovery",
+          "input": "SFC candidate and named music/vocal stems",
+          "assembly": "4-class evidence -> guarded same-voice recovery",
+          "population": "Product BGM; wanted singing controls",
+          "observation": "Preserve musical voice even when SFC puts it in Dialogue.",
+          "decision": "SHIPPED_SCOPED",
+          "reopen": "Instrument/accompaniment recovery needs separate evidence; no blanket voice exclusion.",
+          "sources": [
+            "recipe-contract",
+            "sound-contract"
+          ]
+        },
+        {
+          "use": "Direct DnR replacement",
+          "input": "13 synthetic rows and historical 42-row bank",
+          "assembly": "BandIt v2 multi speech/music/SFX as whole-mix route",
+          "population": "13 rows; historical target-absent/activity controls",
+          "observation": "1.51 dB versus Musicless 6.02 on current synthetic fixture; older +0.24 dB failure-case lead had target-absent leakage.",
+          "decision": "NO_GAIN_TESTED_CELLS",
+          "reopen": "Different component/analyzer role with positive/negative controls.",
+          "sources": [
+            "rotation",
+            "recipe-contract"
+          ]
+        }
+      ],
+      "assets": [
+        {
+          "module": "lss/bgm/four_stem_analysis.py",
+          "symbol": "WEIGHTS"
+        }
+      ]
+    },
+    {
+      "id": "scnet",
+      "name": "SCNet XL IHF / SCNet research",
+      "aliases": [],
+      "category": "separation",
+      "implementation": "lss/sound/extract.py SCNET; research author models separate",
+      "adoption": "Shipped 4-stem node",
+      "configuration": "SCNet XL IHF ep36 from MSST v1.0.15; exact spec in extract.py",
+      "roles": [
+        {
+          "use": "Instrument parents",
+          "input": "music parent",
+          "assembly": "SCNet drums/bass/other/vocals -> specialist or instrument-mode SAM",
+          "population": "MUSDB7 and sound instrument bench",
+          "observation": "Specialist parent useful; other stem is not a complete per-instrument renderer.",
+          "decision": "SHIPPED_SCOPED",
+          "reopen": "New stem/role with retention and target-absent checks.",
+          "sources": [
+            "sound-contract",
+            "sound-bench"
+          ]
+        }
+      ],
+      "assets": [
+        {
+          "module": "lss/sound/extract.py",
+          "symbol": "SCNET"
+        },
+        {
+          "module": "lss/sound/extract.py",
+          "symbol": "SCNET_CONFIG"
+        }
+      ]
+    },
+    {
+      "id": "karaoke-chorus",
+      "name": "Karaoke lead/backing and male/female specialists",
+      "aliases": [],
+      "category": "separation",
+      "implementation": "lss/sound/extract.py KARAOKE/CHORUS; lss/separation/stem_semantics.py",
+      "adoption": "SOUND shipped; model-stem semantics separate from Product target registration",
+      "configuration": "becruily karaoke@f7849ae; Sucial ep267@bb174dc; each stem has model-specific meaning",
+      "roles": [
+        {
+          "use": "Lead/backing/all singing",
+          "input": "all-vocals music parent",
+          "assembly": "lead(vocals(music)); backing = all vocals - lead; male/female uses chorus specialist",
+          "population": "20 controlled duets plus real SOUND checks",
+          "observation": "Alternating voices poorly split (~0-2 dB); chorus vs harmony not separately shipped.",
+          "decision": "SHIPPED_SCOPED",
+          "reopen": "New role or cleaner voice split; never redefine BGM to exclude musical singing.",
+          "sources": [
+            "sound-contract",
+            "sound-bench",
+            "model-ledger"
+          ]
+        }
+      ],
+      "assets": [
+        {
+          "module": "lss/sound/extract.py",
+          "symbol": "KARAOKE"
+        },
+        {
+          "module": "lss/sound/extract.py",
+          "symbol": "CHORUS"
+        }
+      ]
+    },
+    {
+      "id": "hyperace",
+      "name": "HyperACE v2 instrumental",
+      "aliases": [
+        "HyperACE",
+        "unwa",
+        "load failure",
+        "ロード"
+      ],
+      "category": "separation",
+      "implementation": "Research loader uses unwa bs_roformer.py, not standard MSST module",
+      "adoption": "Research lead only; not Product default",
+      "configuration": "pcunwa BS-Roformer-HyperACE v2_inst; upstream-specific implementation required",
+      "roles": [
+        {
+          "use": "Standard loader intake",
+          "input": "HyperACE v2 checkpoint",
+          "assembly": "standard MSST bs_roformer loader",
+          "population": "historical intake",
+          "observation": "Load failure only; superseded by successful own-module execution, not a quality rejection.",
+          "decision": "LOAD_FAILURE_SUPERSEDED",
+          "reopen": "Reuse corrected loader before any acquisition request.",
+          "sources": [
+            "model-ledger",
+            "practitioner-digest",
+            "exploration"
+          ]
+        },
+        {
+          "use": "M&E guide vs final music",
+          "input": "42-row approximate-truth bank",
+          "assembly": "HyperACE M&E -> FX -> consensus -> mid processing -> singing/tonal protection",
+          "population": "42 exploratory rows; thresholds developed on them",
+          "observation": "Guide order reaches 4/12 prior hopeless rows; final renderer worse than Y10. PHRASE_TONALKEEP CLEAR5/HARM1, not certified.",
+          "decision": "RESEARCH_LEAD",
+          "reopen": "New population confirmation before adoption; distinguish guide from final renderer.",
+          "sources": [
+            "exploration",
+            "exploration-rows"
+          ]
+        }
+      ],
+      "assets": [
+        {
+          "path": "%LSS_MEDIA_ROOT%/DevCache/bs-reassembly-r1/models/hyperace_v2_inst.ckpt",
+          "kind": "checkpoint"
+        },
+        {
+          "path": "%LSS_MEDIA_ROOT%/DevCache/bs-reassembly-r1/models/hyperace_v2_inst_config.yaml",
+          "kind": "config"
+        },
+        {
+          "path": "%LSS_MEDIA_ROOT%/DevCache/bs-reassembly-r1/models/hyperace_bs_roformer.py",
+          "kind": "corrected_upstream_loader"
+        }
+      ],
+      "reuse": {
+        "development_use": "Reuse these existing checkpoint/config/own-module files with sep.py _hyperace. For active inference stage or relocate them to the SSD using the existing storage policy and update NEW / all owning references together; do not download again or move an installed runtime dependency out from under it."
+      },
+      "execution": [
+        {
+          "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+          "path": "evidence/bs-reassembly/sep.py",
+          "scope": "Existing research execution code; inspect identity/settings and use the standard hidden/GPU/storage admission before inference."
+        },
+        {
+          "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+          "path": "evidence/explore/explore.py",
+          "scope": "Existing research execution code; inspect identity/settings and use the standard hidden/GPU/storage admission before inference."
+        }
+      ]
+    },
+    {
+      "id": "dialogue-consensus",
+      "name": "Local dialogue-residual instrumental consensus",
+      "aliases": [
+        "dialogue residual",
+        "consensus",
+        "台詞残り",
+        "局所"
+      ],
+      "category": "separation",
+      "implementation": "lss/bgm/dialogue_residual.py; worker run_instrumental_spans",
+      "adoption": "Shipped BGM local dialogue cleanup",
+      "configuration": "dialogue-residual-instrumental-consensus-v1; Product default instrumental model, not research Musicless",
+      "roles": [
+        {
+          "use": "Dialogue residue in score",
+          "input": "SFC first/accepted second pass and wanted-singing recovery output; source instrumental with context",
+          "assembly": "eligible WANTED cue and Speech-supported windows -> minimum STFT magnitude consensus; preserve other windows",
+          "population": "13 eligible released corpus-a spans and8 corpus-c spans;10 ineligible spans",
+          "observation": "13/13 corpus-a closer to recording, median+6.7dB, minimum+1.7dB;8/8 corpus-c improved; ineligible0 worsened. Source docstring evidence, not installed ep1 answer-key score.",
+          "decision": "SHIPPED_SCOPED",
+          "reopen": "Different eligibility/representation requires preserving wanted singing and unprocessed regions.",
+          "sources": [
+            "recipe-contract",
+            "headroom-repaired",
+            "acceptance-index"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "musicless",
+      "name": "Musicless / Y10-dependent research routes",
+      "aliases": [
+        "Y10",
+        "dialogue-first",
+        "台詞",
+        "順序"
+      ],
+      "category": "separation",
+      "implementation": "Research adapters/caches; no Musicless-named provider in main lss/. Historical Y10 is fixture-specific",
+      "adoption": "Research only; separate from shipped instrumental-consensus cleanup",
+      "configuration": "Musicless checkpoint and complement convention are fixture-specific; Y10 historical baseline is not every installed release",
+      "roles": [
+        {
+          "use": "Whole score / residual cleanup",
+          "input": "historical Y10, original mix, clean/singing controls",
+          "assembly": "Musicless direct or consensus as guard/detector",
+          "population": "42-row bank and repaired candidate audit",
+          "observation": "Can help tonal rows but remove wanted singing; selector cannot safely take every oracle win.",
+          "decision": "MIXED_SCOPED",
+          "reopen": "Different role/guard with measured wanted preservation.",
+          "sources": [
+            "breadth-history",
+            "headroom-repaired",
+            "selector"
+          ]
+        },
+        {
+          "use": "Dialogue-first ordering / 順序",
+          "input": "condition-typed mix or real occurrences",
+          "assembly": "FlowersV10/Resurrection/FNO/other instrumental -> Musicless",
+          "population": "13 synthetic rows; 18 real ep1 windows; 25 recurring occurrences",
+          "observation": "Dialogue-first consistently improves listener-calibrated measures; real leak meter 0.145->0.039 for FlowersV10 first. No whole-episode acceptance.",
+          "decision": "RESEARCH_LEAD",
+          "reopen": "Whole user path and residue measure able to resolve non-speech under music.",
+          "sources": [
+            "rotation"
+          ]
+        },
+        {
+          "use": "Blanket replacement of historical cached Y10",
+          "input": "Original mixture (not Y10 output)",
+          "assembly": "Cached standalone Musicless, one fixed output role, no oracle choice",
+          "population": "42 reused headroom intervals; source-fitted reference, not untouched holdout or installed-release truth",
+          "observation": "Median paired reference error SNR +0.84 dB and effects-proxy bleed -3.69 dB coexist with local regression in 13/42 intervals and 21 windows losing >3 dB target-dominant energy.",
+          "decision": "REJECT_SCOPED_BLANKET_REPLACEMENT",
+          "reopen": "Different local role/order with fixed preserved baseline, independent confirmation and wanted-preservation evidence. This does not reject dialogue-first or post-Y10 use.",
+          "sources": [
+            "real-quality-local-20261105"
+          ]
+        }
+      ],
+      "assets": [],
+      "execution": [
+        {
+          "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+          "path": "evidence/bs-reassembly/sep.py",
+          "scope": "Existing research execution code; inspect identity/settings and use the standard hidden/GPU/storage admission before inference."
+        }
+      ]
+    },
+    {
+      "id": "sfx-removers",
+      "name": "FX MDX23C, Jasper/Jazzpear category removers",
+      "aliases": [
+        "Jazzpear",
+        "Jasper",
+        "SFX",
+        "FX",
+        "MDX23C"
+      ],
+      "category": "separation",
+      "implementation": "Research caches and adapters; existing Product effects/cleanup roles separate",
+      "adoption": "Research cells mostly no gain; no family-wide exclusion",
+      "configuration": "FX MDX23C differs from Jazzpear explosions/fighting/anime and Jasper foreground/background",
+      "roles": [
+        {
+          "use": "Remove effects / detector consensus",
+          "input": "whole mix, Y10/Musicless, individual dirty stem or removed side",
+          "assembly": "FX before/after instrumental; subtractor vs consensus detector",
+          "population": "42 exploratory rows and 13 condition-typed rows",
+          "observation": "Whole/stem use and order differ. Category removers find little explosion residue in Musicless; some remove orchestral hits.",
+          "decision": "MIXED_SCOPED",
+          "reopen": "Cue/instrument-specific role with preservation controls, not repeat whole-clip chain.",
+          "sources": [
+            "exploration",
+            "rotation",
+            "practitioner-digest"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "query-tools",
+      "name": "AudioSep, USS, CLAPSep, TUSS, Hive",
+      "aliases": [
+        "AudioSep",
+        "USS",
+        "CLAPSep",
+        "TUSS",
+        "Hive",
+        "query"
+      ],
+      "category": "query-separation",
+      "implementation": "Research execution records and cached outputs; not interchangeable checkpoints",
+      "adoption": "Research only for listed music roles",
+      "configuration": "Text query, audio-example query and oracle/self query are distinct conditions",
+      "roles": [
+        {
+          "use": "Music cleanup and query conditioning",
+          "input": "mix, Musicless, own-cue example, removed side",
+          "assembly": "text/music or effects prompts; USS own example; CLAPSep self-conditioning",
+          "population": "13 condition rows; historical 42 rows; separate CLAPSep eight-target scope",
+          "observation": "Most tested music roles below specialists; self-query and clean-input preservation failures are scoped. Loading/execution exists for several tools.",
+          "decision": "NO_GAIN_TESTED_CELLS",
+          "reopen": "New input/query/assembly with an automatic Product-available guide and clean-input retention.",
+          "sources": [
+            "rotation",
+            "breadth-history",
+            "model-survey"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "separator-alternatives",
+      "name": "MRX, TIGER, DBS-TIGER, MIMO, Big Beta 6X",
+      "aliases": [
+        "MRX",
+        "TIGER",
+        "DBS",
+        "MIMO",
+        "BB6X",
+        "Big Beta"
+      ],
+      "category": "separation",
+      "implementation": "Research providers/intakes; original TIGER remains under .providers/tiger",
+      "adoption": "Not adopted as general replacements",
+      "configuration": "Original TIGER, DBS-TIGER and DBS-BSRNN are different assets/runtime conditions",
+      "roles": [
+        {
+          "use": "Whole-mix replacement",
+          "input": "finished mix / historical bank",
+          "assembly": "separate native L/R where model is mono; compare replacement and target absence",
+          "population": "six-candidate historical review; newer rotation screens",
+          "observation": "Tonal Music/SFX confusion, target absence or stereo failure; no universal separator winner.",
+          "decision": "NO_GAIN_TESTED_CELLS",
+          "reopen": "Different useful role, not leaderboard-only replacement.",
+          "sources": [
+            "recipe-contract",
+            "rotation"
+          ]
+        },
+        {
+          "use": "Independent Effects covariance",
+          "input": "cached TIGER Effects + FX Music + unexplained residual",
+          "assembly": "local stereo Wiener using independent Effects covariance",
+          "population": "three fixed prefixes, no new model forward",
+          "observation": "Some interference suppression improves but corpus-c singing holes/retention worsen. DBS-BSRNN missing-dependency intake is not quality evidence.",
+          "decision": "NO_ADOPTION_TRADEOFF",
+          "reopen": "Preservation-safe new role; reuse cached estimates; fix runtime before interpreting intake.",
+          "sources": [
+            "spatial",
+            "spatial-handoff"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "instrument-reassembly",
+      "name": "SW6, Mega53 and instrument specialists / Drumsep",
+      "aliases": [
+        "Drumsep",
+        "Mega53",
+        "SW6",
+        "Gilliaan",
+        "strings",
+        "guitar",
+        "再合成",
+        "楽器"
+      ],
+      "category": "assembly",
+      "implementation": "Research SW6/Mega53/strings/guitar/drum providers and cached passes",
+      "adoption": "Method open; uniform full-cue reproduction claim withdrawn",
+      "configuration": "Choose present instruments per cue; FX only dirty stems; piano/bass before drums where attacks/leak require",
+      "roles": [
+        {
+          "use": "Band Separation Reassembly",
+          "input": "cue-specific actual instrumentation",
+          "assembly": "instrument stems -> FX on dirty stem -> drums/Drumsep as appropriate -> sum",
+          "population": "42-row uniform 12-instrument chain; 13-row 19-model sum",
+          "observation": "Uniform chains harm 23-41/42; 19-model sum loses ~5 dB. These do not reproduce practitioner per-cue choices and do not reject that method.",
+          "decision": "UNIFORM_ROLE_FAILED_METHOD_OPEN",
+          "reopen": "Automatic cue-specific instrumentation/dirty-stem choice preserving attacks, tails, choir and stereo.",
+          "sources": [
+            "exploration",
+            "rotation",
+            "practitioner-digest",
+            "recipe-contract"
+          ]
+        }
+      ],
+      "assets": [],
+      "execution": [
+        {
+          "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+          "path": "evidence/bs-reassembly/sep.py",
+          "scope": "Existing research execution code; inspect identity/settings and use the standard hidden/GPU/storage admission before inference."
+        },
+        {
+          "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+          "path": "evidence/explore/faithful.py",
+          "scope": "Existing research execution code; inspect identity/settings and use the standard hidden/GPU/storage admission before inference."
+        }
+      ]
+    },
+    {
+      "id": "transformed-passes",
+      "name": "Speed/pitch/polarity/shift passes and ensembles",
+      "aliases": [
+        "sample rate",
+        "speed",
+        "pitch",
+        "polarity",
+        "ensemble",
+        "average",
+        "max",
+        "min",
+        "速度",
+        "ピッチ",
+        "位相反転"
+      ],
+      "category": "assembly",
+      "implementation": "Research guide_batch1/3, real order checks; no Product default",
+      "adoption": "Tried; means are research leads, max has scene-sound risk",
+      "configuration": "Sample-rate reinterpretation then map back; 0.90/0.94/1.06/1.12 plus inverted/shifted passes; avg/max/min/median differ",
+      "roles": [
+        {
+          "use": "Recover omitted music",
+          "input": "same recorded stereo fixture",
+          "assembly": "transformed Musicless passes -> align original timeline -> mean/max/min/median",
+          "population": "13 synthetic rows; 18 real ep1 windows",
+          "observation": "Seven-pass mean SI-SDR 6.02->6.27, better 13/13; max improves missing-band measure but real scene sound can return. Dialogue-first + means also measured.",
+          "decision": "RESEARCH_LEAD_MEAN_ONLY",
+          "reopen": "Generalization, native stereo/timeline, real wanted retention and no scene-sound addition; not untried.",
+          "sources": [
+            "rotation"
+          ]
+        }
+      ],
+      "assets": [],
+      "execution": [
+        {
+          "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+          "path": "evidence/rotation/guide_batch1.py",
+          "scope": "Existing research execution code; inspect identity/settings and use the standard hidden/GPU/storage admission before inference."
+        },
+        {
+          "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+          "path": "evidence/rotation/guide_batch3.py",
+          "scope": "Existing research execution code; inspect identity/settings and use the standard hidden/GPU/storage admission before inference."
+        },
+        {
+          "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+          "path": "evidence/rotation/order_real2.py",
+          "scope": "Existing research execution code; inspect identity/settings and use the standard hidden/GPU/storage admission before inference."
+        }
+      ]
+    },
+    {
+      "id": "residual-reseparation",
+      "name": "Boosted residual and discarded-stem recovery",
+      "aliases": [
+        "residual",
+        "+20 dB",
+        "removed side",
+        "残差",
+        "捨てた"
+      ],
+      "category": "assembly",
+      "implementation": "Research +20dB and cached-stem trials",
+      "adoption": "Tried cells no useful gain; other roles open",
+      "configuration": "Gain boost/undo, input side and return mask are explicit Recipe stages",
+      "roles": [
+        {
+          "use": "Recover missing music",
+          "input": "discarded residual or FX removed side",
+          "assembly": "+20 dB -> re-separate -> undo gain -> guarded return; SW6/HyperACE/Musicless alternatives",
+          "population": "13 condition rows; historical 42 bank; three SAM prefixes",
+          "observation": "Residual boost/add-back does not improve current test; returning Effects instruments can return SFX.",
+          "decision": "NO_GAIN_TESTED_CELLS",
+          "reopen": "Different input/guide/selection with wanted-vs-SFX discrimination.",
+          "sources": [
+            "rotation",
+            "exploration",
+            "spatial"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "phase-spatial",
+      "name": "Phase fixer, Mid/Side and spatial refinement",
+      "aliases": [
+        "phase",
+        "Mid/Side",
+        "M/S",
+        "Wiener",
+        "位相",
+        "ステレオ"
+      ],
+      "category": "assembly",
+      "implementation": "Existing local refinement + research phase/M/S branches",
+      "adoption": "Some scoped analyzer/refiner roles; no global M/S recipe",
+      "configuration": "Input M/S, processing mid/keeping side, phase replacement and covariance conditioning are separate cells",
+      "roles": [
+        {
+          "use": "Phase correction / M/S",
+          "input": "multiple separator estimates or original stereo",
+          "assembly": "500Hz-5kHz reference phase; coherence gate; M/S transform or mid-only removal",
+          "population": "13 synthetic rows; historical 30 development cases; three spatial prefixes",
+          "observation": "Phase/LSD gains may lose PQ+CU; independent M/S separation breaks trained mixture distribution; protected mid-only differs.",
+          "decision": "MIXED_SCOPED",
+          "reopen": "New representation/phase role with actual stereo/retention controls.",
+          "sources": [
+            "rotation",
+            "exploration",
+            "spatial",
+            "recipe-contract"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "repetition-lowrank",
+      "name": "REPET-SIM, RPCA and spectral dictionaries",
+      "aliases": [
+        "REPET",
+        "RPCA",
+        "dictionary",
+        "low rank",
+        "繰り返し"
+      ],
+      "category": "assembly",
+      "implementation": "Research signal processing; existing occurrence_dictionary reused from Git",
+      "adoption": "Listed cells not adopted",
+      "configuration": "Low-rank cleanup, removed-side return, per-stem repetition and dictionary guide are different roles",
+      "roles": [
+        {
+          "use": "Suppress nonrepeating interference",
+          "input": "Y10, FX-removed side or individual SW6 stem",
+          "assembly": "REPET/PCP cleanup vs low-rank return; instrument-conditioned PSD dictionary",
+          "population": "42 bank; six fixed crops; three short dictionary prefixes",
+          "observation": "REPET loses nonrepeating melody; RPCA cleanup loses 2.99-5.86dB wanted energy; dictionary return no material gain.",
+          "decision": "NO_GAIN_TESTED_CELLS",
+          "reopen": "Different recurrence/guide/input/assembly, not parameter-only repeat.",
+          "sources": [
+            "rotation",
+            "spatial"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "guidesep-mus3d",
+      "name": "GuideSep / MuS3D query and blind component tools",
+      "aliases": [
+        "GuideSep",
+        "MuS3D",
+        "guided",
+        "guide"
+      ],
+      "category": "query-separation",
+      "implementation": "Existing loaders and successful executions in prior Git; research only",
+      "adoption": "Not new intake; automatic guidance trials not adopted",
+      "configuration": "GuideSep automatic strongest SW6 guide; MuS3D blind SEG vs guided query; no user-curated runtime guide",
+      "roles": [
+        {
+          "use": "Guided recovery",
+          "input": "cached instrument guide or blind source components",
+          "assembly": "GuideSep return-from-FX vs instrument cleanup; prior MuS3D SEG/guided query",
+          "population": "GuideSep three 4s CPU prefixes; prior MuS3D 4 blind components then 3 outputs/6 forwards",
+          "observation": "Both GuideSep assemblies no gain. MuS3D executed earlier; original worktree/audio missing, relocation unresolved, code/results retained in Git.",
+          "decision": "REUSE_PRIOR_EXECUTION",
+          "reopen": "New guide/input role; resolve original locators before acquisition.",
+          "sources": [
+            "spatial",
+            "spatial-handoff"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "fastmnmf",
+      "name": "FastMNMF2 / blind spatial separation",
+      "aliases": [
+        "FastMNMF2",
+        "MNMF",
+        "blind"
+      ],
+      "category": "assembly",
+      "implementation": "Research implementation and cached outputs",
+      "adoption": "Not adopted for tested cells",
+      "configuration": "blind original / Y10-guided original / cleanup-Y10, seed20261103,30 iterations,8 components",
+      "roles": [
+        {
+          "use": "Spatial recovery",
+          "input": "six historical bank crops",
+          "assembly": "three fixed guide/input roles",
+          "population": "six crops per role",
+          "observation": "Wanted-loss tradeoffs in all three uses; not a family-wide negative.",
+          "decision": "NO_ADOPTION_TRADEOFF",
+          "reopen": "Different source count/conditioning or local role with meaningful positive/negative controls.",
+          "sources": [
+            "spatial",
+            "spatial-handoff"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "occurrence-memory",
+      "name": "Occurrence memory and cross-episode identity",
+      "aliases": [
+        "memory",
+        "series",
+        "recurrence",
+        "記憶",
+        "別話"
+      ],
+      "category": "recovery",
+      "implementation": "lss/bgm/memory_support.py, memory_refresh.py, recurrence assets",
+      "adoption": "Shipped scoped memory; recall and complete-form assembly open",
+      "configuration": "Verified source/recording overlap, external accepted PCM; no self-support or implicit release identity",
+      "roles": [
+        {
+          "use": "Extent/identity support",
+          "input": "user-produced prior cues + current episode",
+          "assembly": "verified constant-offset overlap -> formation evidence -> CurrentBest decision",
+          "population": "9 episodes, 7 consolidated assets in recorded acceptance; 4/4 anchored pairs, recall7/15",
+          "observation": "Useful extent and identity; matching a donor never proves clean audio or whole-span EXACT.",
+          "decision": "SHIPPED_SCOPED",
+          "reopen": "New verified witness or changed Recipe; preserve single-occurrence utility and all unknown material.",
+          "sources": [
+            "recovery-contract",
+            "acceptance-index"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "occurrence-splicing",
+      "name": "Cleanest-occurrence splicing and dialogue-first combinations",
+      "aliases": [
+        "occurrence splicing",
+        "splice",
+        "dialogue-first",
+        "つぎはぎ",
+        "順序",
+        "組み合わせ"
+      ],
+      "category": "recovery",
+      "implementation": "Research occurrence scripts; Product memory/alignment reused",
+      "adoption": "Research only for splicing combinations",
+      "configuration": "Align true overlap, choose cleanest section, level match/crossfade; never average nonoverlapping recording parts",
+      "roles": [
+        {
+          "use": "Cross-occurrence recovery",
+          "input": "13 x4 constructed aligned occurrences; 25 real recurring cue occurrences",
+          "assembly": "own Musicless vs spliced; FlowersV10 -> Musicless per occurrence -> splice",
+          "population": "13 synthetic rows; 25 real occurrences, no clean truth for real set",
+          "observation": "Real leak 0.145->0.126 by splicing plain route; dialogue-first alone0.039 and splicing0.039, PQ+CU14.78->14.83. Residual SFX under music unresolved.",
+          "decision": "RESEARCH_SCOPED",
+          "reopen": "Measure remaining SFX/retention, not only speech leak; per-instrument occurrence choice remains distinct.",
+          "sources": [
+            "rotation",
+            "recovery-contract"
+          ]
+        }
+      ],
+      "assets": [],
+      "execution": [
+        {
+          "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+          "path": "evidence/rotation/occ_splice.py",
+          "scope": "Existing research execution code; inspect identity/settings and use the standard hidden/GPU/storage admission before inference."
+        },
+        {
+          "commit": "9759fd77f7a8cd59439b21311bc2930c281c78bd",
+          "path": "evidence/rotation/occ_real.py",
+          "scope": "Existing research execution code; inspect identity/settings and use the standard hidden/GPU/storage admission before inference."
+        }
+      ]
+    },
+    {
+      "id": "reference-identity",
+      "name": "Released recording identity and scoped EXACT",
+      "aliases": [
+        "EXACT",
+        "released",
+        "reference",
+        "発売",
+        "同定",
+        "fingerprint"
+      ],
+      "category": "identity",
+      "implementation": "lss/bgm/identity.py; reference_relations/reconstruction; acquisition",
+      "adoption": "Product implementation; recognition recall and late-reference follow-through open",
+      "configuration": "Landmark candidates -> audio verification -> bounded relation; partial match does not skip unknown remainder",
+      "roles": [
+        {
+          "use": "Released recognition",
+          "input": "18 ep1 12s usages vs42 released tracks; Product whole episodes are separate",
+          "assembly": "candidate retrieval -> existing method3 dialogue-bed/piecewise verifier",
+          "population": "14 released +4 unreleased short queries; past real episode44-reference evidence",
+          "observation": "Landmark top1 can be14/14 while safe verification lower. Reused method3 confirms10/14 vs saved9/14; short-query out-of-bounds need HOLD.",
+          "decision": "SHIPPED_WITH_RECALL_LIMITS",
+          "reopen": "Whole-usage scope, unknown wanted preservation and actual installed answer-key scoring.",
+          "sources": [
+            "rotation",
+            "spatial",
+            "spatial-handoff",
+            "recovery-contract"
+          ]
+        },
+        {
+          "use": "Separator-matched reference evidence",
+          "input": "Fixed 12 s stereo guard crops: clean reference, controlled dialogue/SFX, -18 dB added music, final 2 s replacement",
+          "assembly": "SFC clean-reference Music as an evidence template versus original reference; unchanged existing relation cell measurements",
+          "population": "Four controlled derived cases from bgm-guards; one base recording and one secondary recording, not episode audio",
+          "observation": "Dialogue/SFX reference-only residual median 0.014189 to 0.014145 (about 0.31 percent reduction); overlay maximum 0.019001 is below dialogue/SFX maximum 0.043273; replacement remains locally visible. Fixed 25 percent improvement plus per-cell discrimination screen fails.",
+          "decision": "REJECTED_THIS_SCREEN",
+          "reopen": "A distinct population first demonstrates materially larger clean-reference separator distortion. Do not retune these four cases or infer stereo-safe EXACT from mono metrics.",
+          "sources": [
+            "reference-template-screen"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "soundprint-sampleid",
+      "name": "SoundPrint / SampleID / CLEWS / Fish candidate retrieval",
+      "aliases": [
+        "SoundPrint",
+        "SampleID",
+        "CLEWS",
+        "Fish",
+        "candidate"
+      ],
+      "category": "identity",
+      "implementation": "Research adapters/caches; Product landmarks already exist",
+      "adoption": "Research candidates, not whole-span skip authorization",
+      "configuration": "landmarks, audio embedding, mean-of-best windows and score fusion; raw vs separated query differs",
+      "roles": [
+        {
+          "use": "Candidate discovery",
+          "input": "ep1 released/unreleased; 17x141 version fixture; short overlap patterns",
+          "assembly": "SoundPrint/SampleID/CLEWS/Fish -> candidate list -> independent waveform verification",
+          "population": "14+4 ep1 uses; 17 version queries incl9 rerecordings; short-pattern bank",
+          "observation": "SoundPrint often duplicates Product retrieval; SampleID helps some variant ranks but distinct-performance recall remains low. No automatic EXACT.",
+          "decision": "RESEARCH_SCOPED",
+          "reopen": "New complementary recall with false-EXACT controls and complete-span confirmation.",
+          "sources": [
+            "rotation",
+            "spatial",
+            "spatial-handoff"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "version-relations",
+      "name": "Chroma/CENS, 2D-FTM, DTW, key-invariant matching",
+      "aliases": [
+        "CENS",
+        "chroma",
+        "DTW",
+        "2D-FTM",
+        "version",
+        "別演奏",
+        "別ミックス"
+      ],
+      "category": "identity",
+      "implementation": "Product versions.qmax plus research scorers",
+      "adoption": "Related-version research; not EXACT",
+      "configuration": "Same composition != same recording; within-query ranks need calibration for typed relations",
+      "roles": [
+        {
+          "use": "Alternate recording/edit candidate",
+          "input": "17 queries vs141 recordings, 9 rerecordings",
+          "assembly": "CENS rigid / subsequence DTW / global OTI / qmax / SampleID fusion",
+          "population": "17x141,12s research queries below Product20s eligibility",
+          "observation": "DTW same8/8 shared+1/9 rerecordings; OTI6/8+0/9; CENS-qmax6/17. No relation adoption from these rankings.",
+          "decision": "NO_GAIN_TESTED_CELLS",
+          "reopen": "New matching representation with natural performance positives and false relation controls.",
+          "sources": [
+            "rotation",
+            "spatial",
+            "recipe-contract"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "cue-formation",
+      "name": "BGM detection, quiet gaps, boundaries and continuity",
+      "aliases": [
+        "boundary",
+        "continuation",
+        "quiet",
+        "gap",
+        "曲頭",
+        "曲尾",
+        "静か",
+        "境界"
+      ],
+      "category": "formation",
+      "implementation": "lss/bgm/ formation, memory_support and boundary modules",
+      "adoption": "Shipped extent capabilities; short and gap cases remain scoped",
+      "configuration": "Source + separated audio + physical boundaries + recording witnesses; no classifier non-detection means ABSENT",
+      "roles": [
+        {
+          "use": "Quiet music / cue continuity",
+          "input": "raw vs Musicless/FX views; short flanks; source physical boundaries",
+          "assembly": "diverse separation views -> tags/CLAP/continuation evidence -> formation",
+          "population": "quiet/gap fixtures, real149/137 regional checks; 7 selected continuity pairs",
+          "observation": "Two separations help detection; separated CLAP drops AUC1.0->0.9167 on seven pairs; u04 raw evidence does not establish deployed detector input.",
+          "decision": "SHIPPED_WITH_OPEN_GAPS",
+          "reopen": "Inspect actual Product-rendered detector input and truth at boundaries; no inferred auto-join from a score.",
+          "sources": [
+            "rotation",
+            "spatial",
+            "regional-results",
+            "components",
+            "precision"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "short-assets",
+      "name": "Short BGM and short named-effect removal",
+      "aliases": [
+        "short",
+        "stinger",
+        "短い",
+        "短尺"
+      ],
+      "category": "formation",
+      "implementation": "Bounded-short and SOUND removal code; exact adoption in release record",
+      "adoption": "Scoped source/package evidence; broad short recall remains unknown",
+      "configuration": "2-to-under10s BGM physical witnesses; independent word/frame/output-parent corroboration for removal",
+      "roles": [
+        {
+          "use": "Short publication/removal",
+          "input": "single episode and controlled positive/negative asks",
+          "assembly": "bounded asset gate; remove only positively confirmed supported sound/time",
+          "population": "BGM137 one5.877846s addition with4 negatives held; short effects20/40 positives and0/160 negative removals",
+          "observation": "One BGM addition and bounded removal recall improve; sparse target absence still UNKNOWN/HELD as appropriate.",
+          "decision": "SCOPED_CAPABILITY",
+          "reopen": "Broader useful short cases with unknown wanted preservation and real packaged route.",
+          "sources": [
+            "short-bgm",
+            "short-effects",
+            "sound-contract"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "tagging-instrumentation",
+      "name": "PANNs AudioSet, PE-A-Frame, CLAP and instrument evidence",
+      "aliases": [
+        "PANNs",
+        "AudioSet",
+        "PE-A-Frame",
+        "CLAP",
+        "instrumentation",
+        "編成",
+        "検出"
+      ],
+      "category": "analysis",
+      "implementation": "Product tagger / sound verification; separate research selectors",
+      "adoption": "Shipped evidence tools; not quality or absence oracles",
+      "configuration": "Input representation matters; independent source/output evidence; stereo-power guarded tagging",
+      "roles": [
+        {
+          "use": "Instrumentation and presence",
+          "input": "raw dirty occurrence vs separated estimate; known parent",
+          "assembly": "separate first -> 13 AudioSet instrument groups; PE confirmation where supported",
+          "population": "14 released ep1 usages; instrument presence52 absent asks; stereo tagging controls",
+          "observation": "Instrumentation rho0.54->0.77, top group3/14->6/14 by separation; low-Speech seconds add no material gain. Parent gating reduces false instrument presence.",
+          "decision": "SHIPPED_SCOPED_AND_RESEARCH",
+          "reopen": "Control low-energy/singing confounds; never prune wanted instruments from non-detection.",
+          "sources": [
+            "rotation",
+            "spatial",
+            "sound-contract",
+            "stereo-tagging"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "quality-evaluation",
+      "name": "Wanted retention, ODAQ, Audiobox Aesthetics and residue meters",
+      "aliases": [
+        "quality",
+        "judge",
+        "ODA Q",
+        "ODAQ",
+        "Audiobox",
+        "aesthetics",
+        "品質",
+        "評価"
+      ],
+      "category": "evaluation",
+      "implementation": "Product quality gates + research proxy studies",
+      "adoption": "No single general no-reference quality selector",
+      "configuration": "Within-route monitor, within-item candidate ranking, presence and semantic preservation are different questions",
+      "roles": [
+        {
+          "use": "Rank separation candidates",
+          "input": "truth-backed controls and natural candidates with unknown truth",
+          "assembly": "retention/stereo/target absence gates; aesthetics or tagger as scoped evidence",
+          "population": "film05, ODAQ listener data, 13 condition rows and natural ep1/occurrence windows",
+          "observation": "Aesthetics across-route selection chooses missing-music candidates; non-speech tagger residue meters fail candidate ranking. Speech leak near floor cannot resolve music-like SFX.",
+          "decision": "UNRESOLVED_GENERAL_JUDGE",
+          "reopen": "New measure demonstrated on realistic candidate differences, not only truth-vs-mix. The agent cannot listen.",
+          "sources": [
+            "rotation",
+            "headroom-repaired",
+            "quality-contract",
+            "spatial"
+          ]
+        },
+        {
+          "use": "Local replacement regression screen",
+          "input": "Hash-bound 42 historical real-mix intervals with fitted released references and proxy attribution",
+          "assembly": "Whole interval and fixed 3 s windows, bands, stereo; no candidate-specific fit",
+          "population": "corpus-a 1/137/145/146/150 and corpus-c ep1/8/10; 42 reused correlated intervals, 295 windows",
+          "observation": "Same-policy whole-row regression 7/42 versus local 13/42; six new local rows. 21 windows lose >3 dB target-dominant energy; strongest newly exposed ep1 tail loses 8.62 dB despite whole-row loss 0.65 dB. Full paired results byte-identical on two runs.",
+          "decision": "DEVELOPMENT_REJECTION_SCREEN",
+          "reopen": "Separate frozen confirmation, real splice joins and semantic/instrument truth before promotion; no-reference Product selection remains unresolved.",
+          "sources": [
+            "real-quality-local-20261105"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "restoration",
+      "name": "MSR/X-LANCE/MelRNN, inpainting and rhythm-tail restoration",
+      "aliases": [
+        "Restoration",
+        "MSR",
+        "MelRNN",
+        "X-LANCE",
+        "inpainting",
+        "復元",
+        "生成",
+        "un-ducking"
+      ],
+      "category": "restoration",
+      "implementation": "Research source-restoration engines; existing labelled restoration paths",
+      "adoption": "Separate representation, not faithful extraction or recovered master",
+      "configuration": "Generated/enhanced waveform is Restoration; rhythm/guides and gain caps belong to its identity",
+      "roles": [
+        {
+          "use": "Repair missing material",
+          "input": "Musicless removed/weak bins or observed repeated tail",
+          "assembly": "MSR poststage or50/50 blend with gate; rhythm-select existing restored tail",
+          "population": "13 synthetic rows; real12-window confirmation; observed-tail controls",
+          "observation": "Promising fitted gains can fail natural confirmation; repair selection needs target presence before aesthetics. No automatic extraction claim.",
+          "decision": "RESEARCH_SCOPED",
+          "reopen": "Preservation-safe restoration with explicit provenance and source clock; cannot substitute for recorded target evidence.",
+          "sources": [
+            "rotation",
+            "spatial",
+            "intent",
+            "recipe-contract"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "scene-understanding",
+      "name": "Scene evidence: ASR, OCR, video/audio understanding",
+      "aliases": [
+        "ASR",
+        "OCR",
+        "Whisper",
+        "Haas",
+        "ReazonSpeech",
+        "Omni",
+        "LFM3",
+        "scene",
+        "場面",
+        "字幕"
+      ],
+      "category": "scene-naming",
+      "implementation": "scene_job/native/runtime; source observations and research model adapters",
+      "adoption": "Native naming runtime shipped; ASR withheld, scene-grounded names unavailable in installed release",
+      "configuration": "whisper.cpp/kotoba vs Haas-ja/ReazonSpeech/Qwen ASR; LFM3/Omni separate research",
+      "roles": [
+        {
+          "use": "Observed scene -> provisional title",
+          "input": "dialogue/subtitle/frame evidence + music, cast/title context",
+          "assembly": "extract actual evidence -> observed vs inferred -> one title per identity",
+          "population": "4 naming usages and18 audiovisual scene rows; real137/150 observations",
+          "observation": "ASR names/window choice can mislead; Haas/LFM3 four-row naming gives no gain. Text output is not acoustic identity evidence.",
+          "decision": "PARTLY_SHIPPED_GAP_OPEN",
+          "reopen": "Verified scene evidence on actual packaged user path; naming quality separate from successful model load.",
+          "sources": [
+            "rotation",
+            "scene-observation",
+            "scene-runtime",
+            "naming-contract",
+            "runtime-contract"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "naming-metadata",
+      "name": "Identity-wide song-like naming and music-library metadata",
+      "aliases": [
+        "title",
+        "naming",
+        "metadata",
+        "仮題",
+        "タイトル",
+        "タグ"
+      ],
+      "category": "scene-naming",
+      "implementation": "lss/bgm/scene_names.py; scene_job.py; metadata/publication",
+      "adoption": "Shipped provisional names with identity collisions/revision gaps",
+      "configuration": "Official verified title supersedes provisional; newer better LSS title replaces identity-wide with recoverable revision",
+      "roles": [
+        {
+          "use": "Naming and finishing",
+          "input": "observed scene + tempo/rhythm/instrumentation/structure; music alone if scene unknown",
+          "assembly": "identity -> shared title -> tags/artwork/track/album -> recoverable revision",
+          "population": "installed ep1 title collision observed; distinct-name branch not deployed",
+          "observation": "One name for9/14 recordings reported installed; development improved distinctness, not verified scene grounding. Source first-name permanence is a Product gap.",
+          "decision": "PARTLY_SHIPPED_GAP_OPEN",
+          "reopen": "Measure identity distinction, revisions and scene fidelity on real packaged refresh.",
+          "sources": [
+            "naming-contract",
+            "runtime-contract",
+            "naming-distinct"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "native-runtime",
+      "name": "stems.cpp Vulkan / CUDA and resident native request context",
+      "aliases": [
+        "stems.cpp",
+        "Vulkan",
+        "CUDA",
+        "GGUF",
+        "C ABI",
+        "native",
+        "実行基盤"
+      ],
+      "category": "runtime",
+      "implementation": "Research stems.cpp; lss/separation/native_stems* only on spatial branch",
+      "adoption": "Development only; no Product route registered",
+      "configuration": "stems.cpp v0.1.6; same Musicless converted GGUF; request-scoped V1 C ABI context, no between-job residency",
+      "roles": [
+        {
+          "use": "Local inference runtime",
+          "input": "20s stereo clip; u04 two4s regions",
+          "assembly": "PyTorch vs Vulkan/CUDA; reload vs same-request resident context",
+          "population": "one20s comparison; two4s region request checks",
+          "observation": "Vulkan1829MiB vs PyTorch4832MiB,60.2dB output agreement; shipped CUDA CPU-speed here. Resident timing cold-cache-confounded, not causal speedup.",
+          "decision": "DEVELOPMENT_EXECUTABLE_BOUNDARY",
+          "reopen": "Long-form throughput, memory/stereo/timeline contracts and Product integration; not a new separator-quality result.",
+          "sources": [
+            "rotation",
+            "spatial"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "local-language-runtime",
+      "name": "On-demand local LLM/ASR and development memory",
+      "aliases": [
+        "LLM",
+        "local AI",
+        "Qwen",
+        "gpt-oss",
+        "Ornith",
+        "memory",
+        "ローカル"
+      ],
+      "category": "runtime",
+      "implementation": "scene_native/runtime; scripts/dev.py memory/draft; no hosted source analysis",
+      "adoption": "Native Product naming runtime and separate Development assistants",
+      "configuration": "On-demand GPU lease; SSD-resolved weights; Ornith/gpt-oss/Qwen role and resource measurements kept separately",
+      "roles": [
+        {
+          "use": "Language assistance",
+          "input": "local transcript/context or developer code/docs",
+          "assembly": "load per job -> constrained text -> unload; CPU retrieval/explicit reranking separate",
+          "population": "local runtime benchmarks and22-query memory replay",
+          "observation": "Successful runtime/text output never proves music facts or ten-fix autonomous coding adoption; no resident quality-changing fallback.",
+          "decision": "SCOPED_RUNTIME",
+          "reopen": "Task-specific factual/identifier correctness and actual package path with resource headroom.",
+          "sources": [
+            "runtime-contract",
+            "local-development-ai",
+            "acceptance-index"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "lineage-publication",
+      "name": "Recipe, CurrentBest, provenance, reuse and rollback",
+      "aliases": [
+        "CurrentBest",
+        "Recipe",
+        "provenance",
+        "rollback",
+        "履歴",
+        "再利用"
+      ],
+      "category": "product-integrity",
+      "implementation": "lss/core/recipe_registry.py and asset/public integrity boundaries",
+      "adoption": "Shipped; exact claims and failure history in acceptance ledger",
+      "configuration": "Recipe graph includes all output-changing order/params; newest candidate is not CurrentBest",
+      "roles": [
+        {
+          "use": "Safe output improvement",
+          "input": "source identity + candidate PCM/tags/state + prior accepted asset",
+          "assembly": "stage -> validate exact bytes/claim -> CurrentBest revision -> reversible publication",
+          "population": "real corrupt/forged-rate/appended audio and rollback/user-state falsifiers",
+          "observation": "Prior independent verifiers rejected apparent PASS candidates; accepted audio and user metadata survive changes.",
+          "decision": "SHIPPED_SCOPED",
+          "reopen": "New output/state mutation needs relevant falsifier, not full acceptance ritual for every experiment.",
+          "sources": [
+            "acceptance-index",
+            "recipe-contract",
+            "recovery-contract"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "reference-acquisition",
+      "name": "Release discovery, acquisition and late-reference redecision",
+      "aliases": [
+        "release",
+        "acquisition",
+        "reference",
+        "OST",
+        "発売",
+        "取得"
+      ],
+      "category": "identity",
+      "implementation": "lss/bgm/reference_acquisition.py, discovery and acquisition services",
+      "adoption": "Shipped discovery; late-arrival revision has separate development work",
+      "configuration": "Optional public reference evidence; no source upload; no requirement for official references on a single episode",
+      "roles": [
+        {
+          "use": "Find recording references",
+          "input": "work/composer/catalogue metadata and authorized released media",
+          "assembly": "discovery -> acquisition -> recording verification -> reevaluate unresolved relations",
+          "population": "installed ep1 soundtrack38/41 acquisition; late-reference lane records separate",
+          "observation": "A successfully acquired reference after the decision does not prove it informed the published result. No matching title authorizes whole-span exclusion.",
+          "decision": "SHIPPED_WITH_OPEN_TIMING_GAP",
+          "reopen": "Revisit exactly affected unknown relations when verified references arrive, preserve unknown wanted parts.",
+          "sources": [
+            "recovery-contract",
+            "acceptance-index"
+          ]
+        }
+      ],
+      "assets": []
+    },
+    {
+      "id": "external-leads-20261113",
+      "name": "External leads not yet tried (2026-11-13 search): SAM Audio Judge, CineAudioDB, cross-version common-signal / deformed-reference NMF, TVSM, AV-CASS, llama.cpp audio input, BAF fingerprinting",
+      "aliases": [
+        "SAM Audio Judge",
+        "SAJ",
+        "CineAudioDB",
+        "CineAudioGen",
+        "common signal",
+        "international versions",
+        "deformed references",
+        "SPORES",
+        "TVSM",
+        "speech music activity",
+        "AV-CASS",
+        "AVCASS",
+        "flow matching",
+        "Qwen3-ASR",
+        "llama.cpp audio",
+        "mtmd",
+        "BAF",
+        "ssafp",
+        "PeakNetFP",
+        "外部候補",
+        "未試行"
+      ],
+      "category": "external-intake",
+      "implementation": "None in LSS; public code/weights exist for most (see FRONTIER links)",
+      "adoption": "Untried leads; each names the existing role it could serve and its falsifier",
+      "configuration": "Read-only external search; licence, gating, stereo support and 16 GB fit unverified for every lead",
+      "roles": [
+        {
+          "use": "No-reference separation judge",
+          "input": "(mix, separated output, target text)",
+          "assembly": "SAJ recall/precision/faithfulness as candidate ranking for quality-evaluation",
+          "population": "none in LSS; external reports only (2026-11-13 primary-source search)",
+          "observation": "Reported music PCC 0.815 overall but SRCC 0.714/0.569 (recall); trained on weaker separators; gated weights, SAM License",
+          "decision": "UNTRIED_EXTERNAL_LEAD",
+          "reopen": "Rank cached candidates on truth-backed rows: recall must demote the missing-music candidate Aesthetics chose; target-absent controls must not score high; prompt wording must not flip order",
+          "sources": [
+            "frontier-external-leads"
+          ]
+        },
+        {
+          "use": "External ducking-aware confirmation population",
+          "input": "CineAudioDB stereo production_mix with music stem as truth",
+          "assembly": "frozen confirmation only, current route vs research leads",
+          "population": "none in LSS; external reports only (2026-11-13 primary-source search)",
+          "observation": "Real stems where linear sum differs from production mix (sidechain ducking); 2.46 h; CC-BY/BY-SA per film; one 5.1 downmix and one mono film excluded",
+          "decision": "UNTRIED_EXTERNAL_LEAD",
+          "reopen": "Use when a quality or ducking/restoration decision needs real-mix truth; never for threshold fitting",
+          "sources": [
+            "frontier-external-leads"
+          ]
+        },
+        {
+          "use": "Cross-version common signal and deformation-aware joint fit",
+          "input": "another-language 2ch mix as identity-verified donor; occurrences as deformed references",
+          "assembly": "common-signal extraction; NMF co-factorisation with explicit gain/EQ/offset deformation for occurrence-memory",
+          "population": "none in LSS; external reports only (2026-11-13 primary-source search)",
+          "observation": "Classic 2010-2015 results from abstracts only; no public implementation found; donor rules of SOURCE_TO_ASSET apply",
+          "decision": "UNTRIED_EXTERNAL_LEAD",
+          "reopen": "Synthetic versions with 0.5 dB level and few-sample offsets must beat current dialogue removal; real use only when the user has multi-track media",
+          "sources": [
+            "frontier-external-leads"
+          ]
+        },
+        {
+          "use": "Independent music-under-dialogue witness",
+          "input": "original mix frames",
+          "assembly": "TVSM CRNN probabilities as additional witness for cue-formation; never an absence claim",
+          "population": "none in LSS; external reports only (2026-11-13 primary-source search)",
+          "observation": "Trained on about 1600 h of real TV; Apache-2.0 repo, weight licence and language mix unverified",
+          "decision": "UNTRIED_EXTERNAL_LEAD",
+          "reopen": "Must add answer-key regions the current detector misses without adding held negatives; reject if out of distribution on anime",
+          "sources": [
+            "frontier-external-leads"
+          ]
+        },
+        {
+          "use": "Generative cinematic separation as mask source",
+          "input": "stereo mix (audio-only checkpoint first)",
+          "assembly": "AV-CASS output projected onto the original stereo, compared with separator-alternatives",
+          "population": "none in LSS; external reports only (2026-11-13 primary-source search)",
+          "observation": "MIT code, Google Drive checkpoints (hash on intake); stereo, sample rate and VRAM unverified",
+          "decision": "UNTRIED_EXTERNAL_LEAD",
+          "reopen": "Reject at once on no stereo, music generated on target-absent controls or over 16 GB; audio-visual variant only on SFX-dominant failure rows",
+          "sources": [
+            "frontier-external-leads"
+          ]
+        },
+        {
+          "use": "Second ASR on the shipped native runtime",
+          "input": "original mix and dialogue stem",
+          "assembly": "llama.cpp mtmd audio input (Qwen3-ASR GGUF) agreeing with whisper.cpp for scene-understanding naming",
+          "population": "none in LSS; external reports only (2026-11-13 primary-source search)",
+          "observation": "Official llama.cpp list includes Qwen3-ASR 0.6B/1.7B GGUF; packaged build audio support unverified",
+          "decision": "UNTRIED_EXTERNAL_LEAD",
+          "reopen": "First check whether the packaged llama.cpp reads audio; adopt only if agreed words are clearly more precise and still include names",
+          "sources": [
+            "frontier-external-leads"
+          ]
+        },
+        {
+          "use": "External answer key for broadcast music identification",
+          "input": "BAF TV recordings and production-music catalogue",
+          "assembly": "query representation (original / music stem / dialogue-first) for reference-identity landmark search",
+          "population": "none in LSS; external reports only (2026-11-13 primary-source search)",
+          "observation": "2025 study reports separation helps peak-based but not neural fingerprints (abstract only); data licence unverified",
+          "decision": "UNTRIED_EXTERNAL_LEAD",
+          "reopen": "Licence first; about 30 fixed segments, count false EXACT with unreleased controls",
+          "sources": [
+            "frontier-external-leads"
+          ]
+        }
+      ],
+      "assets": []
+    }
+  ]
+}
