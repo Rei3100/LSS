@@ -1420,8 +1420,8 @@
       "reason": "Claude Design drawing of the project tray icons and cursors (the owner's own design); tests/test_ui_system_assets.py checks the generated assets against it. Reviewed 2026-11-14: geometry notes only."
     },
     "docs/DOCS_MANIFEST.json": {
-      "blob_oid": "873b506147d7ca30c18693b0f40758c3f38326a1",
-      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+      "blob_oid": "d0c8df96201e0b6d986adaa6b4d1e61e4c9cf5ef",
+      "reason": "Docs manifest re-pinned to the published CI document (hash only), reviewed 2026-11-17"
     },
     "docs/dev/AGENT_PLAYBOOK.md": {
       "blob_oid": "efa8c610dbaff4d1e3998ff27c9e3ee7e17b3982",
