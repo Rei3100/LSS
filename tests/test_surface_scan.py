@@ -146,6 +146,17 @@ def test_each_text_surface(invoke, suffix, field, kind):
     assert result["findings"][0]["url"].startswith("https://github.com/" + REPO)
 
 
+def test_canary_comment_is_a_finding(invoke):
+    """The leak drill posts one canary token; the scan must report it without a denylist entry."""
+    fake = FakeRunner()
+    fake.data["/issues/comments"][0]["body"] = "LSS-" + "CANARY-Drill20261117"
+    code, result, _ = invoke(fake)
+    assert code == 1 and result["status"] == "findings"
+    assert result["findings"] == [{"kind": "issue_comment", "url": result["findings"][0]["url"],
+                                    "entry_index": None, "rule": "CANARY"}]
+    assert "CANARY-Drill" not in json.dumps(result)
+
+
 @pytest.mark.parametrize("suffix", ["/issues", "/pulls", "/issues/comments", "/pulls/comments",
                                     "/commits", "/branches", "/secret-scanning/alerts"])
 def test_pagination_reaches_later_findings(invoke, suffix):
