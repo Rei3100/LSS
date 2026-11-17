@@ -2,6 +2,7 @@
   "schema_version": 1,
   "include": [
     "docs/dev/CI.md",
+    "docs/DOCS_MANIFEST.json",
     ".github/*.json",
     ".github/*.yml",
     "AGENTS.md",
@@ -976,7 +977,8 @@
     "scripts/local_llm_models.json",
     "tests/test_machine_config.py",
     "tests/machine_config_fixtures.py",
-    "tests/gates/test_review_gate.py"
+    "tests/gates/test_review_gate.py",
+    "docs/DOCS_MANIFEST.json"
   ],
   "approved_paths": {
     "assets/app.ico": {
@@ -1418,10 +1420,6 @@
     "design/system-assets/LSS System Assets.dc.html": {
       "blob_oid": "c8c5454c65762503b0eb70a72e97134001c2e387",
       "reason": "Claude Design drawing of the project tray icons and cursors (the owner's own design); tests/test_ui_system_assets.py checks the generated assets against it. Reviewed 2026-11-14: geometry notes only."
-    },
-    "docs/DOCS_MANIFEST.json": {
-      "blob_oid": "d0c8df96201e0b6d986adaa6b4d1e61e4c9cf5ef",
-      "reason": "Docs manifest re-pinned to the published CI document (hash only), reviewed 2026-11-17"
     },
     "docs/dev/AGENT_PLAYBOOK.md": {
       "blob_oid": "efa8c610dbaff4d1e3998ff27c9e3ee7e17b3982",
