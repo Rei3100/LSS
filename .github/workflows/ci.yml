@@ -134,6 +134,9 @@ jobs:
       - run: python -m pip install torch==2.9.1 torchaudio==2.9.1 torchvision==0.24.1 --index-url https://download.pytorch.org/whl/cpu
       - run: python scripts/fetch_ffmpeg.py
       - run: python scripts/fetch_msst_models.py
+      # Compile librosa's numba kernels once in one process; four test workers compiling them at the same
+      # time hung test_bgm_music_facts on the hosted runner.
+      - run: python -c "import numpy as np; from lss.bgm import music_facts; print(music_facts.tempo(np.random.default_rng(0).random(22050 * 8).astype('float32'), 22050)['status'])"
       # A hung test must fail the job with its stack in the log, not hold a runner for six hours.
       - run: python scripts/dev.py test --ci -j 4 -m "not local"
         timeout-minutes: 50
