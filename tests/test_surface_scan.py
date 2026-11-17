@@ -146,6 +146,29 @@ def test_each_text_surface(invoke, suffix, field, kind):
     assert result["findings"][0]["url"].startswith("https://github.com/" + REPO)
 
 
+def test_canary_comment_is_a_finding(invoke):
+    """The leak drill posts one canary token; the scan must report it without a denylist entry."""
+    fake = FakeRunner()
+    fake.data["/issues/comments"][0]["body"] = "LSS-" + "CANARY-Drill20261117"
+    code, result, _ = invoke(fake)
+    assert code == 1 and result["status"] == "findings"
+    assert result["findings"] == [{"kind": "issue_comment", "url": result["findings"][0]["url"],
+                                    "entry_index": None, "rule": "CANARY"}]
+    assert "CANARY-Drill" not in json.dumps(result)
+
+
+@pytest.mark.parametrize("value", [
+    "https://github.com/example/LSS-" + "CANARY-Locator20261117/issues/1",
+    "https://github.com/example/LSS%2D" + "CANARY%2DLocator20261117/issues/1",
+    "example/lss-" + "canary-locator20261117",
+])
+def test_canary_in_a_locator_is_masked(value):
+    """A locator that carries the token (raw, percent-encoded or lower case) is not written out."""
+    checker = scan.Checker([], {})
+    assert checker.safe(value) == "<masked>"
+    assert checker.safe("https://github.com/example/synthetic/issues/1").endswith("/issues/1")
+
+
 @pytest.mark.parametrize("suffix", ["/issues", "/pulls", "/issues/comments", "/pulls/comments",
                                     "/commits", "/branches", "/secret-scanning/alerts"])
 def test_pagination_reaches_later_findings(invoke, suffix):
