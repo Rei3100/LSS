@@ -267,7 +267,10 @@ def test_candidate_preparation_records_exact_failure_without_rebuilding_product(
     storage_tiers.make_junction(source/'.venv',ROOT/'.venv')
     subprocess.run(['git','init','-q',str(source)],check=True)
     for key,value in [('user.name','fixture'),('user.email','fixture@example.invalid')]:subprocess.run(['git','config',key,value],cwd=source,check=True)
-    subprocess.run(['git','add','scripts','build.ps1'],cwd=source,check=True)
+    (source/'.gitignore').write_text('bin/\nvendor/\n')
+    for name in ['bin/ffmpeg.exe','vendor/upstream/source.py']:
+        (source/name).parent.mkdir(parents=True);(source/name).write_text(name)
+    subprocess.run(['git','add','scripts','build.ps1','.gitignore'],cwd=source,check=True)
     subprocess.run(['git','commit','-qm','Fixture'],cwd=source,check=True)
     sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=source,text=True).strip()
     config_before=subprocess.check_output(['git','config','--local','--list'],cwd=source)
@@ -279,4 +282,6 @@ def test_candidate_preparation_records_exact_failure_without_rebuilding_product(
     assert record['commit']==sha and record['phase']=='build' and record['status']=='failed',result.stdout+result.stderr
     assert (target/'.venv/Scripts/python.exe').samefile(ROOT/'.venv/Scripts/python.exe')
     assert (target/'build').resolve().is_relative_to(tmp_path/'output')
+    # Fetched files the package needs are ignored by git; the candidate worktree receives them.
+    assert [(target/name).read_text() for name in ['bin/ffmpeg.exe','vendor/upstream/source.py']]==['bin/ffmpeg.exe','vendor/upstream/source.py']
     assert subprocess.check_output(['git','config','--local','--list'],cwd=source)==config_before
