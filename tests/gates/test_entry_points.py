@@ -735,3 +735,19 @@ def test_issue_state_operations_refuse_pull_requests(publication, tmp_path, argu
     args = [str(path) if arg == "BODY" else arg for arg in arguments]
     assert gh.main(args, runner=runner) == 1
     assert not any(argv[:2] == ["gh", "issue"] and argv[2] != "view" for argv, _ in calls)
+
+
+def test_run_carries_text_outside_the_console_code_page(tmp_path):
+    """A body with an emoji reaches the child unchanged whatever the Windows code page is."""
+    text = "Reviewed \U0001f916 日本語\n"
+    echo = "import sys; sys.stdout.buffer.write(sys.stdin.buffer.read())"
+    assert gh.run([sys.executable, "-I", "-c", echo], cwd=tmp_path, input=text).stdout == text
+
+
+def test_dry_run_output_is_ascii_json(publication, tmp_path, capsysbinary):
+    runner, _, _ = publication
+    path = tmp_path / "body.txt"
+    path.write_text("Reviewed \U0001f916\n", encoding="utf-8")
+    assert gh.main(["--dry-run", "issue-comment", "--issue", "7", "--body-file", str(path)], runner=runner) == 0
+    out = capsysbinary.readouterr().out
+    assert out.isascii() and json.loads(out)["stdin"] == "Reviewed \U0001f916\n"

@@ -23,7 +23,8 @@ guard = sibling("public_guard")
 
 
 def run(argv, *, cwd, input=None):
-    return subprocess.run(argv, cwd=cwd, input=input, text=True, capture_output=True,
+    # UTF-8 explicitly: the Windows default code page cannot carry every character of a body.
+    return subprocess.run(argv, cwd=cwd, input=input, text=True, encoding="utf-8", capture_output=True,
                           check=True, timeout=120)
 
 
@@ -263,7 +264,7 @@ def main(argv=None, *, runner=run):
             require_issue(issue_target)
         for command, text in commands:
             if args.dry_run:
-                print(json.dumps({"argv": command, "stdin": text}, ensure_ascii=False))
+                print(json.dumps({"argv": command, "stdin": text}))
             else:
                 result = runner(command, cwd=repo, input=text)
                 if args.operation == "issue-create":
