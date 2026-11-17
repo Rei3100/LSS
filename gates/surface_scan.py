@@ -103,7 +103,9 @@ class Checker:
                 yield index
 
     def safe(self, value):
-        if list(self.matches(value)) or list(self.matches(unquote(value))):
+        canary = guard.PATTERNS["CANARY"]
+        if (list(self.matches(value)) or list(self.matches(unquote(value)))
+                or canary.search(value) or canary.search(unquote(value))):
             return "<masked>"
         return value
 
