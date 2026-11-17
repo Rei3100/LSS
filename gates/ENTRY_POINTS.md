@@ -39,10 +39,12 @@ behavior require plan T15 on the real machine.
 
 ## GitHub publication
 
-Set `LSS_REPO_ROOT` to the intended checkout and `LSS_AGENT_BRANCH` to the assigned
-`codex/...` or `claude/...` branch. The branch must be checked out and origin must
-be the HTTPS or SSH `.git` URL of `LSS_GITHUB_REPOSITORY` (`owner/name`, set on the
-machine, never in this tree). Set
+Set `LSS_REPO_ROOT` to the intended checkout. Origin and every effective push URL
+must be the HTTPS or SSH `.git` URL of `LSS_GITHUB_REPOSITORY` (`owner/name`, set on
+the machine, never in this tree). Branch-bound operations require the assigned
+`codex/...` or `claude/...` branch in `LSS_AGENT_BRANCH` to be checked out. Issue
+operations, `pr-comment` and `comment-delete` also work from main without that
+variable. Set
 `LSS_PUBLISH_DENYLIST` to the private nonempty literal list, or use the public
 guard's default. Missing configuration, guard errors and command failures block.
 No denylist content or rejected body is printed.
@@ -51,36 +53,50 @@ The installed `lss-gh.cmd` accepts exactly these operations:
 
 | Operation | Inputs and scope |
 | --- | --- |
-| `pr-create` | `--title`, `--body-file`; assigned branch to main in the fixed repository |
+| `issue-create` | `--title`, `--body-file`, repeated optional `--label`; prints the new issue URL from gh |
+| `issue-comment` | `--issue N`, `--body-file`, optional `--allow-canary-test`; fixed repository |
+| `issue-close` | `--issue N`, `--reason-file`; posts the reason, then closes after posting succeeds |
+| `issue-edit` | `--issue N`, repeated `--add-label` / `--remove-label`; at least one label change, no title/body edits |
+| `pr-comment` | `--pr N`, `--body-file`; fixed repository, any head branch |
+| `pr-create` | `--title`, `--body-file`, optional `--draft`; assigned branch to main in the fixed repository |
+| `pr-ready` / `pr-draft` | `--pr N`; changes draft state only for the assigned branch's PR in the fixed repository |
+| `pr-close` | `--pr N`, `--reason-file`; assigned branch's PR only; posts the reason before closing |
+| `comment-delete` | `--comment-id ID`; deletes one issue/PR comment in the fixed repository |
 | `push` | No extra arguments; exact checked HEAD to the same assigned branch on origin |
 | `thread-reply` | `--thread PRRT_...`, `--reason-file`; current HEAD's thread in the fixed repository |
 | `thread-resolve` | Same inputs; posts the reason first, then resolves only after posting succeeds |
 | `review-record` | `--pr`, `--reason-file`; JSON record posted to the assigned branch's current PR |
 | `ci-rerun` | `--run-id`; requires the fixed repository's pull_request run for current HEAD and branch |
 
-Review-record JSON requires nonempty `base_sha`, `head_sha`, `bc_diff_digest`,
-`engine`, `summary` and `reason` strings. `head_sha` must equal current HEAD.
+The new issue, PR and comment selectors accept positive ASCII numeric IDs only. Labels
+match `[a-z0-9:_-]{1,40}` and pass the same outgoing inspection as titles and bodies.
+`--allow-canary-test` accepts only one complete canary token as the entire issue
+comment body, without whitespace. Only that body's single `CANARY` finding is
+tolerated; private literal hits and every other finding still block.
+
+Review-record JSON requires `base_sha`, `review_head_sha`, `diff_digest`, `engine`,
+`complete`, `summary`, `findings_p0p1` and `unresolved_p0p1`.
+`review_head_sha` must equal current HEAD; the README describes the field checks.
 This transports the record; CI owns base/digest invalidation and independent
 engine policy. Replies and resolution require a nonempty recorded reason.
 The text file is read once (maximum 1 MiB), inspected using the existing public
-guard's Reporter and private literals, then sent via stdin. PR titles, branch
-names and outgoing API payloads are also inspected. Commit publication scans
+guard's Reporter and private literals, then sent via stdin. Titles have the same
+1 MiB limit. Titles, labels, branch names and outgoing API payloads are also
+inspected. Commit publication scans
 every ancestor of HEAD, including commit metadata, through `public_guard.scan`.
 It conservatively refuses an ancestor that is not public-safe.
 
 Place `--dry-run` before the operation. It prints one JSON object per planned
 write containing the exact `argv` array and `stdin` snapshot. No planned write is
 executed. Local Git inspection and necessary read-only GitHub identity queries
-still run; therefore thread/review/run dry runs need GitHub access in deployment.
+still run; therefore PR state, thread/review/run dry runs need GitHub access in deployment.
 No shell command strings are constructed. Arbitrary commands, options, force,
 main pushes, ref deletion, alternate repositories and no-verify are refused.
-Issue writes, generic edits/labels/closures and canary bypass are deliberately
-not offered by this initial allowlist.
+Generic edits and canary exceptions outside `issue-comment` are refused.
 
-The existing public guard pre-push hook currently permits main only. This gate
-preserves that hook and does not bypass it: an assigned-branch push will still
-be rejected with that hook enabled. Reconcile the hook's permitted destinations
-in a separate reviewed change before real use. T3 must verify the narrow allow,
+The public guard pre-push hook permits main and the documented agent branches,
+with full content and ancestor inspection. This gate preserves the hook.
+T3 must verify the narrow allow,
 worktree behavior and cross-repository rejection; T13 must verify raw-write
 denials and synthetic private text rejection with fake executables. No test of
 this implementation performs a real GitHub write or network request.

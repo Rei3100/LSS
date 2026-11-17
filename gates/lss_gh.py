@@ -23,8 +23,15 @@ guard = sibling("public_guard")
 
 
 def run(argv, *, cwd, input=None):
-    return subprocess.run(argv, cwd=cwd, input=input, text=True, capture_output=True,
+    # UTF-8 explicitly: the Windows default code page cannot carry every character of a body.
+    return subprocess.run(argv, cwd=cwd, input=input, text=True, encoding="utf-8", capture_output=True,
                           check=True, timeout=120)
+
+
+def numeric_id(value):
+    if not re.fullmatch(r"[0-9]+", value) or not value.strip("0"):
+        raise argparse.ArgumentTypeError("Expected a positive numeric ID")
+    return value
 
 
 def format_review_record(record, head):
@@ -51,6 +58,27 @@ def main(argv=None, *, runner=run):
     pr = sub.add_parser("pr-create", allow_abbrev=False)
     pr.add_argument("--title", required=True)
     pr.add_argument("--body-file", type=Path, required=True)
+    pr.add_argument("--draft", action="store_true")
+    p = sub.add_parser("issue-create", allow_abbrev=False)
+    p.add_argument("--title", required=True)
+    p.add_argument("--body-file", type=Path, required=True)
+    p.add_argument("--label", action="append", default=[])
+    for name in ("issue-comment", "issue-close", "issue-edit", "pr-comment",
+                 "pr-ready", "pr-draft", "pr-close"):
+        p = sub.add_parser(name, allow_abbrev=False)
+        p.add_argument("--issue" if name.startswith("issue-") else "--pr",
+                       type=numeric_id, required=True)
+        if name in ("issue-comment", "pr-comment"):
+            p.add_argument("--body-file", type=Path, required=True)
+        if name == "issue-comment":
+            p.add_argument("--allow-canary-test", action="store_true")
+        if name in ("issue-close", "pr-close"):
+            p.add_argument("--reason-file", type=Path, required=True)
+        if name == "issue-edit":
+            p.add_argument("--add-label", action="append", default=[])
+            p.add_argument("--remove-label", action="append", default=[])
+    p = sub.add_parser("comment-delete", allow_abbrev=False)
+    p.add_argument("--comment-id", type=numeric_id, required=True)
     for name in ("thread-reply", "thread-resolve", "review-record"):
         p = sub.add_parser(name, allow_abbrev=False)
         p.add_argument("--reason-file", type=Path, required=True)
@@ -75,29 +103,66 @@ def main(argv=None, *, runner=run):
         push_urls = git("remote", "get-url", "--push", "--all", "origin").splitlines()
         if origin not in allowed or not push_urls or any(url not in allowed for url in push_urls):
             raise ValueError("Wrong repository")
-        branch = git("symbolic-ref", "--short", "HEAD")
-        if (branch != os.environ["LSS_AGENT_BRANCH"] or
-                not re.fullmatch(r"(?:codex|claude)/[A-Za-z0-9][A-Za-z0-9._/-]*", branch)):
-            raise ValueError("Not the assigned agent branch")
-        head = git("rev-parse", "HEAD")
-        if not re.fullmatch(r"[0-9a-f]{40,64}", head):
-            raise ValueError("Invalid HEAD")
+        if args.operation not in ("issue-create", "issue-comment", "issue-close", "issue-edit",
+                                  "pr-comment", "comment-delete"):
+            branch = git("symbolic-ref", "--short", "HEAD")
+            if (branch != os.environ["LSS_AGENT_BRANCH"] or
+                    not re.fullmatch(r"(?:codex|claude)/[A-Za-z0-9][A-Za-z0-9._/-]*", branch)):
+                raise ValueError("Not the assigned agent branch")
+            head = git("rev-parse", "HEAD")
+            if not re.fullmatch(r"[0-9a-f]{40,64}", head):
+                raise ValueError("Invalid HEAD")
         reporter = guard.Reporter(guard.load_denylist(Path(os.environ.get(
             "LSS_PUBLISH_DENYLIST", guard.DEFAULT_DENYLIST))))
         commands = []
-        def outgoing(parts, text=None):
+        def outgoing(parts, text=None, *, allow_canary=False):
             reporter.text("<outgoing>", json.dumps(parts, ensure_ascii=False))
             if text is not None:
-                reporter.text("<outgoing>", text)
+                if len(text.encode("utf-8")) > 1024 * 1024:
+                    raise ValueError("Text too large")
+                if allow_canary:
+                    if not guard.PATTERNS["CANARY"].fullmatch(text):
+                        raise ValueError("Expected exactly one canary token")
+                    canary_reporter = guard.Reporter(reporter.literals)
+                    canary_reporter.text("<outgoing>", text)
+                    if (len(canary_reporter.findings) != 1 or
+                            canary_reporter.findings[0]["rule"] != "CANARY"):
+                        raise ValueError("Outgoing canary rejected")
+                else:
+                    reporter.text("<outgoing>", text)
             commands.append((parts, text))
         def body(path):
             guard.require_plain_path(path)
-            if path.stat().st_size > 1024 * 1024:
+            # Keep one bounded snapshot, including if the file grows after inspection.
+            with path.open("rb") as stream:
+                data = stream.read(1024 * 1024 + 1)
+            if len(data) > 1024 * 1024:
                 raise ValueError("Text too large")
-            value = path.read_text(encoding="utf-8")
+            value = data.decode("utf-8").replace("\r\n", "\n")
             if not value.strip():
                 raise ValueError("Empty text")
             return value
+        def labels(parts, option, values):
+            for value in values:
+                if not re.fullmatch(r"[a-z0-9:_-]{1,40}", value):
+                    raise ValueError("Invalid label")
+                if value.startswith("-"):
+                    parts.append(option + "=" + value)
+                else:
+                    parts.extend([option, value])
+        issue_target = None
+        def require_issue(number):
+            # gh issue commands also accept pull request numbers; closing or relabelling a pull
+            # request must stay behind the assigned-branch check of the pr-* operations.
+            info = json.loads(runner(["gh", "issue", "view", number, "--repo", REPOSITORY,
+                                      "--json", "url"], cwd=repo).stdout)
+            if info != {"url": "https://github.com/" + REPOSITORY + "/issues/" + str(int(number))}:
+                raise ValueError("Not an issue of the fixed repository")
+        if hasattr(args, "title"):
+            if len(args.title.encode("utf-8")) > 1024 * 1024:
+                raise ValueError("Title too large")
+            # Inspect the literal title too; JSON escaping must not hide private literals.
+            reporter.text("<outgoing>", args.title)
         if args.operation in ("push", "pr-create"):
             # Scan every ancestor, including metadata. Do not assume remote history is safe.
             for oid in git("rev-list", head).splitlines():
@@ -107,8 +172,52 @@ def main(argv=None, *, runner=run):
             commands.append((["git", "-C", str(repo), "push", "origin", head + ":refs/heads/" + branch], None))
             reporter.text("<outgoing>", branch)
         elif args.operation == "pr-create":
-            outgoing(["gh", "pr", "create", "--repo", REPOSITORY, "--base", "main",
-                      "--head", branch, "--title", args.title, "--body-file", "-"], body(args.body_file))
+            parts = ["gh", "pr", "create", "--repo", REPOSITORY, "--base", "main",
+                     "--head", branch, "--title", args.title, "--body-file", "-"]
+            if args.draft:
+                parts.append("--draft")
+            outgoing(parts, body(args.body_file))
+        elif args.operation == "issue-create":
+            parts = ["gh", "issue", "create", "--repo", REPOSITORY,
+                     "--title", args.title, "--body-file", "-"]
+            labels(parts, "--label", args.label)
+            outgoing(parts, body(args.body_file))
+        elif args.operation in ("issue-comment", "pr-comment"):
+            kind = "issue" if args.operation == "issue-comment" else "pr"
+            number = args.issue if kind == "issue" else args.pr
+            # A numeric selector and explicit --repo cannot select a PR/issue by foreign URL.
+            outgoing(["gh", kind, "comment", number, "--repo", REPOSITORY, "--body-file", "-"],
+                     body(args.body_file), allow_canary=getattr(args, "allow_canary_test", False))
+        elif args.operation == "issue-edit":
+            if not args.add_label and not args.remove_label:
+                raise ValueError("No label changes")
+            issue_target = args.issue
+            parts = ["gh", "issue", "edit", args.issue, "--repo", REPOSITORY]
+            labels(parts, "--add-label", args.add_label)
+            labels(parts, "--remove-label", args.remove_label)
+            outgoing(parts)
+        elif args.operation in ("pr-ready", "pr-draft", "pr-close", "issue-close"):
+            kind = "issue" if args.operation == "issue-close" else "pr"
+            number = args.issue if kind == "issue" else args.pr
+            if kind == "pr":
+                info = json.loads(runner(["gh", "pr", "view", number, "--repo", REPOSITORY,
+                                          "--json", "headRefName,isCrossRepository"], cwd=repo).stdout)
+                if info != {"headRefName": branch, "isCrossRepository": False}:
+                    raise ValueError("PR does not belong to assigned branch")
+            else:
+                issue_target = number
+            if args.operation in ("pr-close", "issue-close"):
+                outgoing(["gh", kind, "comment", number, "--repo", REPOSITORY,
+                          "--body-file", "-"], body(args.reason_file))
+                outgoing(["gh", kind, "close", number, "--repo", REPOSITORY])
+            else:
+                parts = ["gh", "pr", "ready", number, "--repo", REPOSITORY]
+                if args.operation == "pr-draft":
+                    parts.append("--undo")
+                outgoing(parts)
+        elif args.operation == "comment-delete":
+            outgoing(["gh", "api", "--method", "DELETE",
+                      "repos/" + REPOSITORY + "/issues/comments/" + args.comment_id])
         elif args.operation == "ci-rerun":
             if args.run_id <= 0:
                 raise ValueError("Invalid run")
@@ -150,11 +259,16 @@ def main(argv=None, *, runner=run):
                     outgoing(["gh", "api", "graphql", "-f", "query=" + query, "-f", "id=" + args.thread])
         if reporter.findings:
             raise ValueError("Outgoing text rejected")
+        if issue_target is not None:
+            # After inspection: a rejected request reaches GitHub with no call at all.
+            require_issue(issue_target)
         for command, text in commands:
             if args.dry_run:
-                print(json.dumps({"argv": command, "stdin": text}, ensure_ascii=False))
+                print(json.dumps({"argv": command, "stdin": text}))
             else:
-                runner(command, cwd=repo, input=text)
+                result = runner(command, cwd=repo, input=text)
+                if args.operation == "issue-create":
+                    print(result.stdout, end="")
         return 0
     except (KeyError, TypeError, OSError, ValueError, guard.GuardError, subprocess.SubprocessError):
         print(json.dumps({"result": "BLOCK", "reason": "Repository, identity, guard or command check failed"}))
