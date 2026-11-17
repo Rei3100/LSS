@@ -55,8 +55,9 @@ Save-BuildReceipt
 & git -C $root -c core.longpaths=true -c core.autocrlf=false worktree add --detach $Worktree $exactCommit
 if ($LASTEXITCODE -ne 0) { throw "git worktree add failed" }
 New-Item -ItemType Junction -Path (Join-Path $Worktree ".venv") -Target (Join-Path $sharedRoot ".venv") | Out-Null
-# bin/ffmpeg.exe is fetched, not tracked, and LSS.spec packages it.
-$ignored = & git -C $root ls-files --others --ignored --exclude-standard -- vendor bin
+# LSS.spec packages two files this repository does not track: the fetched bin/ffmpeg.exe and the
+# design export runtime design/reference/support.js (not redistributed here).
+$ignored = & git -C $root ls-files --others --ignored --exclude-standard -- vendor bin design/reference/support.js
 foreach ($relative in $ignored) {
     if ($relative -match "__pycache__") { continue }
     $destination = Join-Path $Worktree $relative
