@@ -35,15 +35,18 @@ def publication(tmp_path, monkeypatch):
     monkeypatch.setenv("LSS_PUBLISH_DENYLIST", str(deny))
     monkeypatch.setattr(gh.guard, "scan", lambda *a, **k: {"result": "PASS"})
     calls = []
-    replies = {"branch": "codex/test", "run_head": HEAD,
-               "push_urls": "https://github.com/example-owner/LSS.git\n"}
+    replies = {"branch": "codex/test", "run_head": HEAD, "pr_branch": "codex/test",
+               "cross_repository": False, "origin": "https://github.com/example-owner/LSS.git\n",
+               "push_urls": "https://github.com/example-owner/LSS.git\n",
+               "issue_url": "https://github.com/example-owner/LSS/issues/7",
+               "write_stdout": "https://github.com/example-owner/LSS/issues/7\n"}
 
     def runner(argv, *, cwd, input=None):
         calls.append((argv, input))
         if argv[0] == "git":
             parts = argv[3:]
             if parts == ["remote", "get-url", "origin"]:
-                return SimpleNamespace(stdout="https://github.com/example-owner/LSS.git\n")
+                return SimpleNamespace(stdout=replies["origin"])
             if parts == ["remote", "get-url", "--push", "--all", "origin"]:
                 return SimpleNamespace(stdout=replies["push_urls"])
             if parts == ["symbolic-ref", "--short", "HEAD"]:
@@ -54,12 +57,23 @@ def publication(tmp_path, monkeypatch):
             return SimpleNamespace(stdout=json.dumps({"headSha": replies["run_head"],
                                                       "headBranch": "codex/test", "event": "pull_request"}))
         if argv[:3] == ["gh", "pr", "view"]:
-            return SimpleNamespace(stdout=json.dumps({"headRefOid": HEAD, "headRefName": "codex/test",
-                                                      "isCrossRepository": False}))
+            info = {"headRefOid": HEAD, "headRefName": replies["pr_branch"],
+                    "isCrossRepository": replies["cross_repository"]}
+            return SimpleNamespace(stdout=json.dumps({key: info[key] for key in argv[-1].split(",")}))
+        if argv[:3] == ["gh", "issue", "view"]:
+            return SimpleNamespace(stdout=json.dumps({"url": replies["issue_url"]}))
         if argv[:3] == ["gh", "api", "graphql"] and any(x.startswith("query=query") for x in argv):
             return SimpleNamespace(stdout=json.dumps({"data": {"node": {"pullRequest": {
                 "headRefOid": HEAD, "headRefName": "codex/test",
                 "repository": {"nameWithOwner": "example-owner/LSS"}}}}}))
+        if (argv[:3] in (["gh", "issue", "create"], ["gh", "issue", "comment"],
+                         ["gh", "issue", "edit"], ["gh", "issue", "close"],
+                         ["gh", "pr", "create"], ["gh", "pr", "comment"],
+                         ["gh", "pr", "ready"], ["gh", "pr", "close"])
+                or argv[:4] == ["gh", "api", "--method", "DELETE"]):
+            if argv[:3] == replies.get("fail_command"):
+                raise subprocess.CalledProcessError(1, argv)
+            return SimpleNamespace(stdout=replies["write_stdout"])
         raise AssertionError("Unexpected executable call: " + repr(argv))
     return runner, calls, replies
 
@@ -231,6 +245,322 @@ def test_resolve_records_reason_before_resolution(publication, tmp_path, capsys)
     assert "resolveReviewThread" in plans[1]["argv"][4]
 
 
+@pytest.mark.parametrize("arguments,expected", [
+    (["issue-create", "--title", "Work item", "--body-file", "BODY", "--label", "work:queue",
+      "--label", "agent_1-ready"],
+     ["gh", "issue", "create", "--repo", "example-owner/LSS", "--title", "Work item",
+      "--body-file", "-", "--label", "work:queue", "--label", "agent_1-ready"]),
+    (["issue-comment", "--issue", "7", "--body-file", "BODY"],
+     ["gh", "issue", "comment", "7", "--repo", "example-owner/LSS", "--body-file", "-"]),
+    (["issue-edit", "--issue", "7", "--add-label", "queued", "--add-label", "agent:codex",
+      "--remove-label", "held", "--remove-label", "old"],
+     ["gh", "issue", "edit", "7", "--repo", "example-owner/LSS", "--add-label", "queued",
+      "--add-label", "agent:codex", "--remove-label", "held", "--remove-label", "old"]),
+    (["pr-comment", "--pr", "8", "--body-file", "BODY"],
+     ["gh", "pr", "comment", "8", "--repo", "example-owner/LSS", "--body-file", "-"]),
+    (["pr-create", "--title", "Interrupted work", "--body-file", "BODY", "--draft"],
+     ["gh", "pr", "create", "--repo", "example-owner/LSS", "--base", "main", "--head",
+      "codex/test", "--title", "Interrupted work", "--body-file", "-", "--draft"]),
+    (["pr-ready", "--pr", "8"],
+     ["gh", "pr", "ready", "8", "--repo", "example-owner/LSS"]),
+    (["pr-draft", "--pr", "8"],
+     ["gh", "pr", "ready", "8", "--repo", "example-owner/LSS", "--undo"]),
+    (["comment-delete", "--comment-id", "123"],
+     ["gh", "api", "--method", "DELETE", "repos/example-owner/LSS/issues/comments/123"]),
+])
+def test_new_operation_command_shapes(publication, tmp_path, capsys, arguments, expected):
+    runner, calls, _ = publication
+    path = tmp_path / "body.txt"
+    path.write_text("Reviewed work\n", encoding="utf-8")
+    args = [str(path) if arg == "BODY" else arg for arg in arguments]
+    assert gh.main(["--dry-run", *args], runner=runner) == 0
+    assert json.loads(capsys.readouterr().out) == {
+        "argv": expected, "stdin": "Reviewed work\n" if "BODY" in arguments else None}
+    assert not any(argv == expected for argv, _ in calls)
+
+
+@pytest.mark.parametrize("kind", ["issue", "pr"])
+@pytest.mark.parametrize("post_fails", [False, True])
+def test_close_posts_reason_before_closing(publication, tmp_path, kind, post_fails):
+    runner, calls, replies = publication
+    path = tmp_path / "reason.txt"
+    path.write_text("Work is superseded\n", encoding="utf-8")
+    if post_fails:
+        replies["fail_command"] = ["gh", kind, "comment"]
+    assert gh.main([kind + "-close", "--" + kind, "7", "--reason-file", str(path)],
+                   runner=runner) == (1 if post_fails else 0)
+    writes = [(argv, text) for argv, text in calls if argv[:2] == ["gh", kind] and argv[2] != "view"]
+    expected = [(["gh", kind, "comment", "7", "--repo", "example-owner/LSS", "--body-file", "-"],
+                 "Work is superseded\n")]
+    if not post_fails:
+        expected.append((["gh", kind, "close", "7", "--repo", "example-owner/LSS"], None))
+    assert writes == expected
+
+
+@pytest.mark.parametrize("arguments", [
+    ["issue-create", "--title", "Work", "--body-file"],
+    ["issue-comment", "--issue", "7", "--body-file"],
+    ["issue-close", "--issue", "7", "--reason-file"],
+    ["issue-edit", "--issue", "7", "--add-label", "queued"],
+    ["pr-comment", "--pr", "8", "--body-file"],
+    ["comment-delete", "--comment-id", "123"],
+])
+def test_unbound_operations_work_without_agent_checkout(publication, tmp_path, monkeypatch, arguments):
+    runner, calls, replies = publication
+    replies["branch"] = "main"
+    replies["pr_branch"] = "someone/other"
+    monkeypatch.delenv("LSS_AGENT_BRANCH")
+    path = tmp_path / "body.txt"
+    path.write_text("Reviewed work", encoding="utf-8")
+    args = arguments + ([str(path)] if arguments[-1].endswith("-file") else [])
+    assert gh.main(args, runner=runner) == 0
+    assert not any("symbolic-ref" in argv or "rev-parse" in argv for argv, _ in calls)
+
+
+@pytest.mark.parametrize("operation", ["pr-ready", "pr-draft", "pr-close"])
+@pytest.mark.parametrize("mismatch", ["remote_branch", "fork", "checkout", "missing_assignment"])
+def test_pr_state_requires_assigned_branch(publication, tmp_path, monkeypatch, operation, mismatch):
+    runner, calls, replies = publication
+    if mismatch == "remote_branch":
+        replies["pr_branch"] = "codex/other"
+    elif mismatch == "fork":
+        replies["cross_repository"] = True
+    elif mismatch == "checkout":
+        replies["branch"] = "main"
+    else:
+        monkeypatch.delenv("LSS_AGENT_BRANCH")
+    path = tmp_path / "reason.txt"
+    path.write_text("Reviewed reason", encoding="utf-8")
+    args = [operation, "--pr", "8"]
+    if operation == "pr-close":
+        args += ["--reason-file", str(path)]
+    assert gh.main(args, runner=runner) == 1
+    assert not any(argv[:3] in (["gh", "pr", "ready"], ["gh", "pr", "comment"],
+                               ["gh", "pr", "close"]) for argv, _ in calls)
+
+
+@pytest.mark.parametrize("operation", ["issue-create", "issue-comment", "issue-close", "pr-comment", "pr-close"])
+@pytest.mark.parametrize("unsafe", [
+    "synthetic-" + "private-phrase", "gh" + "p_" + "x" * 40,
+    "C:" + chr(92) + "Users" + chr(92) + "SyntheticUser", "LSS-" + "CANARY-12345678",
+])
+def test_all_new_body_paths_inspect_before_writing(publication, tmp_path, capsys, operation, unsafe):
+    runner, calls, _ = publication
+    path = tmp_path / "body.txt"
+    path.write_text(unsafe, encoding="utf-8")
+    args = [operation]
+    if operation == "issue-create":
+        args += ["--title", "Work"]
+    else:
+        args += ["--issue" if operation.startswith("issue-") else "--pr", "7"]
+    args += ["--reason-file" if operation.endswith("-close") else "--body-file", str(path)]
+    assert gh.main(args, runner=runner) == 1
+    assert not any(argv[0] == "gh" and argv[2] != "view" for argv, _ in calls)
+    assert unsafe not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("suffix,accepted", [
+    ("", True), ("\n", False), (" ", False), (" extra", False),
+    ("\n" + "LSS-" + "CANARY-abcdefgh", False),
+    ("\nsynthetic-" + "private-phrase", False),
+    ("\n" + "gh" + "p_" + "x" * 40, False),
+])
+def test_canary_exception_requires_exactly_one_token(publication, tmp_path, suffix, accepted):
+    runner, calls, _ = publication
+    path = tmp_path / "body.txt"
+    text = "lss-" + "canary-1234abcd" + suffix
+    path.write_text(text, encoding="utf-8")
+    assert gh.main(["issue-comment", "--issue", "7", "--body-file", str(path),
+                    "--allow-canary-test"], runner=runner) == (0 if accepted else 1)
+    writes = [(argv, value) for argv, value in calls if argv[:3] == ["gh", "issue", "comment"]]
+    assert len(writes) == int(accepted)
+    if accepted:
+        assert writes[0][1] == text
+
+
+@pytest.mark.parametrize("text", ["Safe text", "", "LSS-" + "CANARY-short", " LSS-" + "CANARY-12345678"])
+def test_canary_flag_rejects_non_canary_body(publication, tmp_path, text):
+    runner, calls, _ = publication
+    path = tmp_path / "body.txt"
+    path.write_text(text, encoding="utf-8")
+    assert gh.main(["issue-comment", "--issue", "7", "--body-file", str(path),
+                    "--allow-canary-test"], runner=runner) == 1
+    assert not any(argv[0] == "gh" for argv, _ in calls)
+
+
+def test_canary_exception_never_bypasses_private_literals(publication, tmp_path, monkeypatch, capsys):
+    runner, calls, _ = publication
+    text = "LSS-" + "CANARY-12345678"
+    deny = tmp_path / "private-canary-list.txt"
+    deny.write_text(text, encoding="utf-8")
+    monkeypatch.setenv("LSS_PUBLISH_DENYLIST", str(deny))
+    path = tmp_path / "body.txt"
+    path.write_text(text, encoding="utf-8")
+    assert gh.main(["issue-comment", "--issue", "7", "--body-file", str(path),
+                    "--allow-canary-test"], runner=runner) == 1
+    assert not any(argv[0] == "gh" for argv, _ in calls)
+    assert text not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("arguments", [
+    ["issue-create", "--title", "Work", "--body-file", "unused", "--allow-canary-test"],
+    ["pr-comment", "--pr", "7", "--body-file", "unused", "--allow-canary-test"],
+    ["issue-close", "--issue", "7", "--reason-file", "unused", "--allow-canary-test"],
+    ["issue-edit", "--issue", "7", "--title", "Changed"],
+    ["issue-edit", "--issue", "7", "--body-file", "unused"],
+    ["issue-comment", "--issue", "7", "--body-f", "unused"],
+])
+def test_new_operations_refuse_unlisted_options(publication, arguments):
+    runner, calls, _ = publication
+    with pytest.raises(SystemExit):
+        gh.main(arguments, runner=runner)
+    assert calls == []
+
+
+@pytest.mark.parametrize("operation,selector", [
+    ("issue-comment", "--issue"), ("issue-close", "--issue"), ("issue-edit", "--issue"),
+    ("pr-comment", "--pr"), ("pr-ready", "--pr"), ("pr-draft", "--pr"), ("pr-close", "--pr"),
+    ("comment-delete", "--comment-id"),
+])
+@pytest.mark.parametrize("value", ["abc", "0", "-1", "+1", "1.0", "1/2", "https://github.com/other/repo/issues/1", "\u0661"])
+def test_new_ids_are_positive_ascii_digits(publication, operation, selector, value):
+    runner, calls, _ = publication
+    args = [operation, selector, value]
+    if operation.endswith("-comment"):
+        args += ["--body-file", "unused"]
+    elif operation.endswith("-close"):
+        args += ["--reason-file", "unused"]
+    elif operation == "issue-edit":
+        args += ["--add-label", "queued"]
+    with pytest.raises(SystemExit):
+        gh.main(args, runner=runner)
+    assert calls == []
+
+
+@pytest.mark.parametrize("option,operation", [
+    ("--label", "issue-create"), ("--add-label", "issue-edit"), ("--remove-label", "issue-edit")])
+@pytest.mark.parametrize("label", ["", "Upper", "has space", "a,b", "a" * 41, "a/b", "\u00e9"])
+def test_invalid_labels_never_write(publication, tmp_path, option, operation, label):
+    runner, calls, _ = publication
+    path = tmp_path / "body.txt"
+    path.write_text("Reviewed work", encoding="utf-8")
+    args = ([operation, "--title", "Work", "--body-file", str(path)] if operation == "issue-create"
+            else [operation, "--issue", "7"])
+    assert gh.main([*args, option + "=" + label], runner=runner) == 1
+    assert not any(argv[0] == "gh" for argv, _ in calls)
+
+
+@pytest.mark.parametrize("label", ["a", "a" * 40, "--repo"])
+@pytest.mark.parametrize("option,operation", [
+    ("--label", "issue-create"), ("--add-label", "issue-edit"), ("--remove-label", "issue-edit")])
+def test_valid_label_boundaries_and_option_like_values(publication, tmp_path, label, option, operation):
+    runner, calls, _ = publication
+    path = tmp_path / "body.txt"
+    path.write_text("Reviewed work", encoding="utf-8")
+    args = ([operation, "--title", "Work", "--body-file", str(path)] if operation == "issue-create"
+            else [operation, "--issue", "7"])
+    assert gh.main([*args, option + "=" + label], runner=runner) == 0
+    command = calls[-1][0]
+    if label.startswith("-"):
+        assert command[-1] == option + "=" + label
+    else:
+        assert command[-2:] == [option, label]
+    assert command.count("--repo") == 1
+
+
+@pytest.mark.parametrize("arguments", [
+    ["issue-create", "--title", "synthetic-" + "private-phrase", "--body-file", "BODY"],
+    ["issue-create", "--title", "Work", "--body-file", "BODY", "--label", "synthetic-private-phrase"],
+    ["issue-edit", "--issue", "7", "--add-label", "synthetic-private-phrase"],
+    ["issue-edit", "--issue", "7", "--remove-label", "synthetic-private-phrase"],
+    ["issue-create", "--title", "LSS-" + "CANARY-12345678", "--body-file", "BODY"],
+])
+def test_titles_and_valid_labels_receive_public_inspection(publication, tmp_path, arguments):
+    runner, calls, _ = publication
+    path = tmp_path / "body.txt"
+    path.write_text("Reviewed work", encoding="utf-8")
+    assert gh.main([str(path) if arg == "BODY" else arg for arg in arguments], runner=runner) == 1
+    assert not any(argv[0] == "gh" for argv, _ in calls)
+
+
+@pytest.mark.parametrize("operation", ["issue-create", "issue-comment", "issue-close", "issue-edit",
+                                       "pr-comment", "pr-ready", "pr-draft", "pr-close", "comment-delete"])
+@pytest.mark.parametrize("field", ["origin", "push_urls"])
+def test_new_operations_refuse_wrong_repository(publication, operation, field):
+    runner, calls, replies = publication
+    replies[field] = "https://github.com/other-owner/other.git"
+    args = [operation]
+    if operation == "issue-create":
+        args += ["--title", "Work", "--body-file", "unused"]
+    elif operation == "comment-delete":
+        args += ["--comment-id", "7"]
+    else:
+        args += ["--issue" if operation.startswith("issue-") else "--pr", "7"]
+        if operation.endswith("-comment"):
+            args += ["--body-file", "unused"]
+        elif operation.endswith("-close"):
+            args += ["--reason-file", "unused"]
+        elif operation == "issue-edit":
+            args += ["--add-label", "queued"]
+    assert gh.main(args, runner=runner) == 1
+    assert not any(argv[0] == "gh" for argv, _ in calls)
+
+
+@pytest.mark.parametrize("data", [b"a" * (1024 * 1024 + 1), b"\xff", b" \n"])
+def test_new_body_paths_fail_closed_on_invalid_files(publication, tmp_path, data):
+    runner, calls, _ = publication
+    path = tmp_path / "body.txt"
+    path.write_bytes(data)
+    assert gh.main(["issue-comment", "--issue", "7", "--body-file", str(path)], runner=runner) == 1
+    assert not any(argv[0] == "gh" for argv, _ in calls)
+
+
+def test_issue_create_prints_gh_result_and_reads_body_once(publication, tmp_path, monkeypatch, capsys):
+    runner, calls, replies = publication
+    path = tmp_path / "body.txt"
+    path.write_bytes(b"Reviewed purpose\r\n")
+    original_open = Path.open
+    reads = []
+    def tracked_open(self, *args, **kwargs):
+        if self == path:
+            reads.append((args, kwargs))
+        return original_open(self, *args, **kwargs)
+    monkeypatch.setattr(Path, "open", tracked_open)
+    assert gh.main(["issue-create", "--title", "Work", "--body-file", str(path)], runner=runner) == 0
+    assert len(reads) == 1
+    assert calls[-1][1] == "Reviewed purpose\n"
+    assert capsys.readouterr().out == replies["write_stdout"]
+
+
+def test_issue_edit_requires_a_label_change(publication):
+    runner, calls, _ = publication
+    assert gh.main(["issue-edit", "--issue", "7"], runner=runner) == 1
+    assert not any(argv[0] == "gh" for argv, _ in calls)
+
+
+@pytest.mark.parametrize("operation", ["issue-create", "pr-create"])
+def test_title_inspection_uses_literal_text(publication, tmp_path, monkeypatch, operation):
+    runner, calls, _ = publication
+    text = 'synthetic-"private-phrase'
+    deny = tmp_path / "quoted-denylist.txt"
+    deny.write_text(text, encoding="utf-8")
+    monkeypatch.setenv("LSS_PUBLISH_DENYLIST", str(deny))
+    path = tmp_path / "body.txt"
+    path.write_text("Reviewed work", encoding="utf-8")
+    assert gh.main([operation, "--title", text, "--body-file", str(path)], runner=runner) == 1
+    assert not any(argv[0] == "gh" for argv, _ in calls)
+
+
+@pytest.mark.parametrize("operation", ["issue-create", "pr-create"])
+def test_title_size_limit_counts_utf8_bytes(publication, tmp_path, operation):
+    runner, calls, _ = publication
+    path = tmp_path / "body.txt"
+    path.write_text("Reviewed work", encoding="utf-8")
+    assert gh.main([operation, "--title", "\u00e9" * (512 * 1024 + 1),
+                    "--body-file", str(path)], runner=runner) == 1
+    assert not any(argv[0] == "gh" for argv, _ in calls)
+
+
 @pytest.fixture
 def release(tmp_path):
     def write(name, data):
@@ -385,3 +715,39 @@ def test_installer_plan_and_non_elevated_refusal(tmp_path):
     result = subprocess.run(command, capture_output=True, text=True, timeout=30)
     assert result.returncode != 0 and "Elevation required" in result.stderr
     assert not target.exists()
+
+
+@pytest.mark.parametrize("arguments", [
+    ["issue-close", "--issue", "7", "--reason-file", "BODY"],
+    ["issue-edit", "--issue", "7", "--add-label", "queued"],
+])
+@pytest.mark.parametrize("url", [
+    "https://github.com/example-owner/LSS/pull/7",
+    "https://github.com/example-owner/LSS/issues/8",
+    "https://github.com/other-owner/LSS/issues/7",
+])
+def test_issue_state_operations_refuse_pull_requests(publication, tmp_path, arguments, url):
+    """gh issue close/edit accept a pull request number; the entry must not."""
+    runner, calls, replies = publication
+    replies["issue_url"] = url
+    path = tmp_path / "reason.txt"
+    path.write_text("Work is superseded\n", encoding="utf-8")
+    args = [str(path) if arg == "BODY" else arg for arg in arguments]
+    assert gh.main(args, runner=runner) == 1
+    assert not any(argv[:2] == ["gh", "issue"] and argv[2] != "view" for argv, _ in calls)
+
+
+def test_run_carries_text_outside_the_console_code_page(tmp_path):
+    """A body with an emoji reaches the child unchanged whatever the Windows code page is."""
+    text = "Reviewed \U0001f916 日本語\n"
+    echo = "import sys; sys.stdout.buffer.write(sys.stdin.buffer.read())"
+    assert gh.run([sys.executable, "-I", "-c", echo], cwd=tmp_path, input=text).stdout == text
+
+
+def test_dry_run_output_is_ascii_json(publication, tmp_path, capsysbinary):
+    runner, _, _ = publication
+    path = tmp_path / "body.txt"
+    path.write_text("Reviewed \U0001f916\n", encoding="utf-8")
+    assert gh.main(["--dry-run", "issue-comment", "--issue", "7", "--body-file", str(path)], runner=runner) == 0
+    out = capsysbinary.readouterr().out
+    assert out.isascii() and json.loads(out)["stdin"] == "Reviewed \U0001f916\n"
