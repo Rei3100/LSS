@@ -65,6 +65,19 @@ class PublicGuardTests(RepoTest):
         self.write("VERSION", ("LSS-" + "CANARY-1234abcd\n").encode())
         self.blocked("CANARY")
 
+    def test_escaped_text_is_read_as_the_text_it_loads_to(self):
+        # A JSON or source escape must not carry a canary or a private word past the content checks.
+        canary = "LSS-" + "CANARY-1234abcd"
+        escaped = "".join("\\u%04x" % ord(c) for c in canary)
+        self.write("VERSION", ('{"basis": "' + escaped + '"}\n').encode())
+        self.blocked("CANARY")
+
+    def test_escaped_private_word_is_read(self):
+        escaped = "".join("\\x%02x" % ord(c) for c in self.literal)
+        self.write("VERSION", ('note = "' + escaped + '"\n').encode())
+        proc, _ = self.blocked("DENYLIST")
+        self.assertNotIn(self.literal, (proc.stdout + proc.stderr).decode().casefold())
+
     def test_fake_private_key(self):
         self.write("VERSION", ("-----BEGIN " + "RSA PRIVATE KEY-----\nFAKE\n").encode())
         proc, _ = self.blocked("PRIVATE_KEY")
