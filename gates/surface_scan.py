@@ -103,7 +103,9 @@ class Checker:
                 yield index
 
     def safe(self, value):
-        if list(self.matches(value)) or list(self.matches(unquote(value))):
+        canary = guard.PATTERNS["CANARY"]
+        if (list(self.matches(value)) or list(self.matches(unquote(value)))
+                or canary.search(value) or canary.search(unquote(value))):
             return "<masked>"
         return value
 
@@ -115,6 +117,11 @@ class Checker:
         for index in self.matches(value):
             self.result["findings"].append({"kind": kind, "url": self.safe(url),
                                             "entry_index": index})
+        # The canary is the one generic pattern reported here: it is the token the leak drill posts
+        # through `lss-gh issue-comment --allow-canary-test`, and the drill passes only if this scan sees it.
+        if guard.PATTERNS["CANARY"].search(value):
+            self.result["findings"].append({"kind": kind, "url": self.safe(url),
+                                            "entry_index": None, "rule": "CANARY"})
 
 
 def positive_id(value):
