@@ -38,6 +38,7 @@ def publication(tmp_path, monkeypatch):
     replies = {"branch": "codex/test", "run_head": HEAD, "pr_branch": "codex/test",
                "cross_repository": False, "origin": "https://github.com/example-owner/LSS.git\n",
                "push_urls": "https://github.com/example-owner/LSS.git\n",
+               "issue_url": "https://github.com/example-owner/LSS/issues/7",
                "write_stdout": "https://github.com/example-owner/LSS/issues/7\n"}
 
     def runner(argv, *, cwd, input=None):
@@ -59,6 +60,8 @@ def publication(tmp_path, monkeypatch):
             info = {"headRefOid": HEAD, "headRefName": replies["pr_branch"],
                     "isCrossRepository": replies["cross_repository"]}
             return SimpleNamespace(stdout=json.dumps({key: info[key] for key in argv[-1].split(",")}))
+        if argv[:3] == ["gh", "issue", "view"]:
+            return SimpleNamespace(stdout=json.dumps({"url": replies["issue_url"]}))
         if argv[:3] == ["gh", "api", "graphql"] and any(x.startswith("query=query") for x in argv):
             return SimpleNamespace(stdout=json.dumps({"data": {"node": {"pullRequest": {
                 "headRefOid": HEAD, "headRefName": "codex/test",
@@ -712,3 +715,23 @@ def test_installer_plan_and_non_elevated_refusal(tmp_path):
     result = subprocess.run(command, capture_output=True, text=True, timeout=30)
     assert result.returncode != 0 and "Elevation required" in result.stderr
     assert not target.exists()
+
+
+@pytest.mark.parametrize("arguments", [
+    ["issue-close", "--issue", "7", "--reason-file", "BODY"],
+    ["issue-edit", "--issue", "7", "--add-label", "queued"],
+])
+@pytest.mark.parametrize("url", [
+    "https://github.com/example-owner/LSS/pull/7",
+    "https://github.com/example-owner/LSS/issues/8",
+    "https://github.com/other-owner/LSS/issues/7",
+])
+def test_issue_state_operations_refuse_pull_requests(publication, tmp_path, arguments, url):
+    """gh issue close/edit accept a pull request number; the entry must not."""
+    runner, calls, replies = publication
+    replies["issue_url"] = url
+    path = tmp_path / "reason.txt"
+    path.write_text("Work is superseded\n", encoding="utf-8")
+    args = [str(path) if arg == "BODY" else arg for arg in arguments]
+    assert gh.main(args, runner=runner) == 1
+    assert not any(argv[:2] == ["gh", "issue"] and argv[2] != "view" for argv, _ in calls)

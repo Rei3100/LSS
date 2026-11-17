@@ -149,6 +149,14 @@ def main(argv=None, *, runner=run):
                     parts.append(option + "=" + value)
                 else:
                     parts.extend([option, value])
+        issue_target = None
+        def require_issue(number):
+            # gh issue commands also accept pull request numbers; closing or relabelling a pull
+            # request must stay behind the assigned-branch check of the pr-* operations.
+            info = json.loads(runner(["gh", "issue", "view", number, "--repo", REPOSITORY,
+                                      "--json", "url"], cwd=repo).stdout)
+            if info != {"url": "https://github.com/" + REPOSITORY + "/issues/" + str(int(number))}:
+                raise ValueError("Not an issue of the fixed repository")
         if hasattr(args, "title"):
             if len(args.title.encode("utf-8")) > 1024 * 1024:
                 raise ValueError("Title too large")
@@ -182,6 +190,7 @@ def main(argv=None, *, runner=run):
         elif args.operation == "issue-edit":
             if not args.add_label and not args.remove_label:
                 raise ValueError("No label changes")
+            issue_target = args.issue
             parts = ["gh", "issue", "edit", args.issue, "--repo", REPOSITORY]
             labels(parts, "--add-label", args.add_label)
             labels(parts, "--remove-label", args.remove_label)
@@ -194,6 +203,8 @@ def main(argv=None, *, runner=run):
                                           "--json", "headRefName,isCrossRepository"], cwd=repo).stdout)
                 if info != {"headRefName": branch, "isCrossRepository": False}:
                     raise ValueError("PR does not belong to assigned branch")
+            else:
+                issue_target = number
             if args.operation in ("pr-close", "issue-close"):
                 outgoing(["gh", kind, "comment", number, "--repo", REPOSITORY,
                           "--body-file", "-"], body(args.reason_file))
@@ -247,6 +258,9 @@ def main(argv=None, *, runner=run):
                     outgoing(["gh", "api", "graphql", "-f", "query=" + query, "-f", "id=" + args.thread])
         if reporter.findings:
             raise ValueError("Outgoing text rejected")
+        if issue_target is not None:
+            # After inspection: a rejected request reaches GitHub with no call at all.
+            require_issue(issue_target)
         for command, text in commands:
             if args.dry_run:
                 print(json.dumps({"argv": command, "stdin": text}, ensure_ascii=False))
