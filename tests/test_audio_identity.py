@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 from pathlib import Path
 
@@ -174,6 +175,10 @@ def test_a_wav_playback_chunk_after_data_keeps_the_declared_stream_length(tmp_pa
         stream.seek(identity["audio_offset"] if "audio_offset" in identity
                     else audio_identity.container_layout(output)["audio_offset"])
         stream.write(b"\x01\x02\x03\x04")
+    # The identity cache is keyed by size and mtime; an in-place write of the same size inside one clock
+    # tick keeps both, so the test states the modification time it means.
+    stat = output.stat()
+    os.utime(output, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000_000))
     assert not audio_identity.same_audio(identity, audio_identity.audio_identity(output))
 
 
