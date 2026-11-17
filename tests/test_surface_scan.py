@@ -157,11 +157,16 @@ def test_canary_comment_is_a_finding(invoke):
     assert "CANARY-Drill" not in json.dumps(result)
 
 
-def test_canary_in_a_locator_is_masked(invoke):
-    fake = FakeRunner()
-    fake.data["/branches"][0]["name"] = "LSS-" + "CANARY-Branch20261117"
-    code, result, _ = invoke(fake)
-    assert code == 1 and result["findings"] and "CANARY-Branch" not in json.dumps(result)
+@pytest.mark.parametrize("value", [
+    "https://github.com/example/LSS-" + "CANARY-Locator20261117/issues/1",
+    "https://github.com/example/LSS%2D" + "CANARY%2DLocator20261117/issues/1",
+    "example/lss-" + "canary-locator20261117",
+])
+def test_canary_in_a_locator_is_masked(value):
+    """A locator that carries the token (raw, percent-encoded or lower case) is not written out."""
+    checker = scan.Checker([], {})
+    assert checker.safe(value) == "<masked>"
+    assert checker.safe("https://github.com/example/synthetic/issues/1").endswith("/issues/1")
 
 
 @pytest.mark.parametrize("suffix", ["/issues", "/pulls", "/issues/comments", "/pulls/comments",
