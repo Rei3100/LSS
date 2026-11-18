@@ -1446,7 +1446,7 @@
       "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
     },
     "docs/engine/QUALITY_AND_DECISIONS.md": {
-      "blob_oid": "753d9b1d41adda2c4a5a7174b45c09e03e962e99",
+      "blob_oid": "1b2440c325f13d8595a516bf3f016e8bcd3566c4",
       "reason": "Content, rights and privacy reviewed after a wording update that follows current decisions; no paths, names or secrets added (2026-11-18)"
     },
     "docs/engine/RECOVERY_AND_REFERENCES.md": {
@@ -1470,7 +1470,7 @@
       "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
     },
     "docs/product/PRODUCT_INTENT.md": {
-      "blob_oid": "9563ba049161829f997e8bfa7a3ffa00bfefd3ed",
+      "blob_oid": "2f2a66f3b99bed73e19732ba36d7e06295cb1d01",
       "reason": "Content, rights and privacy reviewed after a wording update that follows current decisions; no paths, names or secrets added (2026-11-18)"
     },
     "docs/product/USER_JOURNEYS.md": {

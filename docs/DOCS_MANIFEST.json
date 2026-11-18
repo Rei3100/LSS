@@ -44,7 +44,7 @@
         {
             "path": "docs/engine/QUALITY_AND_DECISIONS.md",
             "class": "engineering_contract",
-            "sha256": "4c08209b85ff5db3a962a72a6a3f42f04cdcdf352c4a6da24386d5cb407adc20"
+            "sha256": "42cffe126dd26bf3b08693adf4b2687d3bfad32c8d0a5220d9499e3be0f8bb41"
         },
         {
             "path": "docs/engine/RECOVERY_AND_REFERENCES.md",
@@ -74,7 +74,7 @@
         {
             "path": "docs/product/PRODUCT_INTENT.md",
             "class": "product_contract",
-            "sha256": "cf7467e30f0d0fdcfccb930b57343c6985b355aa36455061868d990c7e2dc874"
+            "sha256": "a743d01e8399f7ce0863053c6ddc987f0af7a6d4466e2534d70f9d4b1ad96e7b"
         },
         {
             "path": "docs/product/USER_JOURNEYS.md",
