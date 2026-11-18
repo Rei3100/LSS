@@ -9,7 +9,7 @@
         {
             "path": "AGENTS.md",
             "class": "entrypoint",
-            "sha256": "60720ea95847c151b79d91cc3bdd48a8f59a9dd9b78a2920cd5ea83fce91a531"
+            "sha256": "6c842677b9f8459a8819ec90acc0fcec6c75820c0ad10360d5086dace119af0d"
         },
         {
             "path": "ARCHITECTURE.md",
@@ -44,7 +44,7 @@
         {
             "path": "docs/engine/QUALITY_AND_DECISIONS.md",
             "class": "engineering_contract",
-            "sha256": "7261797e720e5729e6609ce0d924b0d2eff23abd2180a197b429bd20c28e1f39"
+            "sha256": "4c08209b85ff5db3a962a72a6a3f42f04cdcdf352c4a6da24386d5cb407adc20"
         },
         {
             "path": "docs/engine/RECOVERY_AND_REFERENCES.md",
@@ -74,7 +74,7 @@
         {
             "path": "docs/product/PRODUCT_INTENT.md",
             "class": "product_contract",
-            "sha256": "a921625951930a8204af53b1dfd3fdb4980c922a0ae7bd52129c83ab8c033147"
+            "sha256": "cf7467e30f0d0fdcfccb930b57343c6985b355aa36455061868d990c7e2dc874"
         },
         {
             "path": "docs/product/USER_JOURNEYS.md",
