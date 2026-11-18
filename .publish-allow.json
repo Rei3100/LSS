@@ -1446,8 +1446,8 @@
       "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
     },
     "docs/engine/QUALITY_AND_DECISIONS.md": {
-      "blob_oid": "8ef0e9f6cc059ba3296b95d141ef60664be7a59e",
-      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+      "blob_oid": "1b2440c325f13d8595a516bf3f016e8bcd3566c4",
+      "reason": "Content, rights and privacy reviewed after a wording update that follows current decisions; no paths, names or secrets added (2026-11-18)"
     },
     "docs/engine/RECOVERY_AND_REFERENCES.md": {
       "blob_oid": "b2b8eb95a0cb7609cd2ffb0d47f23733bb7e3a3d",
@@ -1470,8 +1470,8 @@
       "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
     },
     "docs/product/PRODUCT_INTENT.md": {
-      "blob_oid": "ad36ecf22900571d91a07eb7f6c1ed8650d57ad6",
-      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+      "blob_oid": "2f2a66f3b99bed73e19732ba36d7e06295cb1d01",
+      "reason": "Content, rights and privacy reviewed after a wording update that follows current decisions; no paths, names or secrets added (2026-11-18)"
     },
     "docs/product/USER_JOURNEYS.md": {
       "blob_oid": "bd3fd35e22f8adb2da185a4242ae34a65037d0f2",
