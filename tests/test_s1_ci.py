@@ -319,7 +319,7 @@ def test_workflow_contract():
     runs = {job: [s.get("run") for s in jobs[job]["steps"]] for job in ("test-linux", "test-windows")}
     assert 'python scripts/dev.py test --ci -j 4 -m "not local"' in runs["test-windows"]
     assert {"python scripts/fetch_ffmpeg.py", "python scripts/fetch_msst_models.py"} <= set(runs["test-windows"])
-    assert "python -B -m pytest -q -p no:cacheprovider tests/gates" in runs["test-linux"]
+    assert "python -B -m pytest -q -p no:cacheprovider --noconftest tests/gates" in runs["test-linux"]
     raw = (ROOT / ".github/workflows/ci.yml").read_text()
     assert "secrets." not in raw and "pull_request_target" not in raw
     assert "persist-credentials: true" not in raw

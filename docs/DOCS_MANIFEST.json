@@ -5,11 +5,11 @@
     "authority": "repo docs are intent contracts, not live executable proof",
     "owner_count": 22,
     "owners": [
-        {"path":"docs/dev/CI.md","class":"development","sha256":"283676a5fa632c440400123e7855ea64317b87301001d59098c2187dd96b6a62"},
+        {"path":"docs/dev/CI.md","class":"development","sha256":"36ea0cad7fe5aab5f3a13a5f3532f6c7be616adcad7c4ddca13188a8bd4a4a3a"},
         {
             "path": "AGENTS.md",
             "class": "entrypoint",
-            "sha256": "60720ea95847c151b79d91cc3bdd48a8f59a9dd9b78a2920cd5ea83fce91a531"
+            "sha256": "6c842677b9f8459a8819ec90acc0fcec6c75820c0ad10360d5086dace119af0d"
         },
         {
             "path": "ARCHITECTURE.md",
@@ -44,7 +44,7 @@
         {
             "path": "docs/engine/QUALITY_AND_DECISIONS.md",
             "class": "engineering_contract",
-            "sha256": "7261797e720e5729e6609ce0d924b0d2eff23abd2180a197b429bd20c28e1f39"
+            "sha256": "42cffe126dd26bf3b08693adf4b2687d3bfad32c8d0a5220d9499e3be0f8bb41"
         },
         {
             "path": "docs/engine/RECOVERY_AND_REFERENCES.md",
@@ -74,7 +74,7 @@
         {
             "path": "docs/product/PRODUCT_INTENT.md",
             "class": "product_contract",
-            "sha256": "a921625951930a8204af53b1dfd3fdb4980c922a0ae7bd52129c83ab8c033147"
+            "sha256": "a743d01e8399f7ce0863053c6ddc987f0af7a6d4466e2534d70f9d4b1ad96e7b"
         },
         {
             "path": "docs/product/USER_JOURNEYS.md",

@@ -371,6 +371,9 @@ def forbidden_type(path: str, data: bytes) -> bool:
     return any(ord(c) < 32 and c not in "\t\r\n\f" for c in value)
 
 
+ESCAPED_CHAR = re.compile(r"\\u([0-9a-fA-F]{4})|\\x([0-9a-fA-F]{2})")
+
+
 class Reporter:
     def __init__(self, literals: list[str]):
         self.literals = literals
@@ -423,6 +426,11 @@ class Reporter:
         binary = b"\x00" in data
         if not binary:
             values = {data.decode("utf-8-sig", errors="replace"), data.decode("latin-1")}
+            # Escaped text is still text: a backslash-u or backslash-x escape in JSON or source is the
+            # character once it is loaded, so the same checks also read the content with them resolved.
+            plain = data.decode("utf-8-sig", errors="replace")
+            if "\\u" in plain or "\\x" in plain:
+                values.add(ESCAPED_CHAR.sub(lambda m: chr(int(m.group(1) or m.group(2), 16)), plain))
         else:
             # Binary data (fonts, images): compressed bytes read as text match short patterns by chance, so the
             # checks read what a person could read in it: runs of printable characters (single-byte and both

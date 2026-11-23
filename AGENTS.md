@@ -51,7 +51,7 @@ Private material lives outside the repository and is named only by environment v
 ## 4. Development flow
 
 - Open-ended development selects a usable Product capability before an execution task, following `.agents/skills/lss-dev-loop/SKILL.md`; small drafting and verification units do not shrink the requested outcome. Release work follows `.agents/skills/lss-release/SKILL.md`; the first draft of every implementation or test that a command can judge follows `.agents/skills/lss-local-draft/SKILL.md`. Load only the relevant skill. Questions and status-only reports do not start these workflows. `.claude/skills/` contains discovery wrappers for the same procedures.
-- An unfinished environment item is done when real work needs it; `env-build/PROGRESS.md` under `LSS_PRIVATE_ROOT` lists them, with the checks that precede the first GitHub push and the first deployment.
+- Construction work first names the plan stage (S0–S6, `env-build/PROGRESS.md` under `LSS_PRIVATE_ROOT`) and the acceptance condition it advances; Product work starts at S5.
 - One pull request serves one purpose. Integration, deployment and CurrentBest promotion are three separate gates; passing one never implies another. A Development candidate is never deployed merely because tests passed.
 - The user's message is the whole brief, however unordered. Map each point to its owner and start. A question in it is answered in the report with Evidence and a decision.
 - Investigate a concrete Product gap, implement through an executable boundary, test on the real packaged/user path when relevant, keep a specific falsifier. Documentation volume or test count is not new wanted audio.
