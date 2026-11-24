@@ -255,3 +255,7 @@ def test_a_failed_later_reference_decision_keeps_a_first_result_whose_files_rema
     result = app._run_bgm_candidate_request(_request(source), state_root=tmp_path)
     assert len(calls) == 2   # the later decision ran
     assert result is (saved if saved_file_present else failed)
+
+
+def test_s3_t9_deliberate_failure():
+    assert False, "S3 T9: a deliberately failing test; the next push removes it"
