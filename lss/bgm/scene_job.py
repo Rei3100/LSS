@@ -365,24 +365,23 @@ def _nothing_left(state_root: Path, source_sha256: str, source: Path | None) -> 
         return False
 
 
-def _end_requests(state_root: Path, source_sha256: str, source: Path | None, *, started_at: float | None = None,
+def _end_requests(state_root: Path, source_sha256: str, source: Path | None, *,
                   inside_bgm_job: bool = False) -> None:
     """End the user's naming requests that the current state shows finished.
 
     Order matters: the request list is taken first, then the source's BGM job lock, then the strict
     ``_nothing_left`` check. A job that starts after the lock check records its request after the list was
     taken, so its request survives; a job that ran before the lock check has published what the check reads.
-    While a job holds the lock, only a finishing worker may end requests, and only those made before it started.
+    Nothing is ended while a BGM job of the source holds its lock, except by that job itself.
     """
     snapshot = _requests(state_root, source_sha256)
     if not snapshot:
         return
-    active = not inside_bgm_job and _bgm_job_active(state_root, source_sha256)
-    if active and started_at is None:
-        return
+    if not inside_bgm_job and _bgm_job_active(state_root, source_sha256):
+        return   # the running job publishes, then ends or keeps its own request in start_in_background
     if not _nothing_left(state_root, source_sha256, source):
         return
-    cutoff = started_at if active else _retry_clock()
+    cutoff = _retry_clock()
     for path, record in snapshot:
         requested_at = record.get("requested_at")
         if isinstance(requested_at, (int, float)) and requested_at > cutoff:
@@ -401,7 +400,6 @@ def run_background_worker(state_root: Path, source: Path, source_sha256: str, *,
     cues recorded so far are kept, nothing is recorded for the interrupted one, and the source stays pending.
     """
     scene_stop.enable()
-    started_at = _retry_clock()   # requests made before this worker started are the ones it covers
     try:
         result = _run_background_worker(state_root, source, source_sha256, wait=wait or scene_stop.wait,
                                         clock=clock, wait_for_retries=wait_for_retries,
@@ -413,7 +411,7 @@ def run_background_worker(state_root: Path, source: Path, source_sha256: str, *,
     if result.get("state") in ("complete", "current", "retry_pending"):
         # Requests that arrived during this worker (a second job of the same source was told already_running)
         # are covered too when no BGM job of the source runs; otherwise only those made before it started.
-        _end_requests(state_root, source_sha256, Path(source), started_at=started_at)
+        _end_requests(state_root, source_sha256, Path(source))
     return result
 
 
@@ -442,6 +440,8 @@ def _run_background_worker(state_root: Path, source: Path, source_sha256: str, *
             delay = max(0.0, pending - clock())
             if delay:
                 wait(delay)
+            if require_request and not _requests(state_root, source_sha256):
+                return {"state": "not_requested", "attempts": 0}
             if not needs_naming(state_root, source_sha256, source=source, now=clock()):
                 return {"state": "retry_pending", "attempts": 0, "retry_after": pending}
 
@@ -466,6 +466,9 @@ def _run_background_worker(state_root: Path, source: Path, source_sha256: str, *
         result = None
         attempts = 0
         while attempts < MAX_BACKGROUND_ATTEMPTS:
+            if require_request and attempts and not _requests(state_root, source_sha256):
+                # A user job ended the request while this launch worker waited between attempts.
+                return {"state": "not_requested", "attempts": attempts}
             # The checked entry rehashes the source before every attempt; model construction and release live
             # entirely inside name_source, so no model/GPU resource survives into the sleep below.
             result = name_source_checked(state_root, source, source_sha256)

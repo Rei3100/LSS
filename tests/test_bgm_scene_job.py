@@ -1747,3 +1747,34 @@ def test_a_job_that_starts_during_the_check_keeps_its_request(tmp_path, monkeypa
     monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
     scene_job._end_requests(state, digest, None)
     assert len(scene_job._requests(state, digest)) == 1   # only the request listed before the check ended
+
+
+def test_a_launch_worker_rechecks_the_request_after_waiting(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    request = scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: 50.0)
+    def wait(seconds):
+        request.unlink()   # the user's job ended the request meanwhile
+    result = scene_job.run_background_worker(state, source, digest, wait=wait, clock=lambda: 0.0,
+                                             require_request=True)
+    assert result["state"] == "not_requested"
+
+
+def test_a_finishing_worker_leaves_requests_while_the_bgm_job_runs(tmp_path, monkeypatch):
+    from lss import application as app
+    from lss.bgm import current_best
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "complete"})
+    with app._BgmCandidateRunLock(state / current_best.DIRECTORY / digest, wait_seconds=0):
+        scene_job._record_request(state, source, digest)   # the job's request, made before the worker started
+        scene_job.run_background_worker(state, source, digest)
+        assert scene_job._requests(state, digest)
