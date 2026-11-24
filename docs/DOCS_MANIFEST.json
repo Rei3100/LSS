@@ -5,7 +5,7 @@
     "authority": "repo docs are intent contracts, not live executable proof",
     "owner_count": 22,
     "owners": [
-        {"path":"docs/dev/CI.md","class":"development","sha256":"537144b5fcd7930cd89717ed0c826256e58c765f08c76d320845ba40e7313c95"},
+        {"path":"docs/dev/CI.md","class":"development","sha256":"d17921420daf32ff440cbaebdec9f9f82822485bfd4ebd6cc78e9e25683f011f"},
         {
             "path": "AGENTS.md",
             "class": "entrypoint",
