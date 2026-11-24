@@ -19,16 +19,25 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # Administrative gh commands Claude's project settings deny in both shells. "gh -*" and "gh repo -*" cover
 # options placed before a subcommand (gh -R owner/name secret set, gh repo --yes=true delete); gh api is denied
-# whole, because bundled short options (-iXPOST) hide the method from any narrower pattern.
+# whole, because bundled short options (-iXPOST) hide the method from any narrower pattern; gh alias is denied
+# because an alias expands inside gh, past every pattern.
 ADMINISTRATIVE = ("gh -*", "gh api *", "gh repo -*", "gh repo edit *", "gh repo delete *", "gh repo rename *",
                   "gh repo archive *", "gh repo create *", "gh repo new *", "gh repo deploy-key *",
-                  "gh secret *", "gh variable *", "gh ruleset *", "gh rs *")
+                  "gh secret *", "gh variable *", "gh ruleset *", "gh rs *", "gh alias *")
+CODEX_RULE = re.compile(r'prefix_rule\(\s*pattern\s*=\s*\[\s*"[^"]+"(?:\s*,\s*"[^"]+")*\s*\]\s*,'
+                        r'\s*decision\s*=\s*"(?:forbidden|prompt|allow)"\s*\)')
 CODEX_GH_RULE = re.compile(r'prefix_rule\(\s*pattern\s*=\s*\[\s*"gh"\s*\]\s*,\s*decision\s*=\s*"forbidden"\s*\)')
 
 
 def codex_refuses_gh(text: str) -> bool:
-    """True when an uncommented rule of a Codex .rules file forbids every gh command."""
-    return any(CODEX_GH_RULE.fullmatch(line.split("#", 1)[0].strip()) for line in text.splitlines())
+    """True when every line of a Codex .rules file is a one-line prefix rule or a comment, and one forbids gh.
+
+    Codex drops the whole project file on a parse error, so a line of any other shape fails the check.
+    """
+    lines = [line.split("#", 1)[0].strip() for line in text.splitlines()]
+    lines = [line for line in lines if line]
+    return (all(CODEX_RULE.fullmatch(line) for line in lines)
+            and any(CODEX_GH_RULE.fullmatch(line) for line in lines))
 
 
 def check(root: Path = ROOT, environ=None) -> dict:
