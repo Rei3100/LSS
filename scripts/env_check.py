@@ -16,7 +16,17 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 
-ADMINISTRATIVE = ("gh api", "gh repo edit", "gh repo delete", "gh secret", "gh ruleset")
+# Administrative gh commands Claude's project settings deny in both shells. "gh -*" covers options placed
+# before a subcommand (gh -R owner/name secret set ...); the gh api entries cover attached short options.
+ADMINISTRATIVE = ("gh -*", "gh api *-X*", "gh api *-f*", "gh api *-F*", "gh repo edit *", "gh repo delete *",
+                  "gh repo rename *", "gh repo archive *", "gh repo create *", "gh repo new *",
+                  "gh repo deploy-key *", "gh secret *", "gh variable *", "gh ruleset *", "gh rs *")
+CODEX_GH_RULE = 'prefix_rule(pattern=["gh"],decision="forbidden")'
+
+
+def effective_rules(text: str) -> set[str]:
+    """Rule lines of a Codex .rules file with comments and whitespace removed."""
+    return {"".join(line.split("#", 1)[0].split()) for line in text.splitlines()} - {""}
 
 
 def check(root: Path = ROOT, environ=None) -> dict:
@@ -127,14 +137,18 @@ def check(root: Path = ROOT, environ=None) -> dict:
     checks["codex_send_rules"] = "UNKNOWN"
     if rules.is_file():
         checks["codex_send_rules"] = "PASS" if 'decision = "forbidden"' in rules.read_text(encoding="utf-8") else "FAIL"
-    # Administrative commands are denied to both engines: Claude through the project denies, Codex through
-    # its project rules (its hook cannot block). Missing from either is FAIL once both files exist.
-    rule_text = rules.read_text(encoding="utf-8") if rules.is_file() else ""
-    claude_admin = all(any(cmd in d for d in denies) for cmd in ADMINISTRATIVE)
-    codex_admin = all("prefix_rule(pattern = [%s], decision = \"forbidden\")"
-                      % ",".join('"%s"' % w for w in cmd.split()) in rule_text for cmd in ADMINISTRATIVE)
-    checks["administrative_deny"] = ("PASS" if claude_admin and codex_admin else
-                                     "FAIL" if denies and rule_text else "UNKNOWN")
+    # Administrative commands are denied to both engines: Claude through the project denies of each shell,
+    # Codex by refusing gh altogether in its project rules (its hook cannot block). A file that exists but
+    # lacks a denial is FAIL; UNKNOWN only when a file is missing.
+    if ".claude/settings.json" not in settings or not rules.is_file():
+        checks["administrative_deny"] = "UNKNOWN"
+    else:
+        try:
+            codex_admin = CODEX_GH_RULE in effective_rules(rules.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError):
+            codex_admin = False
+        claude_admin = all(f"{tool}({cmd})" in denies for tool in ("Bash", "PowerShell") for cmd in ADMINISTRATIVE)
+        checks["administrative_deny"] = "PASS" if claude_admin and codex_admin else "FAIL"
     return {"status": "FAIL" if "FAIL" in checks.values() else "UNKNOWN" if "UNKNOWN" in checks.values() else "PASS",
             "checks": dict(sorted(checks.items()))}
 

@@ -186,17 +186,34 @@ def test_env_check_missing_optional_and_no_values(tmp_path):
     assert env_check.check(tmp_path, {})["status"] == "FAIL"
 
 
-def test_administrative_commands_are_denied_to_both_engines(tmp_path):
+@pytest.mark.parametrize("name, old, new", [
+    (".codex/rules/lss.rules", 'prefix_rule(pattern = ["gh"]', '# prefix_rule(pattern = ["gh"]'),
+    (".codex/rules/lss.rules", '["gh"]', '["gh","api"]'),
+    (".claude/settings.json", '"PowerShell(gh secret *)",', ""),
+    (".claude/settings.json", '"Bash(gh ruleset *)"', '"Bash(gh rulesets *)"'),
+    (".claude/settings.json", '"Bash(gh -*)"', '"Bash(gh -R *)"'),
+])
+def test_administrative_denials_missing_from_either_engine_fail(tmp_path, name, old, new):
     write_settings(tmp_path)
     rules = tmp_path / ".codex/rules/lss.rules"
     rules.parent.mkdir(exist_ok=True)
     rules.write_bytes((ROOT / ".codex/rules/lss.rules").read_bytes())
     assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "PASS"
-    rules.write_text(rules.read_text(encoding="utf-8").replace('["gh","secret"]', '["gh","secrets"]'), encoding="utf-8")
+    path = tmp_path / name
+    text = path.read_text(encoding="utf-8")
+    assert old in text
+    path.write_text(text.replace(old, new), encoding="utf-8")
     assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "FAIL"
-    rules.write_bytes((ROOT / ".codex/rules/lss.rules").read_bytes())
-    settings = tmp_path / ".claude/settings.json"
-    settings.write_text(settings.read_text(encoding="utf-8").replace("gh ruleset", "gh rule-set"), encoding="utf-8")
+
+
+def test_administrative_rules_ignore_spacing_and_need_both_files(tmp_path):
+    write_settings(tmp_path)
+    assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "UNKNOWN"
+    rules = tmp_path / ".codex/rules/lss.rules"
+    rules.parent.mkdir(exist_ok=True)
+    rules.write_text('prefix_rule( pattern = [ "gh" ], decision = "forbidden" )  # all of gh\n', encoding="utf-8")
+    assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "PASS"
+    rules.write_text("", encoding="utf-8")
     assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "FAIL"
 
 
