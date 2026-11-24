@@ -1,2 +1,2 @@
 #!/bin/sh
-exec "${LSS_GUARD_PYTHON:-python}" -I -B gates/public_guard.py --pre-push
+exec "${LSS_GUARD_PYTHON:-python}" -I -B gates/public_guard.py --pre-push "$@"

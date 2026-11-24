@@ -111,7 +111,10 @@ Run `python scripts/env_check.py` for status codes only. It parses project JSON
 and TOML settings, checks isolated hook registrations in both agents, allow/deny
 presence, administrative deny restoration, Codex forbidden rules, explicit
 environment-root resolution and state junction drift. Missing optional settings
-are `UNKNOWN`; installed broken settings are `FAIL`. It neither executes hooks
+are `UNKNOWN`; installed broken settings are `FAIL`. A registered Codex hook is
+`NOT_RELIED`: Codex CLI 0.172.0 on Windows runs shell commands through its
+code-mode host, where a PreToolUse hook that exits 2 does not stop the command, so
+Codex's secret protection is its profile's deny-read and the project rules. It neither executes hooks
 nor reads global profiles, sandbox logs or credentials. It never prints environment
 values. Runtime hook injection, ACLs, trust, real sandbox enforcement, state guard
 behavior and GitHub administrative facts remain `UNKNOWN` pending their own checks.
