@@ -851,6 +851,7 @@ def test_startup_recovery_does_not_hash_or_download_when_models_are_not_cached(t
     monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: False)
     monkeypatch.setattr(scene_job, "run_background_worker", lambda *args, **kwargs:
                         pytest.fail("uncached startup recovery must not load or fetch models"))
+    monkeypatch.setattr(scene_job, "_sha256_file", lambda *a: pytest.fail("uncached startup recovery must not hash"))
 
     result = scene_job.run_current_best_recovery(state)
 
@@ -1528,6 +1529,39 @@ def test_an_exhausted_retry_budget_ends_the_request(tmp_path, library, monkeypat
     assert not scene_job._requests(state, digest)
 
 
+def test_a_finishing_worker_covers_a_request_that_arrived_while_nothing_is_left(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    now = [100.0]
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: now[0])
+    def worker(*a, **k):
+        now[0] = 200.0
+        scene_job._record_request(state, source, digest)   # a second job was told already_running
+        now[0] = 300.0
+        return {"state": "complete"}
+    monkeypatch.setattr(scene_job, "_run_background_worker", worker)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    scene_job.run_background_worker(state, source, digest)
+    assert not scene_job._requests(state, digest)
+
+
+def test_unreadable_naming_state_keeps_the_request(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
+    def unreadable(*a, **k):
+        raise OSError("state temporarily locked")
+    monkeypatch.setattr(scene_names, "cue_record", unreadable)
+    assert scene_job._eligible_recovery_source(state, digest, [source], now=0.0) is None
+    assert scene_job._requests(state, digest)
+
+
 def test_a_finishing_worker_keeps_a_request_that_arrived_after_it_started(tmp_path, monkeypatch):
     state = tmp_path / "state"
     source = tmp_path / "episode.mkv"
@@ -1540,6 +1574,7 @@ def test_a_finishing_worker_keeps_a_request_that_arrived_after_it_started(tmp_pa
         scene_job._record_request(state, source, digest)   # the user's next job asks again meanwhile
         return {"state": "complete"}
     monkeypatch.setattr(scene_job, "_run_background_worker", worker)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: True)   # the later job's cues still need names
     scene_job.run_background_worker(state, source, digest)
     assert scene_job._requests(state, digest)
 
@@ -1589,6 +1624,7 @@ def test_launch_eligibility_ends_a_request_with_nothing_left(tmp_path, library, 
     digest = hashlib.sha256(source.read_bytes()).hexdigest()
     library[digest] = [_cue(tmp_path / "public", digest, 400)]
     monkeypatch.setattr(scene_job, "_retry_clock", lambda: 100.0)
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
     scene_job._record_request(state, source, digest)
     monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
     monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)

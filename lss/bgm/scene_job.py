@@ -254,7 +254,7 @@ def _next_transient_retry_after(state_root: Path, source_sha256: str) -> float |
 
 
 def _pending_retry_with_budget(state_root: Path, source_sha256: str, *, source: Path | None = None,
-                               models=None) -> float | None:
+                               models=None, strict: bool = False) -> float | None:
     """Earliest persisted transient retry whose current identity still has a bounded attempt available."""
     try:
         revision = _current_model_revision(models)
@@ -284,6 +284,8 @@ def _pending_retry_with_budget(state_root: Path, source_sha256: str, *, source: 
                 due.append(float(retry_after))
         return min(due) if due else None
     except Exception:  # noqa: BLE001 - an eligibility failure never blocks the published result
+        if strict:
+            raise
         return None
 
 
@@ -389,7 +391,16 @@ def run_background_worker(state_root: Path, source: Path, source_sha256: str, *,
         result.get("state") == "retry_pending"
         and _pending_retry_with_budget(state_root, source_sha256, source=Path(source)) is None)
     if finished:
-        _finish_requests(state_root, source_sha256, finished_at=started_at)
+        cutoff = started_at
+        try:
+            # Requests that arrived during this worker (a second job of the same source was told
+            # already_running) are covered too when no BGM job of the source runs and nothing is left now.
+            if (not _bgm_job_active(state_root, source_sha256)
+                    and not needs_naming(state_root, source_sha256, source=Path(source), strict=True)):
+                cutoff = _retry_clock()
+        except Exception:  # noqa: BLE001 - keep the later requests when the state cannot be read
+            pass
+        _finish_requests(state_root, source_sha256, finished_at=cutoff)
     return result
 
 
@@ -966,7 +977,7 @@ def _work_info_enabled() -> bool:
 
 
 def needs_naming(state_root: Path, source_sha256: str, *, source: Path | None = None,
-                 models=None, now: float | None = None) -> bool:
+                 models=None, now: float | None = None, strict: bool = False) -> bool:
     """Whether a cue is new or an unresolved attempt has changed inputs / reached retry backoff."""
     try:
         revision = _current_model_revision(models)
@@ -991,6 +1002,8 @@ def needs_naming(state_root: Path, source_sha256: str, *, source: Path | None = 
                 return True
         return False
     except Exception:  # noqa: BLE001 - a failed check never blocks the BGM result
+        if strict:
+            raise
         return False
 
 
@@ -1169,6 +1182,12 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
         if not source.is_file():
             rejected_paths.append({"path": str(source), "reason": "recorded_source_missing"})
             continue
+        from lss.bgm import scene_runtime
+
+        if not _scene_models_cached() and not scene_runtime.bootstrap_supported():
+            # No hashing or model work without a usable backend; the request stays for a later launch.
+            return {"skip_reason": "scene_naming_models_not_cached", "source": source,
+                    "immediate": False, "retry_after": None}
         try:
             stat = source.stat()
             cache_key = (str(source.resolve()).casefold(), stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
@@ -1186,18 +1205,17 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
                                    "actual_sha256": actual_sha256})
             continue
         # Only the verified original decides whether anything of the request is left.
-        immediate = needs_naming(state_root, source_sha256, source=source, now=now)
-        retry_after = None if immediate else _pending_retry_with_budget(state_root, source_sha256, source=source)
+        try:
+            immediate = needs_naming(state_root, source_sha256, source=source, now=now, strict=True)
+            retry_after = None if immediate else _pending_retry_with_budget(state_root, source_sha256,
+                                                                            source=source, strict=True)
+        except Exception:  # noqa: BLE001 - unreadable naming state: keep the request for a later launch
+            return None
         if not immediate and retry_after is None:
             # The user's requested naming has nothing left: end the requests so a later model or policy change
             # does not turn them into launch-time work.
             _finish_requests(state_root, source_sha256, finished_at=now)
             return None
-        from lss.bgm import scene_runtime
-
-        if not _scene_models_cached() and not scene_runtime.bootstrap_supported():
-            return {"skip_reason": "scene_naming_models_not_cached", "source": source,
-                    "immediate": immediate, "retry_after": retry_after}
         return {"source": source, "immediate": immediate or retry_after is None or retry_after <= now,
                 "retry_after": retry_after, "path_rejections": rejected_paths}
     if rejected_paths:
