@@ -1580,3 +1580,46 @@ def test_start_with_nothing_left_to_name_ends_the_requests(tmp_path, library, mo
     monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
     assert scene_job.start_in_background(state, source, digest)["state"] == "current"
     assert not scene_job._requests(state, digest)
+
+
+def test_launch_eligibility_ends_a_request_with_nothing_left(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: 100.0)
+    scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    assert scene_job._eligible_recovery_source(state, digest, [source], now=200.0) is None
+    assert not scene_job._requests(state, digest)
+
+
+def test_requests_stay_while_the_sources_bgm_job_holds_its_lock(tmp_path):
+    from lss import application as app
+    from lss.bgm import current_best
+    state = tmp_path / "state"
+    digest = "a" * 64
+    scene_job._record_request(state, tmp_path / "episode.mkv", digest)
+    with app._BgmCandidateRunLock(state / current_best.DIRECTORY / digest, wait_seconds=0):
+        scene_job._finish_requests(state, digest, finished_at=10 ** 12)
+        assert scene_job._requests(state, digest)
+    scene_job._finish_requests(state, digest, finished_at=10 ** 12)
+    assert not scene_job._requests(state, digest)
+
+
+def test_launch_tries_the_newest_requested_place_first(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    old_name, new_name = tmp_path / "old-name.mkv", tmp_path / "new-name.mkv"
+    old_name.write_bytes(b"episode")
+    new_name.write_bytes(b"episode")
+    digest = hashlib.sha256(old_name.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    clock = iter([300.0, 100.0])   # the newer request is written first: order must follow requested_at
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: next(clock))
+    scene_job._record_request(state, new_name, digest)
+    scene_job._record_request(state, old_name, digest)
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: True)
+    assert scene_job._eligible_recovery_source(state, digest, [], now=0.0)["source"] == new_name

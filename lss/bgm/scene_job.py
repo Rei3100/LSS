@@ -302,7 +302,8 @@ def _requests(state_root: Path, source_sha256: str) -> list[tuple[Path, dict]]:
             continue
         if isinstance(record, dict):
             rows.append((path, record))
-    return rows
+    requested_at = lambda row: row[1].get("requested_at") if isinstance(row[1].get("requested_at"), (int, float)) else 0.0
+    return sorted(rows, key=requested_at)   # oldest first
 
 
 def _record_request(state_root: Path, source: Path, source_sha256: str) -> Path:
@@ -325,8 +326,37 @@ def _record_request(state_root: Path, source: Path, source_sha256: str) -> Path:
     return path
 
 
+def _bgm_job_active(state_root: Path, source_sha256: str) -> bool:
+    """Whether a BGM job holds this source's CurrentBest lock (it will publish, then request naming itself)."""
+    from lss.bgm import current_best
+
+    path = Path(state_root) / current_best.DIRECTORY / str(source_sha256).lower() / ".owner.lock"
+    if not path.is_file():
+        return False
+    try:
+        with path.open("r+b") as stream:
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+            else:  # pragma: no cover - Product runtime is Windows
+                import fcntl
+                fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fcntl.flock(stream, fcntl.LOCK_UN)
+    except OSError:
+        return True
+    return False
+
+
 def _finish_requests(state_root: Path, source_sha256: str, *, finished_at: float) -> None:
-    """Remove the requests a finished naming covered: those made no later than ``finished_at``."""
+    """Remove the requests a finished naming covered: those made no later than ``finished_at``.
+
+    Nothing is removed while a BGM job of the source is running: it may still publish new cues whose naming its
+    request stands for.
+    """
+    if _bgm_job_active(state_root, source_sha256):
+        return
     for path, record in _requests(state_root, source_sha256):
         requested_at = record.get("requested_at")
         if isinstance(requested_at, (int, float)) and requested_at > finished_at:
@@ -1120,7 +1150,7 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
     if not requests:
         return None
     # The user may have named the source at a new place; try the requested places before older runs' paths.
-    requested = [str(record["source"]) for _, record in reversed(requests)
+    requested = [str(record["source"]) for _, record in reversed(requests)   # newest request first
                  if isinstance(record.get("source"), str) and record["source"]]
     seen = set()
     ordered = []
@@ -1140,6 +1170,9 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
         immediate = needs_naming(state_root, source_sha256, source=source, now=now)
         retry_after = None if immediate else _pending_retry_with_budget(state_root, source_sha256, source=source)
         if not immediate and retry_after is None:
+            # The user's requested naming has nothing left: end the requests so a later model or policy change
+            # does not turn them into launch-time work.
+            _finish_requests(state_root, source_sha256, finished_at=now)
             continue
         from lss.bgm import scene_runtime
 
