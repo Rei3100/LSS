@@ -1808,3 +1808,13 @@ def test_no_request_ends_while_a_naming_worker_holds_the_source_lease(tmp_path, 
         assert scene_job._requests(state, digest)
     scene_job._end_requests(state, digest, None, inside_bgm_job=True)
     assert not scene_job._requests(state, digest)
+
+
+def test_a_failed_request_write_leaves_no_partial_file(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    def refuse(*a, **k):
+        raise OSError("disk full")
+    monkeypatch.setattr(scene_job.os, "replace", refuse)
+    with pytest.raises(OSError):
+        scene_job._record_request(state, tmp_path / "episode.mkv", "a" * 64)
+    assert not list(scene_job._requests_dir(state).iterdir())

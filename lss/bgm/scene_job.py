@@ -321,10 +321,15 @@ def _record_request(state_root: Path, source: Path, source_sha256: str) -> Path:
     folder.mkdir(parents=True, exist_ok=True)
     name = f"{str(source_sha256).lower()}-{uuid.uuid4().hex}"
     temporary = folder / f"{name}.tmp"
-    temporary.write_text(json.dumps({"source_sha256": str(source_sha256).lower(), "source": str(source),
-                                     "requested_at": _retry_clock()}, ensure_ascii=False), encoding="utf-8")
     path = folder / f"{name}.json"
-    os.replace(temporary, path)
+    try:
+        temporary.write_text(json.dumps({"source_sha256": str(source_sha256).lower(), "source": str(source),
+                                         "requested_at": _retry_clock()}, ensure_ascii=False), encoding="utf-8")
+        os.replace(temporary, path)
+    except BaseException:
+        # A failed write leaves no partial file behind; the caller decides what a missing request means.
+        temporary.unlink(missing_ok=True)
+        raise
     return path
 
 
