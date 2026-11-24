@@ -1727,6 +1727,7 @@ def _run_bgm_candidate_request(
                                               memory_refresh=memory_refresh)
     if outcome.disposition is ResultDisposition.FAILED or len(request.sources) != 1:
         return outcome
+    saved = _file_stamps(outcome.outputs)   # before any wait: the saved files as this request published them
     try:
         from lss.bgm import reference_acquisition
         source = request.sources[0].resolve()
@@ -1747,11 +1748,20 @@ def _run_bgm_candidate_request(
     later = _run_bgm_candidate_request_once(request, state_root=state_root, analyze=analyze,
                                             memory_refresh=memory_refresh)
     # The later decision only improves on a result already saved. When it fails while every saved file of the
-    # first decision is still in place, that result still answers the request; a moved file means it does not.
-    if (later.disposition is ResultDisposition.FAILED and later.error_code != "job_abandoned" and outcome.outputs
-            and all(Path(path).is_file() for path in outcome.outputs)):
+    # first decision is untouched, that result still answers the request; a moved or rewritten file means it does not.
+    if (later.disposition is ResultDisposition.FAILED and later.error_code != "job_abandoned"
+            and saved is not None and _file_stamps(outcome.outputs) == saved):
         return outcome
     return later
+
+
+def _file_stamps(paths) -> tuple | None:
+    """Size and modification time of each file, or None when any is missing (a replaced file changes them)."""
+    try:
+        stamps = tuple((str(path), os.stat(path).st_size, os.stat(path).st_mtime_ns) for path in paths)
+    except OSError:
+        return None
+    return stamps or None
 
 
 def _run_bgm_candidate_request_once(

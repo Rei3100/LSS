@@ -1,5 +1,6 @@
 """Cue memory re-evaluates only the source the user named; it never schedules another source."""
 import json
+import os
 from dataclasses import replace
 from pathlib import Path
 
@@ -235,26 +236,34 @@ def test_a_stale_plan_cannot_requery_a_witness_another_attempt_finished(tmp_path
     assert not refresh.claim(tmp_path, later)
 
 
-@pytest.mark.parametrize("saved_file_present", [True, False])
-def test_a_failed_later_reference_decision_keeps_a_first_result_whose_files_remain(tmp_path, monkeypatch,
-                                                                                     saved_file_present):
+@pytest.mark.parametrize("change", ["none", "moved", "rewritten", "rewritten_while_waiting"])
+def test_a_failed_later_reference_decision_keeps_a_first_result_whose_files_are_untouched(tmp_path, monkeypatch,
+                                                                                           change):
     from lss.bgm import reference_acquisition
     source = tmp_path / "episode.mkv"
     source.write_bytes(b"x")
     saved = _outcome(source)
-    if saved_file_present:
-        saved.outputs[0].write_bytes(b"flac")
+    saved.outputs[0].write_bytes(b"flac")
+    os.utime(saved.outputs[0], ns=(1_000_000_000, 1_000_000_000))
     failed = app.ProcessingOutcome(disposition=app.ResultDisposition.FAILED, error_code="worker_stopped")
     calls = []
     def once(*a, **k):
         calls.append(k)
+        if len(calls) == 2 and change == "moved":
+            saved.outputs[0].unlink()
+        if len(calls) == 2 and change == "rewritten":
+            saved.outputs[0].write_bytes(b"flac")   # same path and size, different audio
         return saved if len(calls) == 1 else failed
     monkeypatch.setattr(app, "_run_bgm_candidate_request_once", once)
-    monkeypatch.setattr(reference_acquisition, "wait_active", lambda *a, **k: True)
+    def wait(*a, **k):
+        if change == "rewritten_while_waiting":
+            saved.outputs[0].write_bytes(b"flac")
+        return True
+    monkeypatch.setattr(reference_acquisition, "wait_active", wait)
     monkeypatch.setattr(app, "_registered_references", lambda *a, **k: ([], "album", [], {}))
     result = app._run_bgm_candidate_request(_request(source), state_root=tmp_path)
     assert len(calls) == 2   # the later decision ran
-    assert result is (saved if saved_file_present else failed)
+    assert result is (saved if change == "none" else failed)
 
 
 def test_s3_t9_deliberate_failure():
