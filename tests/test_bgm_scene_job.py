@@ -936,7 +936,7 @@ def test_startup_recovery_skips_a_changed_recorded_path_for_another_current_path
         run_path.write_text(json.dumps(run), encoding="utf-8")
         rows.append(current_best.file_entry(run, run_key, run_path, item, cue["path"], adoption="adopted"))
     old_source.write_bytes(b"replaced bytes at old recorded path")
-    scene_job._record_request(state, valid_source, digest)
+    scene_job._record_request(state, old_source, digest)   # the job named the old place
     current_best._write_json_atomic(current_best.record_path(state, digest), {
         "type": current_best.RECORD_TYPE, "schema_version": current_best.SCHEMA_VERSION,
         "source_sha256": digest,
@@ -1508,8 +1508,52 @@ def test_the_request_record_lives_from_the_user_job_until_its_naming_is_finished
     assert scene_job.start_in_background(state, source, digest)["state"] == "started"
     assert scene_job._request_path(state, digest).is_file()
     monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "retry_pending"})
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: 5000.0)
     scene_job.run_background_worker(state, source, digest)
-    assert scene_job._request_path(state, digest).is_file()   # a due retry remains the user's job
+    assert scene_job._request_path(state, digest).is_file()   # a budgeted retry remains the user's job
     monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "complete"})
     scene_job.run_background_worker(state, source, digest)
     assert not scene_job._request_path(state, digest).exists()
+
+
+def test_an_exhausted_retry_budget_ends_the_request(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "retry_pending"})
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    scene_job.run_background_worker(state, source, digest)
+    assert not scene_job._request_path(state, digest).exists()
+
+
+def test_a_finishing_worker_keeps_a_request_that_arrived_after_it_started(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    now = [100.0]
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: now[0])
+    def worker(*a, **k):
+        now[0] = 200.0
+        scene_job._record_request(state, source, digest)   # the user's next job asks again meanwhile
+        return {"state": "complete"}
+    monkeypatch.setattr(scene_job, "_run_background_worker", worker)
+    scene_job.run_background_worker(state, source, digest)
+    assert scene_job._request_path(state, digest).is_file()
+
+
+def test_launch_recovery_tries_the_requested_place_of_a_moved_source(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    old_place, new_place = tmp_path / "old.mkv", tmp_path / "moved" / "episode.mkv"
+    old_place.write_bytes(b"episode")
+    digest = hashlib.sha256(old_place.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    new_place.parent.mkdir()
+    old_place.rename(new_place)
+    scene_job._record_request(state, new_place, digest)
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: True)
+    eligible = scene_job._eligible_recovery_source(state, digest, [old_place], now=0.0)
+    assert eligible["source"] == new_place

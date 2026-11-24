@@ -305,7 +305,22 @@ def _record_request(state_root: Path, source: Path, source_sha256: str) -> None:
     os.replace(temporary, path)
 
 
-def _finish_request(state_root: Path, source_sha256: str) -> None:
+def _read_request(state_root: Path, source_sha256: str) -> dict | None:
+    try:
+        record = json.loads(_request_path(state_root, source_sha256).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return record if isinstance(record, dict) else None
+
+
+def _finish_request(state_root: Path, source_sha256: str, *, started_at: float | None = None) -> None:
+    """Remove the request, unless a newer request arrived after the finishing worker started."""
+    record = _read_request(state_root, source_sha256)
+    if record is None:
+        return
+    requested_at = record.get("requested_at")
+    if started_at is not None and isinstance(requested_at, (int, float)) and requested_at > started_at:
+        return
     try:
         _request_path(state_root, source_sha256).unlink()
     except FileNotFoundError:
@@ -320,14 +335,20 @@ def run_background_worker(state_root: Path, source: Path, source_sha256: str, *,
     cues recorded so far are kept, nothing is recorded for the interrupted one, and the source stays pending.
     """
     scene_stop.enable()
+    started_at = _retry_clock()
     try:
         result = _run_background_worker(state_root, source, source_sha256, wait=wait or scene_stop.wait,
                                         clock=clock, wait_for_retries=wait_for_retries)
     except scene_stop.StopRequested:
         return {"state": "stopped", "reason": "scene_worker_stop_requested"}
-    if result.get("state") in ("complete", "current"):
+    # The requested naming is over when nothing is left, or when only retries without a remaining budget are
+    # left: a later model or policy change then makes a reprocess candidate, not the user's unfinished job.
+    finished = result.get("state") in ("complete", "current") or (
+        result.get("state") == "retry_pending"
+        and _pending_retry_with_budget(state_root, source_sha256, source=Path(source)) is None)
+    if finished:
         try:
-            _finish_request(state_root, source_sha256)   # nothing of the requested naming is left to resume
+            _finish_request(state_root, source_sha256, started_at=started_at)
         except OSError:
             pass
     return result
@@ -1082,8 +1103,14 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
     Only a source whose naming a user-started job requested and did not finish is eligible: a newer model, policy
     or public information alone makes a reprocess candidate, never launch-time work on a source.
     """
-    if not _request_path(state_root, source_sha256).is_file():
+    request = _read_request(state_root, source_sha256)
+    if request is None:
         return None
+    requested_source = request.get("source")
+    if isinstance(requested_source, str) and requested_source:
+        # The user may have named the source at a new place; try it before the paths of older runs.
+        paths = [Path(requested_source)] + [path for path in paths
+                                           if str(path).casefold() != requested_source.casefold()]
     published = _published(state_root, source_sha256)
     if not published:
         return None
