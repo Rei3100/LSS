@@ -856,6 +856,21 @@ def test_a_stalled_destination_query_ends_and_falls_back_to_a_full_scan(tmp_path
     assert time.monotonic() - started < 30
 
 
+def test_a_refused_tree_kill_still_ends_git_and_falls_back(tmp_path, monkeypatch):
+    import time
+    real_popen = subprocess.Popen
+    def popen(argv, **k):
+        if argv[:1] == ["taskkill"]:
+            raise OSError("refused")
+        return real_popen([sys.executable, "-c", "import time; time.sleep(60)"] if argv[:1] == ["git"] else argv, **k)
+    monkeypatch.setattr(gh.guard.subprocess, "Popen", popen)
+    monkeypatch.setattr(gh.guard, "LS_REMOTE_TIMEOUT", 2)
+    monkeypatch.setattr(gh.guard, "url_rewrites", lambda repo: False)
+    started = time.monotonic()
+    assert gh.guard.published_main(tmp_path, "origin", "https://example.invalid/repo.git") is None
+    assert time.monotonic() - started < 30
+
+
 @pytest.mark.parametrize("reply,local,trusted", [
     ("c" * 40 + "\trefs/heads/main\n", True, True),
     ("c" * 40 + "\trefs/heads/main\n", False, False),     # the destination's main is not in this repository

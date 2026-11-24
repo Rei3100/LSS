@@ -158,10 +158,16 @@ def git(repo: Path, *args: str, input_data: bytes | None = None, timeout: float 
             code = proc.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             if os.name == "nt":
-                subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)],
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            proc.kill()
-            proc.wait()
+                try:
+                    subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+                except (OSError, subprocess.SubprocessError):
+                    pass   # git itself is still ended below; helpers the tree kill missed may remain
+            try:
+                proc.kill()
+                proc.wait(timeout=30)
+            except (OSError, subprocess.SubprocessError):
+                pass
             raise GuardError("Git operation timed out")
         if code:
             raise GuardError("Git operation failed")
