@@ -1450,8 +1450,8 @@
       "reason": "Content, rights and privacy reviewed after a wording update that follows current decisions; no paths, names or secrets added (2026-11-18)"
     },
     "docs/engine/RECOVERY_AND_REFERENCES.md": {
-      "blob_oid": "b2b8eb95a0cb7609cd2ffb0d47f23733bb7e3a3d",
-      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+      "blob_oid": "d472353a196d666432b24729d645a3d670a8d28d",
+      "reason": "Content, rights and privacy reviewed after the occurrence-memory paragraph was rewritten (memory re-evaluates only the named source); no work names, paths or secrets added (2026-11-24)"
     },
     "docs/engine/SOURCE_TO_ASSET.md": {
       "blob_oid": "2f21fc16a0fe6a1b750e3e6463206890a467f9d0",

@@ -96,18 +96,6 @@ def render(source: Path, target: str, projection: dict) -> str:
     if target == "bgm":
         counts += (f"／保留 {count(projection.get('held_count'))}／"
                    f"対応範囲外 {count(projection.get('unsupported_count'))}")
-    refresh = projection.get("related_bgm_refresh") or {}
-    refresh_note = ""
-    if refresh:
-        refreshed = refresh.get("product_result") or {}
-        name = Path(refresh["source"]).name
-        if refreshed.get("replacement_count"):
-            refresh_note = (f"今回保存した曲との照合から、以前の音源「{name}」のBGMも再評価し、"
-                            f"{refreshed['replacement_count']}件を改善した音声へ更新しました。以前の音声は履歴に保持しています。")
-        elif refresh.get("ok"):
-            refresh_note = f"以前の音源「{name}」の未確定BGMも再評価しました。保存済みの音声を保持しています。"
-        else:
-            refresh_note = f"以前の音源「{name}」のBGM再評価は完了できませんでした。保存済みの音声を保持しています。"
     return ('<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="lss-result-view" content="snapshot-v1">'
             f'<meta name="lss-source-sha256" content="{escape(str(projection.get("source_sha256") or ""), quote=True)}">'
             '<title>LSS 保存結果</title><style>body{font-family:system-ui;max-width:850px;margin:40px auto;padding:0 24px;'
@@ -123,7 +111,6 @@ def render(source: Path, target: str, projection: dict) -> str:
             + (f'<p>{escape(recurrence_note)}</p>' if recurrence_note else '')
             + (f'<ul>{recurrence_rows}</ul>' if recurrence_rows else '')
             + (f'<ul>{asset_rows}</ul>' if asset_rows else '') +
-            (f'<p>{escape(refresh_note)}</p>' if refresh_note else '') +
             f'<p>{escape(note)}</p><p>音声の値は変更せず、対応する再生ソフトが使う音量情報を付けています。'
             '「仮題」は音声から得た暫定的な記述です。区切り未確定の表示もそのまま保持しています。</p>'
             f'<p>置換履歴：{projection.get("replacement_history_count", 0)}回。以前の音声と来歴は既存の履歴管理に残っています。</p>'
