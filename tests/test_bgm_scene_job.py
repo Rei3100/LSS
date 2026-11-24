@@ -1659,16 +1659,18 @@ def test_launch_eligibility_ends_a_request_with_nothing_left(tmp_path, library, 
     assert not scene_job._requests(state, digest)
 
 
-def test_requests_stay_while_the_sources_bgm_job_holds_its_lock(tmp_path):
+def test_requests_stay_while_the_sources_bgm_job_holds_its_lock(tmp_path, monkeypatch):
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
     from lss import application as app
     from lss.bgm import current_best
     state = tmp_path / "state"
     digest = "a" * 64
     scene_job._record_request(state, tmp_path / "episode.mkv", digest)
     with app._BgmCandidateRunLock(state / current_best.DIRECTORY / digest, wait_seconds=0):
-        scene_job._finish_requests(state, digest, finished_at=10 ** 12)
+        scene_job._end_requests(state, digest, None)
         assert scene_job._requests(state, digest)
-    scene_job._finish_requests(state, digest, finished_at=10 ** 12)
+    scene_job._end_requests(state, digest, None)
     assert not scene_job._requests(state, digest)
 
 
@@ -1718,3 +1720,30 @@ def test_the_bgm_job_itself_ends_requests_when_nothing_is_left_to_name(tmp_path,
         scene_job._record_request(state, source, digest)
         assert scene_job.start_in_background(state, source, digest)["state"] == "current"
     assert not scene_job._requests(state, digest)
+
+
+def test_a_currentbest_switch_in_progress_keeps_the_requests(tmp_path, monkeypatch):
+    from lss.bgm import current_best
+    state = tmp_path / "state"
+    digest = "a" * 64
+    scene_job._record_request(state, tmp_path / "episode.mkv", digest)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    journal = current_best.journal_path(state, digest)
+    journal.parent.mkdir(parents=True, exist_ok=True)
+    journal.write_text("{}", encoding="utf-8")
+    scene_job._end_requests(state, digest, None)
+    assert scene_job._requests(state, digest)
+
+
+def test_a_job_that_starts_during_the_check_keeps_its_request(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    digest = "a" * 64
+    scene_job._record_request(state, tmp_path / "episode.mkv", digest)
+    def check(*a, **k):
+        scene_job._record_request(state, tmp_path / "episode.mkv", digest)   # a new job begins meanwhile
+        return False
+    monkeypatch.setattr(scene_job, "needs_naming", check)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    scene_job._end_requests(state, digest, None)
+    assert len(scene_job._requests(state, digest)) == 1   # only the request listed before the check ended

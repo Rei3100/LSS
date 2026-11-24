@@ -352,26 +352,40 @@ def _bgm_job_active(state_root: Path, source_sha256: str) -> bool:
 
 
 def _nothing_left(state_root: Path, source_sha256: str, source: Path | None) -> bool:
-    """Strictly: no naming due now and no budgeted retry later. An unreadable state is not "nothing left"."""
+    """Strictly: no naming due now and no budgeted retry later. An unreadable state is not "nothing left",
+    and neither is a CurrentBest switch still in progress (its new cues are not listed yet)."""
     try:
+        from lss.bgm import current_best
+
+        if current_best.journal_path(Path(state_root), source_sha256).is_file():
+            return False
         return (not needs_naming(state_root, source_sha256, source=source, strict=True)
                 and _pending_retry_with_budget(state_root, source_sha256, source=source, strict=True) is None)
     except Exception:  # noqa: BLE001 - keep the request when the state cannot be read
         return False
 
 
-def _finish_requests(state_root: Path, source_sha256: str, *, finished_at: float,
-                     inside_bgm_job: bool = False) -> None:
-    """Remove the requests a finished naming covered: those made no later than ``finished_at``.
+def _end_requests(state_root: Path, source_sha256: str, source: Path | None, *, started_at: float | None = None,
+                  inside_bgm_job: bool = False) -> None:
+    """End the user's naming requests that the current state shows finished.
 
-    Nothing is removed while a BGM job of the source is running: it may still publish new cues whose naming its
-    request stands for.
+    Order matters: the request list is taken first, then the source's BGM job lock, then the strict
+    ``_nothing_left`` check. A job that starts after the lock check records its request after the list was
+    taken, so its request survives; a job that ran before the lock check has published what the check reads.
+    While a job holds the lock, only a finishing worker may end requests, and only those made before it started.
     """
-    if not inside_bgm_job and _bgm_job_active(state_root, source_sha256):
+    snapshot = _requests(state_root, source_sha256)
+    if not snapshot:
         return
-    for path, record in _requests(state_root, source_sha256):
+    active = not inside_bgm_job and _bgm_job_active(state_root, source_sha256)
+    if active and started_at is None:
+        return
+    if not _nothing_left(state_root, source_sha256, source):
+        return
+    cutoff = started_at if active else _retry_clock()
+    for path, record in snapshot:
         requested_at = record.get("requested_at")
-        if isinstance(requested_at, (int, float)) and requested_at > finished_at:
+        if isinstance(requested_at, (int, float)) and requested_at > cutoff:
             continue
         try:
             path.unlink()
@@ -396,12 +410,10 @@ def run_background_worker(state_root: Path, source: Path, source_sha256: str, *,
         return {"state": "stopped", "reason": "scene_worker_stop_requested"}
     # The requested naming is over when nothing is left, or when only retries without a remaining budget are
     # left: a later model or policy change then makes a reprocess candidate, not the user's unfinished job.
-    if result.get("state") in ("complete", "current", "retry_pending") and _nothing_left(
-            state_root, source_sha256, Path(source)):
+    if result.get("state") in ("complete", "current", "retry_pending"):
         # Requests that arrived during this worker (a second job of the same source was told already_running)
         # are covered too when no BGM job of the source runs; otherwise only those made before it started.
-        cutoff = started_at if _bgm_job_active(state_root, source_sha256) else _retry_clock()
-        _finish_requests(state_root, source_sha256, finished_at=cutoff)
+        _end_requests(state_root, source_sha256, Path(source), started_at=started_at)
     return result
 
 
@@ -1034,8 +1046,7 @@ def start_in_background(state_root: Path, source: Path, source_sha256: str) -> d
     if not needs_now and pending is None:
         # Nothing of this naming is left to do: the requests made so far are covered. The caller is the BGM job
         # itself, after its publication, so its own lock does not mean more cues are coming.
-        if _nothing_left(state_root, source_sha256, Path(source)):
-            _finish_requests(state_root, source_sha256, finished_at=_retry_clock(), inside_bgm_job=True)
+        _end_requests(state_root, source_sha256, Path(source), inside_bgm_job=True)
         return ({"state": "retry_pending", "retry_after": terminal}
                 if terminal is not None else {"state": "current"})
     _record_request(state_root, Path(source).resolve(), source_sha256)
@@ -1216,7 +1227,7 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
         if not immediate and retry_after is None:
             # The user's requested naming has nothing left: end the requests so a later model or policy change
             # does not turn them into launch-time work.
-            _finish_requests(state_root, source_sha256, finished_at=now)
+            _end_requests(state_root, source_sha256, source)
             return None
         return {"source": source, "immediate": immediate or retry_after is None or retry_after <= now,
                 "retry_after": retry_after, "path_rejections": rejected_paths}
