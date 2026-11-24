@@ -4,11 +4,11 @@
 
 py -3.11 -m venv .venv
 .venv\Scripts\pip install torch==2.9.1 torchaudio==2.9.1 --index-url https://download.pytorch.org/whl/cu128
-.venv\Scripts\pip install "audio-separator[gpu]"
+.venv\Scripts\pip install "audio-separator[gpu]" -c constraints.txt
 .venv\Scripts\pip install torch==2.9.1 torchaudio==2.9.1 --index-url https://download.pytorch.org/whl/cu128 --force-reinstall --no-deps
 .venv\Scripts\pip install torchvision==0.24.1 --index-url https://download.pytorch.org/whl/cu128 --force-reinstall --no-deps
-.venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\pip install -r requirements-dev.txt
+.venv\Scripts\pip install -r requirements.txt -c constraints.txt
+.venv\Scripts\pip install -r requirements-dev.txt -c constraints.txt
 .venv\Scripts\python scripts\fetch_ffmpeg.py
 if ($LASTEXITCODE -ne 0) { throw "bin\ffmpeg.exe の取得・検証に失敗しました" }
 .venv\Scripts\python scripts\fetch_msst_models.py

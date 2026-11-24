@@ -114,7 +114,7 @@ def test_unparseable_file_does_not_break_selection():
     assert selected("tests/test_broken.py") == {"tests/test_broken.py"}
 
 
-@pytest.mark.parametrize("path", ["tests/conftest.py", "pytest.ini", "requirements.txt", "requirements-dev.txt",
+@pytest.mark.parametrize("path", ["tests/conftest.py", "pytest.ini", "requirements.txt", "requirements-dev.txt", "constraints.txt",
                                   "scripts/dev.py"])
 def test_environment_files_select_the_whole_suite(path):
     assert selected(path) == set(TESTS)
