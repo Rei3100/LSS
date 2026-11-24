@@ -84,7 +84,7 @@ NOT_RUN = 3  # exit code: --changed selected no test file, so nothing was verifi
 def is_whole_suite_trigger(path: str) -> bool:
     name = path.rsplit("/", 1)[-1]
     return (path in WHOLE_SUITE_FILES or name == "conftest.py"
-            or (name.startswith("requirements") and name.endswith(".txt")))
+            or name == "constraints.txt" or (name.startswith("requirements") and name.endswith(".txt")))
 
 
 def module_name(path: str) -> str:
@@ -168,7 +168,7 @@ def select_related(changed: list[str], sources: dict[str, str], tests: list[str]
 
     Affected = the changed test file itself, a file that transitively imports a changed module, or a file
     with a string constant naming a changed path (basename) or module (dotted name), or one that walks a
-    directory tree it names. Whole suite for conftest.py, pytest.ini, requirements and this script.
+    directory tree it names. Whole suite for conftest.py, pytest.ini, requirements, constraints and this script.
     """
     changed = sorted({c.replace("\\", "/").removeprefix("./") for c in changed})
     trigger = next((c for c in changed if is_whole_suite_trigger(c)), None)
