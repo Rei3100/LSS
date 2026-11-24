@@ -16,6 +16,8 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 
+ADMINISTRATIVE = ("gh api", "gh repo edit", "gh repo delete", "gh secret", "gh ruleset")
+
 
 def check(root: Path = ROOT, environ=None) -> dict:
     env = os.environ if environ is None else environ
@@ -59,8 +61,6 @@ def check(root: Path = ROOT, environ=None) -> dict:
         checks[".claude/settings.json"] = "FAIL"
     checks["project_allow_deny"] = ("PASS" if permissions.get("allow") and denies else
                                       "FAIL" if permissions else "UNKNOWN")
-    checks["administrative_deny"] = ("PASS" if all(any(cmd in d for d in denies)
-        for cmd in ("gh api", "gh repo edit", "gh secret", "gh ruleset", "gh repo delete")) else "UNKNOWN")
     for name in ("LSS_PRIVATE_ROOT", "LSS_DEV_STATE"):
         value = env.get(name)
         if not value:
@@ -127,6 +127,14 @@ def check(root: Path = ROOT, environ=None) -> dict:
     checks["codex_send_rules"] = "UNKNOWN"
     if rules.is_file():
         checks["codex_send_rules"] = "PASS" if 'decision = "forbidden"' in rules.read_text(encoding="utf-8") else "FAIL"
+    # Administrative commands are denied to both engines: Claude through the project denies, Codex through
+    # its project rules (its hook cannot block). Missing from either is FAIL once both files exist.
+    rule_text = rules.read_text(encoding="utf-8") if rules.is_file() else ""
+    claude_admin = all(any(cmd in d for d in denies) for cmd in ADMINISTRATIVE)
+    codex_admin = all("prefix_rule(pattern = [%s], decision = \"forbidden\")"
+                      % ",".join('"%s"' % w for w in cmd.split()) in rule_text for cmd in ADMINISTRATIVE)
+    checks["administrative_deny"] = ("PASS" if claude_admin and codex_admin else
+                                     "FAIL" if denies and rule_text else "UNKNOWN")
     return {"status": "FAIL" if "FAIL" in checks.values() else "UNKNOWN" if "UNKNOWN" in checks.values() else "PASS",
             "checks": dict(sorted(checks.items()))}
 

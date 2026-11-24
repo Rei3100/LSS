@@ -186,6 +186,20 @@ def test_env_check_missing_optional_and_no_values(tmp_path):
     assert env_check.check(tmp_path, {})["status"] == "FAIL"
 
 
+def test_administrative_commands_are_denied_to_both_engines(tmp_path):
+    write_settings(tmp_path)
+    rules = tmp_path / ".codex/rules/lss.rules"
+    rules.parent.mkdir(exist_ok=True)
+    rules.write_bytes((ROOT / ".codex/rules/lss.rules").read_bytes())
+    assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "PASS"
+    rules.write_text(rules.read_text(encoding="utf-8").replace('["gh","secret"]', '["gh","secrets"]'), encoding="utf-8")
+    assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "FAIL"
+    rules.write_bytes((ROOT / ".codex/rules/lss.rules").read_bytes())
+    settings = tmp_path / ".claude/settings.json"
+    settings.write_text(settings.read_text(encoding="utf-8").replace("gh ruleset", "gh rule-set"), encoding="utf-8")
+    assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "FAIL"
+
+
 def test_gate_copy_manifest_detects_drift(tmp_path):
     import hashlib
     gates = tmp_path / "bin"
