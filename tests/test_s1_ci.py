@@ -197,6 +197,7 @@ def test_env_check_missing_optional_and_no_values(tmp_path):
     (".codex/rules/lss.rules", 'pattern = ["gh"]', 'pattern = ["g h"]'),
     (".claude/settings.json", '"deny": [', '"deny": [[[['),
     (".claude/settings.json", '"Bash(gh alias *)",', ""),
+    (".codex/rules/lss.rules", '["git","push"]', '["git\\","push"]'),
     (".codex/rules/lss.rules", 'prefix_rule(pattern = ["git","push"]', 'prefix_rule(\nprefix_rule(pattern = ["git","push"]'),
 ])
 def test_administrative_denials_missing_from_either_engine_fail(tmp_path, name, old, new):

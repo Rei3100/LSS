@@ -24,7 +24,8 @@ ROOT = Path(__file__).resolve().parents[1]
 ADMINISTRATIVE = ("gh -*", "gh api *", "gh repo -*", "gh repo edit *", "gh repo delete *", "gh repo rename *",
                   "gh repo archive *", "gh repo create *", "gh repo new *", "gh repo deploy-key *",
                   "gh secret *", "gh variable *", "gh ruleset *", "gh rs *", "gh alias *")
-CODEX_RULE = re.compile(r'prefix_rule\(\s*pattern\s*=\s*\[\s*"[^"]+"(?:\s*,\s*"[^"]+")*\s*\]\s*,'
+# Strings without escapes only: a backslash could hide the closing quote from this check but not from Codex.
+CODEX_RULE = re.compile(r'prefix_rule\(\s*pattern\s*=\s*\[\s*"[^"\\]+"(?:\s*,\s*"[^"\\]+")*\s*\]\s*,'
                         r'\s*decision\s*=\s*"(?:forbidden|prompt|allow)"\s*\)')
 CODEX_GH_RULE = re.compile(r'prefix_rule\(\s*pattern\s*=\s*\[\s*"gh"\s*\]\s*,\s*decision\s*=\s*"forbidden"\s*\)')
 
