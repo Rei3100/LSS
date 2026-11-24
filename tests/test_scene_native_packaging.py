@@ -21,6 +21,8 @@ def test_spec_packages_native_bridge_without_forcing_source_only_stack():
         assert (f'lss/bgm/{name}.py', 'lss/bgm') in values['datas']
         assert f'lss.bgm.{name}' in values['hiddenimports']
     assert not (set(OPTIONAL) & set(values['hiddenimports']))
+    # Installed in the development venv for the source route, but never packaged (2405 files, about 170 MB).
+    assert set(OPTIONAL) - {'huggingface_hub'} <= set(values['excludes'])
     build = (ROOT / 'build.ps1').read_text(encoding='utf-8-sig')
     assert 'Scene naming dependencies are missing' not in build
     for name in SCENE:

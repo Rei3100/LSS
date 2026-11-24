@@ -172,6 +172,12 @@ excludes = [
     "pytest",
     "_pytest",
     "tensorboard",
+    # 場面の命名のTransformers経路はソースからだけ動く（scene_runtime）。開発のvenvに入っていても配布しない。
+    "transformers",
+    "bitsandbytes",
+    "accelerate",
+    "tokenizers",
+    "safetensors",
 ]
 
 a = Analysis(
