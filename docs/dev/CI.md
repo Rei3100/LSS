@@ -150,8 +150,14 @@ offline. This build never used that flag or contacted GitHub.
   failed 423 tests by the halfway point; with these steps 5832 tests ran and the only failures were tests
   now listed in `tests/local_tests.py` and two hook tests that need `sh` on `PATH`. Rejected: a serial run
   (`-j 1`), which does not fit a hosted job's time limit. Reconsider the worker count when hosted runner
-  sizes change. Dependencies other than torch are unpinned; a failure caused by an upstream release is
-  fixed by pinning that package in `requirements.txt`.
+  sizes change.
+- **Every other package is installed at the development venv's version.** `requirements*.txt` name what is
+  needed; `constraints.txt`, written by `scripts/freeze_constraints.py` from `pip freeze --all` of the
+  development venv, fixes each version for the hosted Windows job and `setup-venv.ps1`. torch, torchaudio and
+  torchvision stay pinned where they are installed (separate CUDA and CPU indexes), and pip is left to the
+  runner. After changing the venv, run the script and commit both files; `--check` reports drift. Rejected:
+  pinning only after an upstream release breaks a run (the hosted result could change without a commit).
+  Reconsider if a package has no wheel for the hosted runner at the pinned version.
 - **Only collaborators can open pull requests; anyone signed in can open issues.** The repository's
   `pull_request_creation_policy` is `collaborators_only`, and no interaction limit is set (both read
   through the REST API on 2026-11-24). The repository response has no field that limits who opens issues,

@@ -50,7 +50,8 @@
     "gates/*.md",
     "tests/gates/*.py",
     "scripts/storage_policy.json",
-    "scripts/local_llm_models.json"
+    "scripts/local_llm_models.json",
+    "constraints.txt"
   ],
   "deny": [
     ".git/*",
@@ -978,7 +979,10 @@
     "tests/test_machine_config.py",
     "tests/machine_config_fixtures.py",
     "tests/gates/test_review_gate.py",
-    "docs/DOCS_MANIFEST.json"
+    "docs/DOCS_MANIFEST.json",
+    "constraints.txt",
+    "scripts/freeze_constraints.py",
+    "tests/test_freeze_constraints.py"
   ],
   "approved_paths": {
     "assets/app.ico": {

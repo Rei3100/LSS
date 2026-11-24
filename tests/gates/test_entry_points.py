@@ -190,6 +190,7 @@ def test_default_denylist_uses_private_root_and_missing_stays_closed(tmp_path, m
 @pytest.mark.parametrize("ref", ["refs/heads/main", "refs/heads/codex/test", "refs/heads/claude/test-2/sub"])
 def test_pre_push_accepts_agent_refs_with_full_scan(tmp_path, monkeypatch, ref):
     import io
+    monkeypatch.setattr(gh.guard, "published_main", lambda *a: None)
     monkeypatch.setattr(gh.guard.sys, "stdin", io.StringIO(f"HEAD {HEAD} {ref} {'0' * 40}\n"))
     monkeypatch.setattr(gh.guard, "resolve_object", lambda *a: (HEAD, "commit"))
     monkeypatch.setattr(gh.guard, "git", lambda *a: (HEAD + "\n" + "b" * 40).encode())
@@ -751,3 +752,97 @@ def test_dry_run_output_is_ascii_json(publication, tmp_path, capsysbinary):
     assert gh.main(["--dry-run", "issue-comment", "--issue", "7", "--body-file", str(path)], runner=runner) == 0
     out = capsysbinary.readouterr().out
     assert out.isascii() and json.loads(out)["stdin"] == "Reviewed \U0001f916\n"
+
+
+def test_only_git_push_gets_the_longer_timeout(monkeypatch):
+    seen = []
+    monkeypatch.setattr(gh, "run_bounded", lambda argv, **k: seen.append(k["timeout"]))
+    gh.run(["git", "-C", "repo", "push", "origin", "x:refs/heads/y"], cwd=".")
+    gh.run(["git", "-C", "repo", "rev-parse", "HEAD"], cwd=".")
+    gh.run(["gh", "pr", "create"], cwd=".")
+    assert seen == [900, 120, 120]
+
+
+def test_a_timeout_ends_children_that_hold_the_output_open(tmp_path):
+    import time
+    child = "import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)']); time.sleep(60)"
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        gh.run_bounded([sys.executable, "-c", child], cwd=tmp_path, timeout=2)
+    assert time.monotonic() - started < 30
+
+
+def test_bounded_run_reports_output_and_failure(tmp_path):
+    done = gh.run_bounded([sys.executable, "-c", "import sys; print(sys.stdin.read().upper())"], cwd=tmp_path,
+                          input="body", timeout=30)
+    assert done.stdout.strip() == "BODY"
+    with pytest.raises(subprocess.CalledProcessError):
+        gh.run_bounded([sys.executable, "-c", "raise SystemExit(3)"], cwd=tmp_path, timeout=30)
+
+
+def test_a_failed_tree_kill_still_ends_the_command_and_reports_the_timeout(tmp_path, monkeypatch):
+    import time
+    real_run = subprocess.run
+    def refuse_taskkill(argv, **k):
+        if argv[:1] == ["taskkill"]:
+            return SimpleNamespace(returncode=1)
+        return real_run(argv, **k)
+    monkeypatch.setattr(gh.subprocess, "run", refuse_taskkill)
+    monkeypatch.setattr(gh.os, "killpg", lambda *a: (_ for _ in ()).throw(OSError("denied")), raising=False)
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        gh.run_bounded([sys.executable, "-c", "import time; time.sleep(60)"], cwd=tmp_path, timeout=2)
+    assert time.monotonic() - started < 30
+
+
+def test_a_new_branch_push_skips_commits_already_on_the_fetched_main(tmp_path, monkeypatch):
+    import io
+    main = "c" * 40
+    monkeypatch.setattr(gh.guard.sys, "stdin", io.StringIO(f"HEAD {HEAD} refs/heads/claude/x {'0' * 40}\n"))
+    monkeypatch.setattr(gh.guard, "resolve_object", lambda *a: (HEAD, "commit"))
+    monkeypatch.setattr(gh.guard, "published_main", lambda repo, remote, url: main if remote == "origin" else None)
+    asked = []
+    monkeypatch.setattr(gh.guard, "git", lambda repo, *args: asked.append(args) or HEAD.encode())
+    monkeypatch.setattr(gh.guard, "scan", lambda repo, oid, **k: {"result": "PASS", "files_checked": 1, "findings": [],
+                                                                  "object_oid": oid, "allowlist_sha256": "synthetic"})
+    assert gh.guard.pre_push(tmp_path, None, None, "origin", "https://example.invalid/repo.git") == 0
+    assert asked == [("rev-list", HEAD, "^" + main)]
+
+
+@pytest.mark.parametrize("reply,local,trusted", [
+    ("c" * 40 + "\trefs/heads/main\n", True, True),
+    ("c" * 40 + "\trefs/heads/main\n", False, False),     # the destination's main is not in this repository
+    ("", True, False),                                    # no main at the destination
+    (None, True, False),                                  # the destination cannot be asked
+    ("c" * 40 + "\trefs/heads/main\n" + "d" * 40 + "\trefs/heads/main\n", True, False)])
+def test_only_the_destinations_own_main_is_trusted(tmp_path, monkeypatch, reply, local, trusted):
+    main = "c" * 40
+    asked = []
+    def git(repo, *args):
+        asked.append(args)
+        if reply is None:
+            raise gh.guard.GuardError("network")
+        return reply.encode()
+    def resolve(repo, oid):
+        if not local:
+            raise gh.guard.GuardError("missing")
+        return oid, "commit"
+    monkeypatch.setattr(gh.guard, "git", git)
+    monkeypatch.setattr(gh.guard, "resolve_object", resolve)
+    monkeypatch.setattr(gh.guard, "url_rewrites", lambda repo: False)
+    assert (gh.guard.published_main(tmp_path, "origin", "https://example.invalid/a.git") == main) == trusted
+    assert asked == [("ls-remote", "--", "https://example.invalid/a.git", "refs/heads/main")]
+    assert gh.guard.published_main(tmp_path, None, None) is None
+
+
+def test_a_url_rewrite_rule_disables_the_trust(tmp_path, monkeypatch):
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    assert gh.guard.url_rewrites(tmp_path) is False
+    subprocess.run(["git", "-C", str(tmp_path), "config", "url.https://example.invalid/b/.insteadOf",
+                    "https://example.invalid/a/"], check=True)
+    assert gh.guard.url_rewrites(tmp_path) is True
+    assert gh.guard.published_main(tmp_path, "origin", "https://example.invalid/a/repo.git") is None
+    empty = tmp_path / "empty.config"
+    empty.write_text("")
+    monkeypatch.setenv("GIT_CONFIG", str(empty))   # narrows `git config` only; the rule still applies
+    assert gh.guard.url_rewrites(tmp_path) is True
