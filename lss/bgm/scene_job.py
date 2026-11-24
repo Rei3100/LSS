@@ -466,8 +466,8 @@ def _run_background_worker(state_root: Path, source: Path, source_sha256: str, *
         result = None
         attempts = 0
         while attempts < MAX_BACKGROUND_ATTEMPTS:
-            if require_request and attempts and not _requests(state_root, source_sha256):
-                # A user job ended the request while this launch worker waited between attempts.
+            if require_request and not _requests(state_root, source_sha256):
+                # A user job ended the request while this launch worker prepared models or waited.
                 return {"state": "not_requested", "attempts": attempts}
             # The checked entry rehashes the source before every attempt; model construction and release live
             # entirely inside name_source, so no model/GPU resource survives into the sleep below.

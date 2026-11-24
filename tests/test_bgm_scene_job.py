@@ -1778,3 +1778,19 @@ def test_a_finishing_worker_leaves_requests_while_the_bgm_job_runs(tmp_path, mon
         scene_job._record_request(state, source, digest)   # the job's request, made before the worker started
         scene_job.run_background_worker(state, source, digest)
         assert scene_job._requests(state, digest)
+
+
+def test_a_launch_worker_rechecks_the_request_after_preparing_models(tmp_path, monkeypatch):
+    from lss.bgm import scene_runtime
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    request = scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: True)
+    monkeypatch.setattr(scene_runtime, "available", lambda: False)
+    monkeypatch.setattr(scene_runtime, "bootstrap_supported", lambda: True)
+    monkeypatch.setattr(scene_runtime, "ensure_bootstrapped", lambda: request.unlink())   # the job ended it meanwhile
+    monkeypatch.setattr(scene_job, "name_source_checked", lambda *a: pytest.fail("ended request was named"))
+    result = scene_job.run_background_worker(state, source, digest, require_request=True)
+    assert result["state"] == "not_requested"
