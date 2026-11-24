@@ -1513,6 +1513,8 @@ def test_the_request_record_lives_from_the_user_job_until_its_naming_is_finished
     scene_job.run_background_worker(state, source, digest)
     assert scene_job._requests(state, digest)   # a budgeted retry remains the user's job
     monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "complete"})
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
     scene_job.run_background_worker(state, source, digest)
     assert not scene_job._requests(state, digest)
 
@@ -1525,6 +1527,7 @@ def test_an_exhausted_retry_budget_ends_the_request(tmp_path, library, monkeypat
     scene_job._record_request(state, source, digest)
     monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "retry_pending"})
     monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
     scene_job.run_background_worker(state, source, digest)
     assert not scene_job._requests(state, digest)
 
@@ -1553,12 +1556,36 @@ def test_unreadable_naming_state_keeps_the_request(tmp_path, library, monkeypatc
     source.write_bytes(b"episode")
     digest = hashlib.sha256(source.read_bytes()).hexdigest()
     library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: 100.0)
     scene_job._record_request(state, source, digest)
     monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
     def unreadable(*a, **k):
         raise OSError("state temporarily locked")
     monkeypatch.setattr(scene_names, "cue_record", unreadable)
-    assert scene_job._eligible_recovery_source(state, digest, [source], now=0.0) is None
+    # A launch at a later time would remove the request if the unreadable state counted as "nothing left".
+    assert scene_job._eligible_recovery_source(state, digest, [source], now=200.0) is None
+    assert scene_job._requests(state, digest)
+    monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "current"})
+    scene_job.run_background_worker(state, source, digest)   # the worker end asks the same strict question
+    assert scene_job._requests(state, digest)
+
+
+def test_a_waiting_budgeted_retry_keeps_later_requests(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    now = [100.0]
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: now[0])
+    def worker(*a, **k):
+        now[0] = 200.0
+        scene_job._record_request(state, source, digest)
+        now[0] = 300.0
+        return {"state": "complete"}
+    monkeypatch.setattr(scene_job, "_run_background_worker", worker)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: 5000.0)   # a cue waits for retry
+    scene_job.run_background_worker(state, source, digest)
     assert scene_job._requests(state, digest)
 
 

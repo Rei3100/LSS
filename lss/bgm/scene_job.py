@@ -351,6 +351,15 @@ def _bgm_job_active(state_root: Path, source_sha256: str) -> bool:
     return False
 
 
+def _nothing_left(state_root: Path, source_sha256: str, source: Path | None) -> bool:
+    """Strictly: no naming due now and no budgeted retry later. An unreadable state is not "nothing left"."""
+    try:
+        return (not needs_naming(state_root, source_sha256, source=source, strict=True)
+                and _pending_retry_with_budget(state_root, source_sha256, source=source, strict=True) is None)
+    except Exception:  # noqa: BLE001 - keep the request when the state cannot be read
+        return False
+
+
 def _finish_requests(state_root: Path, source_sha256: str, *, finished_at: float,
                      inside_bgm_job: bool = False) -> None:
     """Remove the requests a finished naming covered: those made no later than ``finished_at``.
@@ -387,19 +396,11 @@ def run_background_worker(state_root: Path, source: Path, source_sha256: str, *,
         return {"state": "stopped", "reason": "scene_worker_stop_requested"}
     # The requested naming is over when nothing is left, or when only retries without a remaining budget are
     # left: a later model or policy change then makes a reprocess candidate, not the user's unfinished job.
-    finished = result.get("state") in ("complete", "current") or (
-        result.get("state") == "retry_pending"
-        and _pending_retry_with_budget(state_root, source_sha256, source=Path(source)) is None)
-    if finished:
-        cutoff = started_at
-        try:
-            # Requests that arrived during this worker (a second job of the same source was told
-            # already_running) are covered too when no BGM job of the source runs and nothing is left now.
-            if (not _bgm_job_active(state_root, source_sha256)
-                    and not needs_naming(state_root, source_sha256, source=Path(source), strict=True)):
-                cutoff = _retry_clock()
-        except Exception:  # noqa: BLE001 - keep the later requests when the state cannot be read
-            pass
+    if result.get("state") in ("complete", "current", "retry_pending") and _nothing_left(
+            state_root, source_sha256, Path(source)):
+        # Requests that arrived during this worker (a second job of the same source was told already_running)
+        # are covered too when no BGM job of the source runs; otherwise only those made before it started.
+        cutoff = started_at if _bgm_job_active(state_root, source_sha256) else _retry_clock()
         _finish_requests(state_root, source_sha256, finished_at=cutoff)
     return result
 
@@ -1033,7 +1034,8 @@ def start_in_background(state_root: Path, source: Path, source_sha256: str) -> d
     if not needs_now and pending is None:
         # Nothing of this naming is left to do: the requests made so far are covered. The caller is the BGM job
         # itself, after its publication, so its own lock does not mean more cues are coming.
-        _finish_requests(state_root, source_sha256, finished_at=_retry_clock(), inside_bgm_job=True)
+        if _nothing_left(state_root, source_sha256, Path(source)):
+            _finish_requests(state_root, source_sha256, finished_at=_retry_clock(), inside_bgm_job=True)
         return ({"state": "retry_pending", "retry_after": terminal}
                 if terminal is not None else {"state": "current"})
     _record_request(state_root, Path(source).resolve(), source_sha256)
