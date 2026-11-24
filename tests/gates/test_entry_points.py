@@ -755,8 +755,25 @@ def test_dry_run_output_is_ascii_json(publication, tmp_path, capsysbinary):
 
 def test_only_git_push_gets_the_longer_timeout(monkeypatch):
     seen = []
-    monkeypatch.setattr(gh.subprocess, "run", lambda argv, **k: seen.append((argv[:4], k["timeout"])))
+    monkeypatch.setattr(gh, "run_bounded", lambda argv, **k: seen.append(k["timeout"]))
     gh.run(["git", "-C", "repo", "push", "origin", "x:refs/heads/y"], cwd=".")
     gh.run(["git", "-C", "repo", "rev-parse", "HEAD"], cwd=".")
     gh.run(["gh", "pr", "create"], cwd=".")
-    assert [t for _, t in seen] == [gh.PUSH_TIMEOUT, gh.COMMAND_TIMEOUT, gh.COMMAND_TIMEOUT]
+    assert seen == [900, 120, 120]
+
+
+def test_a_timeout_ends_children_that_hold_the_output_open(tmp_path):
+    import time
+    child = "import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)']); time.sleep(60)"
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        gh.run_bounded([sys.executable, "-c", child], cwd=tmp_path, timeout=2)
+    assert time.monotonic() - started < 30
+
+
+def test_bounded_run_reports_output_and_failure(tmp_path):
+    done = gh.run_bounded([sys.executable, "-c", "import sys; print(sys.stdin.read().upper())"], cwd=tmp_path,
+                          input="body", timeout=30)
+    assert done.stdout.strip() == "BODY"
+    with pytest.raises(subprocess.CalledProcessError):
+        gh.run_bounded([sys.executable, "-c", "raise SystemExit(3)"], cwd=tmp_path, timeout=30)

@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import subprocess
 import sys
 
@@ -29,10 +30,33 @@ PUSH_TIMEOUT = 900
 
 
 def run(argv, *, cwd, input=None):
-    # UTF-8 explicitly: the Windows default code page cannot carry every character of a body.
     push = argv[:1] == ["git"] and argv[3:4] == ["push"]
-    return subprocess.run(argv, cwd=cwd, input=input, text=True, encoding="utf-8", capture_output=True,
-                          check=True, timeout=PUSH_TIMEOUT if push else COMMAND_TIMEOUT)
+    return run_bounded(argv, cwd=cwd, input=input, timeout=PUSH_TIMEOUT if push else COMMAND_TIMEOUT)
+
+
+def run_bounded(argv, *, cwd, input=None, timeout):
+    """subprocess.run(check=True) whose timeout also ends the command's children.
+
+    A hook started by git can keep the output pipes open after git itself is killed, and reading them would then
+    wait without limit; the whole process tree is ended first.
+    """
+    # UTF-8 explicitly: the Windows default code page cannot carry every character of a body.
+    options = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
+    process = subprocess.Popen(argv, cwd=cwd, stdin=subprocess.PIPE if input is not None else subprocess.DEVNULL,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8",
+                               **options)
+    try:
+        stdout, stderr = process.communicate(input, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True, timeout=30)
+        else:
+            os.killpg(process.pid, signal.SIGKILL)
+        process.communicate(timeout=30)
+        raise
+    if process.returncode:
+        raise subprocess.CalledProcessError(process.returncode, argv, stdout, stderr)
+    return subprocess.CompletedProcess(argv, process.returncode, stdout, stderr)
 
 
 def numeric_id(value):
