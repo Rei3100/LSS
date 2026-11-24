@@ -99,6 +99,40 @@ class GuardError(Exception):
     """An incomplete check; messages must never contain input values."""
 
 
+def url_rewrites(repo: Path) -> bool:
+    """Whether git may rewrite URLs (url.*.insteadOf / pushInsteadOf); then a query can reach another place.
+
+    Unknown counts as yes.
+    """
+    env = os.environ.copy()
+    env["GIT_NO_REPLACE_OBJECTS"] = "1"
+    # GIT_CONFIG narrows `git config` to one file but does not change what ls-remote reads.
+    env.pop("GIT_CONFIG", None)
+    proc = subprocess.run(["git", "-C", str(repo), "config", "--get-regexp", r"^url\..*\.(insteadof|pushinsteadof)$"],
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+    return proc.returncode != 1
+
+
+def published_main(repo: Path, remote: str | None, url: str | None) -> str | None:
+    """The main that the push destination itself reports now, as a local commit id, or None.
+
+    Its history is already published at that destination. Local remote-tracking refs are not used: they can
+    still point at another remote's history after the URL changes. When the destination cannot be asked, or
+    reports a main this repository does not have, the caller scans the whole history.
+    """
+    if not remote or not url or url_rewrites(repo):
+        return None
+    try:
+        lines = git(repo, "ls-remote", "--", url, "refs/heads/main").decode().splitlines()
+        fields = lines[0].split() if len(lines) == 1 else []
+        if len(fields) != 2 or fields[1] != "refs/heads/main" or not OID_RE.fullmatch(fields[0]):
+            return None
+        oid, kind = resolve_object(repo, fields[0])
+    except (GuardError, IndexError):
+        return None
+    return oid if kind == "commit" and oid == fields[0] else None
+
+
 def git(repo: Path, *args: str, input_data: bytes | None = None) -> bytes:
     env = os.environ.copy()
     # Replacements can hide the actual objects sent by push.
@@ -550,7 +584,8 @@ def emit(result: dict) -> int:
     return 0 if result["result"] == "PASS" else 2 if result["result"] == "ERROR" else 1
 
 
-def pre_push(repo: Path, allowlist: Path | None, denylist: Path | None) -> int:
+def pre_push(repo: Path, allowlist: Path | None, denylist: Path | None,
+             remote: str | None = None, url: str | None = None) -> int:
     try:
         commits = set()
         updates = 0
@@ -574,6 +609,13 @@ def pre_push(repo: Path, allowlist: Path | None, denylist: Path | None) -> int:
                 if remote_kind != "commit":
                     raise GuardError("Invalid remote tip")
                 args.append("^" + remote)
+            else:
+                published = published_main(repo, remote, url)
+                if published:
+                    # A new branch: commits on the destination's current main are already published there;
+                    # scanning them again protects nothing and grows with main's history. lss-gh still scans
+                    # every ancestor before it pushes.
+                    args.append("^" + published)
             # Always inspect the exact tip, even when rev-list is empty.
             commits.add(oid)
             commits.update(git(repo, *args).decode().splitlines())
@@ -601,9 +643,12 @@ def main(argv=None) -> int:
     modes.add_argument("--pre-push", action="store_true")
     parser.add_argument("--allowlist", type=Path, help="Explicit trusted policy; default: policy in checked tree")
     parser.add_argument("--denylist", type=Path, help="Private local denylist; environment override is also supported")
+    parser.add_argument("push_target", nargs="*", help="With --pre-push: the remote name and URL git passes to the hook")
     args = parser.parse_args(argv)
+    if args.push_target and (not args.pre_push or len(args.push_target) != 2):
+        parser.error("push_target is the hook's remote name and URL, with --pre-push only")
     if args.pre_push:
-        return pre_push(args.repo, args.allowlist, args.denylist)
+        return pre_push(args.repo, args.allowlist, args.denylist, *(args.push_target or (None, None)))
     return emit(scan(args.repo, args.tree_ish, args.staged, args.allowlist, args.denylist))
 
 
