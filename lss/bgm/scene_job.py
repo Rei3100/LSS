@@ -287,58 +287,69 @@ def _pending_retry_with_budget(state_root: Path, source_sha256: str, *, source: 
         return None
 
 
-def _request_path(state_root: Path, source_sha256: str) -> Path:
-    return Path(state_root) / scene_names.DIRECTORY / "jobs" / f"requested-{str(source_sha256).lower()}.json"
+def _requests_dir(state_root: Path) -> Path:
+    return Path(state_root) / scene_names.DIRECTORY / "jobs" / "requests"
 
 
-def _record_request(state_root: Path, source: Path, source_sha256: str) -> None:
-    """Remember that a job the user started asked for this source's naming, until that naming is finished.
+def _requests(state_root: Path, source_sha256: str) -> list[tuple[Path, dict]]:
+    """Naming requests of user-started jobs for this source, one immutable file per request."""
+    rows = []
+    folder = _requests_dir(state_root)
+    for path in sorted(folder.glob(f"{str(source_sha256).lower()}-*.json")) if folder.is_dir() else []:
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(record, dict):
+            rows.append((path, record))
+    return rows
 
-    Launch recovery resumes only sources with this record (AGENTS.md section 2: no reprocessing of past media on
-    LSS's own initiative; J6: interrupted jobs are recovered).
+
+def _record_request(state_root: Path, source: Path, source_sha256: str) -> Path:
+    """Remember that a job the user started asked for this source's naming, until a worker finishes it.
+
+    Launch recovery resumes only sources with a request (AGENTS.md section 2: no reprocessing of past media on
+    LSS's own initiative; J6: interrupted jobs are recovered). Each request is its own file, so finishing one never
+    removes a request that arrived later.
     """
-    path = _request_path(state_root, source_sha256)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(".tmp")
+    import uuid
+
+    folder = _requests_dir(state_root)
+    folder.mkdir(parents=True, exist_ok=True)
+    name = f"{str(source_sha256).lower()}-{uuid.uuid4().hex}"
+    temporary = folder / f"{name}.tmp"
     temporary.write_text(json.dumps({"source_sha256": str(source_sha256).lower(), "source": str(source),
                                      "requested_at": _retry_clock()}, ensure_ascii=False), encoding="utf-8")
+    path = folder / f"{name}.json"
     os.replace(temporary, path)
+    return path
 
 
-def _read_request(state_root: Path, source_sha256: str) -> dict | None:
-    try:
-        record = json.loads(_request_path(state_root, source_sha256).read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
-    return record if isinstance(record, dict) else None
-
-
-def _finish_request(state_root: Path, source_sha256: str, *, started_at: float | None = None) -> None:
-    """Remove the request, unless a newer request arrived after the finishing worker started."""
-    record = _read_request(state_root, source_sha256)
-    if record is None:
-        return
-    requested_at = record.get("requested_at")
-    if started_at is not None and isinstance(requested_at, (int, float)) and requested_at > started_at:
-        return
-    try:
-        _request_path(state_root, source_sha256).unlink()
-    except FileNotFoundError:
-        pass
+def _finish_requests(state_root: Path, source_sha256: str, *, finished_at: float) -> None:
+    """Remove the requests a finished naming covered: those made no later than ``finished_at``."""
+    for path, record in _requests(state_root, source_sha256):
+        requested_at = record.get("requested_at")
+        if isinstance(requested_at, (int, float)) and requested_at > finished_at:
+            continue
+        try:
+            path.unlink()
+        except OSError:
+            pass
 
 
 def run_background_worker(state_root: Path, source: Path, source_sha256: str, *, wait=None, clock=None,
-                          wait_for_retries: bool = True) -> dict:
+                          wait_for_retries: bool = True, require_request: bool = False) -> dict:
     """Run bounded naming attempts, sleeping without model/GPU resources only for persisted transient errors.
 
     A deploy/rollback stop request (``scene_stop``) ends the worker between cues, download blocks and waits;
     cues recorded so far are kept, nothing is recorded for the interrupted one, and the source stays pending.
     """
     scene_stop.enable()
-    started_at = _retry_clock()
+    started_at = _retry_clock()   # requests made before this worker started are the ones it covers
     try:
         result = _run_background_worker(state_root, source, source_sha256, wait=wait or scene_stop.wait,
-                                        clock=clock, wait_for_retries=wait_for_retries)
+                                        clock=clock, wait_for_retries=wait_for_retries,
+                                        require_request=require_request)
     except scene_stop.StopRequested:
         return {"state": "stopped", "reason": "scene_worker_stop_requested"}
     # The requested naming is over when nothing is left, or when only retries without a remaining budget are
@@ -347,15 +358,12 @@ def run_background_worker(state_root: Path, source: Path, source_sha256: str, *,
         result.get("state") == "retry_pending"
         and _pending_retry_with_budget(state_root, source_sha256, source=Path(source)) is None)
     if finished:
-        try:
-            _finish_request(state_root, source_sha256, started_at=started_at)
-        except OSError:
-            pass
+        _finish_requests(state_root, source_sha256, finished_at=started_at)
     return result
 
 
 def _run_background_worker(state_root: Path, source: Path, source_sha256: str, *, wait=None, clock=None,
-                           wait_for_retries: bool = True) -> dict:
+                           wait_for_retries: bool = True, require_request: bool = False) -> dict:
     source_sha256 = str(source_sha256).lower()
     if len(source_sha256) != 64 or any(char not in "0123456789abcdef" for char in source_sha256):
         raise ValueError("scene_naming_source_hash_invalid")
@@ -365,6 +373,9 @@ def _run_background_worker(state_root: Path, source: Path, source_sha256: str, *
     with _background_worker_lease(state_root, source_sha256) as acquired:
         if not acquired:
             return {"state": "already_running", "attempts": 0}
+        if require_request and not _requests(state_root, source_sha256):
+            # Launch recovery: another worker finished the request while this one waited in line.
+            return {"state": "not_requested", "attempts": 0}
         pending = _pending_retry_with_budget(state_root, source_sha256, source=source)
         if not needs_naming(state_root, source_sha256, source=source, now=clock()):
             if pending is None:
@@ -976,6 +987,8 @@ def start_in_background(state_root: Path, source: Path, source_sha256: str) -> d
     pending = _pending_retry_with_budget(state_root, source_sha256, source=source)
     terminal = _next_transient_retry_after(state_root, source_sha256)
     if not needs_now and pending is None:
+        # Nothing of this naming is left to do: the requests made so far are covered.
+        _finish_requests(state_root, source_sha256, finished_at=_retry_clock())
         return ({"state": "retry_pending", "retry_after": terminal}
                 if terminal is not None else {"state": "current"})
     _record_request(state_root, Path(source).resolve(), source_sha256)
@@ -1103,14 +1116,19 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
     Only a source whose naming a user-started job requested and did not finish is eligible: a newer model, policy
     or public information alone makes a reprocess candidate, never launch-time work on a source.
     """
-    request = _read_request(state_root, source_sha256)
-    if request is None:
+    requests = _requests(state_root, source_sha256)
+    if not requests:
         return None
-    requested_source = request.get("source")
-    if isinstance(requested_source, str) and requested_source:
-        # The user may have named the source at a new place; try it before the paths of older runs.
-        paths = [Path(requested_source)] + [path for path in paths
-                                           if str(path).casefold() != requested_source.casefold()]
+    # The user may have named the source at a new place; try the requested places before older runs' paths.
+    requested = [str(record["source"]) for _, record in reversed(requests)
+                 if isinstance(record.get("source"), str) and record["source"]]
+    seen = set()
+    ordered = []
+    for path in [Path(text) for text in requested] + list(paths):
+        if str(path).casefold() not in seen:
+            seen.add(str(path).casefold())
+            ordered.append(path)
+    paths = ordered
     published = _published(state_root, source_sha256)
     if not published:
         return None
@@ -1220,7 +1238,7 @@ def run_current_best_recovery(state_root: Path, *, wait=None, clock=None) -> dic
                 _recovery_log(state_root, {"state": "source_started", "source_sha256": digest})
                 try:
                     result = run_background_worker(state_root, item["source"], digest, wait=wait, clock=clock,
-                                                   wait_for_retries=False)
+                                                   wait_for_retries=False, require_request=True)
                     outcomes.append({"source_sha256": digest, "result": result})
                 except Exception as exc:  # noqa: BLE001 - a source failure is durable and isolated
                     outcomes.append({"source_sha256": digest, "state": "failed",
@@ -1255,7 +1273,7 @@ def run_current_best_recovery(state_root: Path, *, wait=None, clock=None) -> dic
             _recovery_log(state_root, {"state": "source_started", "source_sha256": digest,
                                        "retry_after": item["retry_after"]})
             try:
-                result = run_background_worker(state_root, item["source"], digest, wait=wait, clock=clock)
+                result = run_background_worker(state_root, item["source"], digest, wait=wait, clock=clock, require_request=True)
                 outcomes.append({"source_sha256": digest, "result": result})
             except Exception as exc:  # noqa: BLE001
                 outcomes.append({"source_sha256": digest, "state": "failed",

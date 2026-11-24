@@ -993,7 +993,7 @@ def test_startup_recovery_restarts_only_a_current_published_cue(tmp_path, librar
 
     assert result["started"] == 1 and result["skipped"] == 0
     assert launches == [(state.resolve(), source.resolve(), source_sha,
-                         {"wait": None, "clock": scene_job._retry_clock, "wait_for_retries": False})]
+                         {"wait": None, "clock": scene_job._retry_clock, "wait_for_retries": False, "require_request": True})]
 
 
 def test_startup_recovery_checks_due_sources_before_future_waits_and_skips_ineligible(tmp_path, library, monkeypatch):
@@ -1506,14 +1506,14 @@ def test_the_request_record_lives_from_the_user_job_until_its_naming_is_finished
     monkeypatch.setattr(scene_job, "available", lambda: True)
     monkeypatch.setattr(scene_job.subprocess, "Popen", lambda *a, **k: type("P", (), {"pid": 1})())
     assert scene_job.start_in_background(state, source, digest)["state"] == "started"
-    assert scene_job._request_path(state, digest).is_file()
+    assert scene_job._requests(state, digest)
     monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "retry_pending"})
     monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: 5000.0)
     scene_job.run_background_worker(state, source, digest)
-    assert scene_job._request_path(state, digest).is_file()   # a budgeted retry remains the user's job
+    assert scene_job._requests(state, digest)   # a budgeted retry remains the user's job
     monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "complete"})
     scene_job.run_background_worker(state, source, digest)
-    assert not scene_job._request_path(state, digest).exists()
+    assert not scene_job._requests(state, digest)
 
 
 def test_an_exhausted_retry_budget_ends_the_request(tmp_path, library, monkeypatch):
@@ -1525,7 +1525,7 @@ def test_an_exhausted_retry_budget_ends_the_request(tmp_path, library, monkeypat
     monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "retry_pending"})
     monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
     scene_job.run_background_worker(state, source, digest)
-    assert not scene_job._request_path(state, digest).exists()
+    assert not scene_job._requests(state, digest)
 
 
 def test_a_finishing_worker_keeps_a_request_that_arrived_after_it_started(tmp_path, monkeypatch):
@@ -1541,7 +1541,7 @@ def test_a_finishing_worker_keeps_a_request_that_arrived_after_it_started(tmp_pa
         return {"state": "complete"}
     monkeypatch.setattr(scene_job, "_run_background_worker", worker)
     scene_job.run_background_worker(state, source, digest)
-    assert scene_job._request_path(state, digest).is_file()
+    assert scene_job._requests(state, digest)
 
 
 def test_launch_recovery_tries_the_requested_place_of_a_moved_source(tmp_path, library, monkeypatch):
@@ -1557,3 +1557,26 @@ def test_launch_recovery_tries_the_requested_place_of_a_moved_source(tmp_path, l
     monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: True)
     eligible = scene_job._eligible_recovery_source(state, digest, [old_place], now=0.0)
     assert eligible["source"] == new_place
+
+
+def test_a_worker_that_waited_in_line_does_not_name_a_request_already_finished(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: pytest.fail("finished request re-examined"))
+    assert scene_job.run_background_worker(state, source, digest, require_request=True)["state"] == "not_requested"
+
+
+def test_start_with_nothing_left_to_name_ends_the_requests(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    library[digest] = []
+    scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "available", lambda: True)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    assert scene_job.start_in_background(state, source, digest)["state"] == "current"
+    assert not scene_job._requests(state, digest)

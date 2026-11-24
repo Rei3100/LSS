@@ -1800,6 +1800,13 @@ def _run_bgm_candidate_request_once(
         # 同じ原本のCurrentBestを扱う処理は、Recipeの版をまたいで一つずつ行う。
         with _BgmCandidateRunLock(root / current_best.DIRECTORY / source_sha256),                 _BgmCandidateRunLock(product_root):
             _ensure_bgm_candidate_recipe(product_root / "recipe.json", recipe)
+            try:
+                # Before any publication or reuse: an interruption after it still leaves the user's naming
+                # request for launch recovery. Naming the source here is within the job the user started.
+                from lss.bgm import scene_job
+                scene_job._record_request(root, source, source_sha256)
+            except Exception:  # noqa: BLE001 - naming never blocks or fails the BGM result
+                pass
             rebuilt: list[str] = []
             with quitting.writing_user_folder():
                 current_best.reconcile(root, source_sha256, _run_regenerator(root, source_sha256, rebuilt=rebuilt))
@@ -1848,12 +1855,6 @@ def _run_bgm_candidate_request_once(
                 raise session.InputChangedError("BGM候補の保存中に原本が変更されました")
             session._write_json_atomic(run_path, run)
             verified = _verified_bgm_run(run_path, source_sha256, recipe["recipe_id"])
-            try:
-                # Before publication: an interruption after it still leaves the user's naming request to resume.
-                from lss.bgm import scene_job
-                scene_job._record_request(root, source, source_sha256)
-            except Exception:  # noqa: BLE001 - naming never blocks or fails the BGM result
-                pass
             # 完了記録を書いた後の公開（CurrentBestの切替）は、終了の要求があっても最後まで運ぶ（数秒）。
             with quitting.writing_user_folder():
                 current, current_path, outputs = _bgm_current_best(root, source, source_sha256, key, verified,
