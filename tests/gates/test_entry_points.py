@@ -841,6 +841,21 @@ def test_a_new_branch_push_skips_commits_already_on_the_fetched_main(tmp_path, m
     assert asked == [("rev-list", HEAD, "^" + main)]
 
 
+def test_a_stalled_destination_query_ends_and_falls_back_to_a_full_scan(tmp_path, monkeypatch):
+    import time
+    real_popen = subprocess.Popen
+    # git stands in for a stalled ls-remote whose helper (a grandchild) keeps git's output open.
+    stall = ("import subprocess, sys, time; subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)']); "
+             "time.sleep(60)")
+    monkeypatch.setattr(gh.guard.subprocess, "Popen", lambda argv, **k: real_popen(
+        [sys.executable, "-c", stall] if argv[:1] == ["git"] else argv, **k))
+    monkeypatch.setattr(gh.guard, "LS_REMOTE_TIMEOUT", 2)
+    monkeypatch.setattr(gh.guard, "url_rewrites", lambda repo: False)
+    started = time.monotonic()
+    assert gh.guard.published_main(tmp_path, "origin", "https://example.invalid/repo.git") is None
+    assert time.monotonic() - started < 30
+
+
 @pytest.mark.parametrize("reply,local,trusted", [
     ("c" * 40 + "\trefs/heads/main\n", True, True),
     ("c" * 40 + "\trefs/heads/main\n", False, False),     # the destination's main is not in this repository
@@ -850,7 +865,7 @@ def test_a_new_branch_push_skips_commits_already_on_the_fetched_main(tmp_path, m
 def test_only_the_destinations_own_main_is_trusted(tmp_path, monkeypatch, reply, local, trusted):
     main = "c" * 40
     asked = []
-    def git(repo, *args):
+    def git(repo, *args, **kwargs):
         asked.append(args)
         if reply is None:
             raise gh.guard.GuardError("network")

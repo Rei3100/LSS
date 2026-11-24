@@ -13,6 +13,7 @@ import re
 import stat
 import subprocess
 import sys
+import tempfile
 
 DEFAULT_DENYLIST = (str(Path(os.environ["LSS_PRIVATE_ROOT"]) / "publish-denylist.txt")
                     if os.environ.get("LSS_PRIVATE_ROOT") else "")
@@ -123,7 +124,7 @@ def published_main(repo: Path, remote: str | None, url: str | None) -> str | Non
     if not remote or not url or url_rewrites(repo):
         return None
     try:
-        lines = git(repo, "ls-remote", "--", url, "refs/heads/main").decode().splitlines()
+        lines = git(repo, "ls-remote", "--", url, "refs/heads/main", timeout=LS_REMOTE_TIMEOUT).decode().splitlines()
         fields = lines[0].split() if len(lines) == 1 else []
         if len(fields) != 2 or fields[1] != "refs/heads/main" or not OID_RE.fullmatch(fields[0]):
             return None
@@ -133,15 +134,39 @@ def published_main(repo: Path, remote: str | None, url: str | None) -> str | Non
     return oid if kind == "commit" and oid == fields[0] else None
 
 
-def git(repo: Path, *args: str, input_data: bytes | None = None) -> bytes:
+# Asking the destination for its main must not hold up a push: a stalled connection falls back to a full scan.
+LS_REMOTE_TIMEOUT = 30
+
+
+def git(repo: Path, *args: str, input_data: bytes | None = None, timeout: float | None = None) -> bytes:
     env = os.environ.copy()
     # Replacements can hide the actual objects sent by push.
     env["GIT_NO_REPLACE_OBJECTS"] = "1"
-    proc = subprocess.run(["git", "-C", str(repo), *args], input=input_data,
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
-    if proc.returncode:
-        raise GuardError("Git operation failed")
-    return proc.stdout
+    if timeout is None:
+        proc = subprocess.run(["git", "-C", str(repo), *args], input=input_data,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+        if proc.returncode:
+            raise GuardError("Git operation failed")
+        return proc.stdout
+    # A bounded call never prompts, and writes to a file rather than a pipe: a helper git starts (remote-https,
+    # ssh) can outlive git and would keep a pipe open past the timeout. Its whole process tree is ended.
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    with tempfile.TemporaryFile() as out:
+        proc = subprocess.Popen(["git", "-C", str(repo), *args], stdin=subprocess.DEVNULL, stdout=out,
+                                stderr=subprocess.DEVNULL, env=env)
+        try:
+            code = proc.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/T", "/F", "/PID", str(proc.pid)],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            proc.kill()
+            proc.wait()
+            raise GuardError("Git operation timed out")
+        if code:
+            raise GuardError("Git operation failed")
+        out.seek(0)
+        return out.read()
 
 
 def valid_path(path: str) -> bool:
