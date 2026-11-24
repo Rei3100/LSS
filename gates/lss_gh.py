@@ -48,11 +48,21 @@ def run_bounded(argv, *, cwd, input=None, timeout):
     try:
         stdout, stderr = process.communicate(input, timeout=timeout)
     except subprocess.TimeoutExpired:
-        if os.name == "nt":
-            subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True, timeout=30)
-        else:
-            os.killpg(process.pid, signal.SIGKILL)
-        process.communicate(timeout=30)
+        try:
+            if os.name == "nt":
+                ended = subprocess.run(["taskkill", "/T", "/F", "/PID", str(process.pid)], capture_output=True,
+                                       timeout=30).returncode == 0
+            else:
+                os.killpg(process.pid, signal.SIGKILL)
+                ended = True
+        except (OSError, subprocess.TimeoutExpired):
+            ended = False
+        if not ended:
+            process.kill()   # at least the command itself; children the tree kill could not reach may remain
+        try:
+            process.communicate(timeout=30)
+        except subprocess.TimeoutExpired:
+            pass   # the timeout is reported either way; the operation's outcome is checked afterwards
         raise
     if process.returncode:
         raise subprocess.CalledProcessError(process.returncode, argv, stdout, stderr)

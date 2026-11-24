@@ -777,3 +777,18 @@ def test_bounded_run_reports_output_and_failure(tmp_path):
     assert done.stdout.strip() == "BODY"
     with pytest.raises(subprocess.CalledProcessError):
         gh.run_bounded([sys.executable, "-c", "raise SystemExit(3)"], cwd=tmp_path, timeout=30)
+
+
+def test_a_failed_tree_kill_still_ends_the_command_and_reports_the_timeout(tmp_path, monkeypatch):
+    import time
+    real_run = subprocess.run
+    def refuse_taskkill(argv, **k):
+        if argv[:1] == ["taskkill"]:
+            return SimpleNamespace(returncode=1)
+        return real_run(argv, **k)
+    monkeypatch.setattr(gh.subprocess, "run", refuse_taskkill)
+    monkeypatch.setattr(gh.os, "killpg", lambda *a: (_ for _ in ()).throw(OSError("denied")), raising=False)
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        gh.run_bounded([sys.executable, "-c", "import time; time.sleep(60)"], cwd=tmp_path, timeout=2)
+    assert time.monotonic() - started < 30
