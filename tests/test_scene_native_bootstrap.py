@@ -139,6 +139,7 @@ def test_startup_recovery_handoff_bootstraps_only_eligible_source(monkeypatch, t
     from lss.bgm import current_best
     root, source, digest = _fresh(monkeypatch, tmp_path)
     state = tmp_path / 'state'
+    scene_job._record_request(state, source, digest)   # the user's job asked for this naming
     directory = state / current_best.DIRECTORY
     directory.mkdir(parents=True)
     (directory / (digest + '.json')).write_text('{}')

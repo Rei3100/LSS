@@ -36,9 +36,12 @@ def _cue(folder, source_sha, start, seconds=20, tone=220):
             "start": float(start), "end": float(start + seconds)}
 
 
-def _write_current_best_for_recovery(state, source, source_sha, cues, *, run_key="candidate"):
+def _write_current_best_for_recovery(state, source, source_sha, cues, *, run_key="candidate", requested=True):
     from pathlib import Path
     from lss.bgm import current_best
+
+    if requested:   # the user's BGM job asked for this source's naming (start_in_background)
+        scene_job._record_request(Path(state), Path(source), source_sha)
 
     run_path = Path(state) / "bgm-candidates" / run_key / "run" / "run.json"
     run_path.parent.mkdir(parents=True, exist_ok=True)
@@ -398,49 +401,6 @@ def test_asr_unavailable_keeps_context_naming_but_never_claims_silence_or_uses_s
         assert audio_identity.audio_identity(cue["path"])["pcm_sha256"] == cue["pcm_sha256"]
     assert len(validations) == 3
     assert ("release",) in models.calls
-
-
-def test_launch_recovery_resumes_unattempted_naming_but_not_a_changed_model(tmp_path, library):
-    state = tmp_path / "state"
-    cue = _cue(tmp_path / "ep137", "s1", 400)
-    library["s1"].append(cue)
-
-    class RevisionModels(FakeModels):
-        def __init__(self, model_revision):
-            super().__init__([])
-            self.model_revision = model_revision
-
-        def order(self, prompt):
-            self.calls.append(("order", prompt))
-            return {"use": "ウェーノベルの捕獲", "direction": "コミカルに", "category": "コミカル",
-                    "name": "ウェーノベル大作戦", "evidence": "ミズウオだ"}
-
-        def revision(self):
-            return {"asr": {"revision": "asr-fixed"}, "llm": {"revision": self.model_revision}}
-
-    # A published cue whose naming never ran (an interrupted job the user started) is resumed at launch.
-    assert scene_job.needs_naming(state, "s1", models=RevisionModels("llm-r1"), resume_only=True)
-    scene_job.name_source(state, tmp_path / "series-alpha-137.mkv", "s1", models=RevisionModels("llm-r1"))
-    assert scene_names.cue_record(state, cue["asset_id"], cue["pcm_sha256"])["name"] is None
-    newer = RevisionModels("llm-r2")
-    # A newer model makes the unresolved name a reprocess candidate for a request that names the source...
-    assert scene_job.needs_naming(state, "s1", models=newer)
-    # ...but it does not start work on that source at launch.
-    assert not scene_job.needs_naming(state, "s1", models=newer, resume_only=True)
-    assert scene_job._pending_retry_with_budget(state, "s1", models=newer, resume_only=True) is None
-
-
-def test_launch_eligibility_asks_only_the_resume_question(tmp_path, library, monkeypatch):
-    state = tmp_path / "state"
-    library["s1"].append(_cue(tmp_path / "ep137", "s1", 400))
-    source = tmp_path / "series-alpha-137.mkv"
-    source.write_bytes(b"source")
-    asked = []
-    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: asked.append(("now", k.get("resume_only"))) or False)
-    monkeypatch.setattr(scene_job, "_pending_retry_with_budget",
-                        lambda *a, **k: asked.append(("later", k.get("resume_only"))) or None)
-    assert scene_job._eligible_recovery_source(state, "s1", [source], now=0.0) is None
-    assert asked == [("now", True), ("later", True)]
 
 
 def test_a_guard_rejected_scene_retries_after_model_revision_then_fixes_first_acceptance(tmp_path, library):
@@ -976,6 +936,7 @@ def test_startup_recovery_skips_a_changed_recorded_path_for_another_current_path
         run_path.write_text(json.dumps(run), encoding="utf-8")
         rows.append(current_best.file_entry(run, run_key, run_path, item, cue["path"], adoption="adopted"))
     old_source.write_bytes(b"replaced bytes at old recorded path")
+    scene_job._record_request(state, valid_source, digest)
     current_best._write_json_atomic(current_best.record_path(state, digest), {
         "type": current_best.RECORD_TYPE, "schema_version": current_best.SCHEMA_VERSION,
         "source_sha256": digest,
@@ -1023,6 +984,7 @@ def test_startup_recovery_restarts_only_a_current_published_cue(tmp_path, librar
         "current": {"files": files, "pinned": False, "evaluated_runs": ["candidate"]}, "history": []})
 
     launches = []
+    scene_job._record_request(state, source, source_sha)
     monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
     monkeypatch.setattr(scene_job, "run_background_worker",
                         lambda root, path, digest, **kwargs: launches.append((root, path, digest, kwargs)) or
@@ -1513,3 +1475,41 @@ def test_refresh_failure_keeps_message_and_ignored_member_path():
     # Case 5: member_path different from path -> memory_path_ignored key present
     r5 = scene_job._refresh_failure('asset5', exc4, Path('/diff'), Path('/base'))
     assert r5["memory_path_ignored"] == str(Path('/diff'))
+
+
+def test_launch_recovery_leaves_a_source_whose_naming_no_user_job_requested(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
+    launched = []
+    monkeypatch.setattr(scene_job, "run_background_worker",
+                        lambda root, path, digest, **kwargs: launched.append(digest) or {"state": "complete"})
+    sources = {}
+    for label, requested in (("requested", True), ("library", False)):
+        source = tmp_path / f"{label}.mkv"
+        source.write_bytes(label.encode())
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()
+        cue = _cue(tmp_path / f"public-{label}", digest, 400)
+        library[digest] = [cue]
+        _write_current_best_for_recovery(state, source, digest, [cue], run_key=label, requested=requested)
+        sources[label] = digest
+    # Both have unnamed cues (a newer LSS could name them), but only the user's unfinished job is resumed.
+    scene_job.run_current_best_recovery(state)
+    assert launched == [sources["requested"]]
+
+
+def test_the_request_record_lives_from_the_user_job_until_its_naming_is_finished(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    monkeypatch.setattr(scene_job, "available", lambda: True)
+    monkeypatch.setattr(scene_job.subprocess, "Popen", lambda *a, **k: type("P", (), {"pid": 1})())
+    assert scene_job.start_in_background(state, source, digest)["state"] == "started"
+    assert scene_job._request_path(state, digest).is_file()
+    monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "retry_pending"})
+    scene_job.run_background_worker(state, source, digest)
+    assert scene_job._request_path(state, digest).is_file()   # a due retry remains the user's job
+    monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "complete"})
+    scene_job.run_background_worker(state, source, digest)
+    assert not scene_job._request_path(state, digest).exists()

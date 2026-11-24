@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import math
 import re
 import subprocess
@@ -184,12 +185,6 @@ def _attempt_is_due(entry: dict, retry_key: str, now: float) -> bool:
     return False
 
 
-def _same_inputs(entry: dict, retry_key: str) -> bool:
-    attempts = entry.get("attempts") or []
-    identity = (attempts[-1] if attempts else {}).get("identity") or entry.get("attempt_identity") or {}
-    return identity.get("retry_key") == retry_key
-
-
 def _transient_attempt_count(entry: dict, retry_key: str) -> int:
     return sum(1 for attempt in entry.get("attempts") or []
                if attempt.get("status") == "transient_error"
@@ -259,7 +254,7 @@ def _next_transient_retry_after(state_root: Path, source_sha256: str) -> float |
 
 
 def _pending_retry_with_budget(state_root: Path, source_sha256: str, *, source: Path | None = None,
-                               models=None, resume_only: bool = False) -> float | None:
+                               models=None) -> float | None:
     """Earliest persisted transient retry whose current identity still has a bounded attempt available."""
     try:
         revision = _current_model_revision(models)
@@ -282,7 +277,7 @@ def _pending_retry_with_budget(state_root: Path, source_sha256: str, *, source: 
             retry_key = _retry_key(state_root, source_sha256, cue, revision, current_facts,
                                    effective_facts_sha256=None if current_facts is not None else
                                    identity.get("effective_facts_sha256"))
-            if not _has_retry_budget(entry, retry_key) or (resume_only and not _same_inputs(entry, retry_key)):
+            if not _has_retry_budget(entry, retry_key):
                 continue
             retry_after = latest.get("retry_after", entry.get("retry_after"))
             if isinstance(retry_after, (int, float)) and math.isfinite(retry_after):
@@ -290,6 +285,31 @@ def _pending_retry_with_budget(state_root: Path, source_sha256: str, *, source: 
         return min(due) if due else None
     except Exception:  # noqa: BLE001 - an eligibility failure never blocks the published result
         return None
+
+
+def _request_path(state_root: Path, source_sha256: str) -> Path:
+    return Path(state_root) / scene_names.DIRECTORY / "jobs" / f"requested-{str(source_sha256).lower()}.json"
+
+
+def _record_request(state_root: Path, source: Path, source_sha256: str) -> None:
+    """Remember that a job the user started asked for this source's naming, until that naming is finished.
+
+    Launch recovery resumes only sources with this record (AGENTS.md section 2: no reprocessing of past media on
+    LSS's own initiative; J6: interrupted jobs are recovered).
+    """
+    path = _request_path(state_root, source_sha256)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps({"source_sha256": str(source_sha256).lower(), "source": str(source),
+                                     "requested_at": _retry_clock()}, ensure_ascii=False), encoding="utf-8")
+    os.replace(temporary, path)
+
+
+def _finish_request(state_root: Path, source_sha256: str) -> None:
+    try:
+        _request_path(state_root, source_sha256).unlink()
+    except FileNotFoundError:
+        pass
 
 
 def run_background_worker(state_root: Path, source: Path, source_sha256: str, *, wait=None, clock=None,
@@ -301,10 +321,16 @@ def run_background_worker(state_root: Path, source: Path, source_sha256: str, *,
     """
     scene_stop.enable()
     try:
-        return _run_background_worker(state_root, source, source_sha256, wait=wait or scene_stop.wait,
-                                      clock=clock, wait_for_retries=wait_for_retries)
+        result = _run_background_worker(state_root, source, source_sha256, wait=wait or scene_stop.wait,
+                                        clock=clock, wait_for_retries=wait_for_retries)
     except scene_stop.StopRequested:
         return {"state": "stopped", "reason": "scene_worker_stop_requested"}
+    if result.get("state") in ("complete", "current"):
+        try:
+            _finish_request(state_root, source_sha256)   # nothing of the requested naming is left to resume
+        except OSError:
+            pass
+    return result
 
 
 def _run_background_worker(state_root: Path, source: Path, source_sha256: str, *, wait=None, clock=None,
@@ -877,13 +903,8 @@ def _work_info_enabled() -> bool:
 
 
 def needs_naming(state_root: Path, source_sha256: str, *, source: Path | None = None,
-                 models=None, now: float | None = None, resume_only: bool = False) -> bool:
-    """Whether a cue is new or an unresolved attempt has changed inputs / reached retry backoff.
-
-    ``resume_only`` is the launch-time question: only naming the user's job never attempted, or a transient
-    failure due for retry with unchanged inputs, continues. Changed models, policies or public information make
-    a reprocess candidate; they do not by themselves start work on a source the user did not name.
-    """
+                 models=None, now: float | None = None) -> bool:
+    """Whether a cue is new or an unresolved attempt has changed inputs / reached retry backoff."""
     try:
         revision = _current_model_revision(models)
         now = _retry_clock() if now is None else float(now)
@@ -903,8 +924,6 @@ def needs_naming(state_root: Path, source_sha256: str, *, source: Path | None = 
             current_facts = facts if facts is not None else identity.get("effective_facts")
             key = _retry_key(state_root, source_sha256, cue, revision, current_facts,
                              effective_facts_sha256=None if current_facts is not None else identity.get("effective_facts_sha256"))
-            if resume_only and not _same_inputs(entry, key):
-                continue
             if _has_retry_budget(entry, key) and _attempt_is_due(entry, key, now):
                 return True
         return False
@@ -938,6 +957,7 @@ def start_in_background(state_root: Path, source: Path, source_sha256: str) -> d
     if not needs_now and pending is None:
         return ({"state": "retry_pending", "retry_after": terminal}
                 if terminal is not None else {"state": "current"})
+    _record_request(state_root, Path(source).resolve(), source_sha256)
     # A child may already be sleeping through the retry delay. The OS lock check is
     # authoritative across the development and frozen command routes.
     with _background_worker_lease(state_root, source_sha256) as acquired:
@@ -1057,7 +1077,13 @@ def _recovery_attempt_state(state_root: Path, source_sha256: str) -> str:
 
 def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[Path], *, now: float,
                               verified_paths: dict | None = None) -> dict | None:
-    """Check current cue eligibility before invoking the worker's final source hash guard."""
+    """Check current cue eligibility before invoking the worker's final source hash guard.
+
+    Only a source whose naming a user-started job requested and did not finish is eligible: a newer model, policy
+    or public information alone makes a reprocess candidate, never launch-time work on a source.
+    """
+    if not _request_path(state_root, source_sha256).is_file():
+        return None
     published = _published(state_root, source_sha256)
     if not published:
         return None
@@ -1066,10 +1092,8 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
         if not source.is_file():
             rejected_paths.append({"path": str(source), "reason": "recorded_source_missing"})
             continue
-        # Launch recovery resumes the user's own unfinished naming only (AGENTS.md section 2).
-        immediate = needs_naming(state_root, source_sha256, source=source, now=now, resume_only=True)
-        retry_after = None if immediate else _pending_retry_with_budget(state_root, source_sha256, source=source,
-                                                                        resume_only=True)
+        immediate = needs_naming(state_root, source_sha256, source=source, now=now)
+        retry_after = None if immediate else _pending_retry_with_budget(state_root, source_sha256, source=source)
         if not immediate and retry_after is None:
             continue
         from lss.bgm import scene_runtime
