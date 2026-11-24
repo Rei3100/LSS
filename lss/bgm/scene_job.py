@@ -372,8 +372,17 @@ def _end_requests(state_root: Path, source_sha256: str, source: Path | None, *,
     Order matters: the request list is taken first, then the source's BGM job lock, then the strict
     ``_nothing_left`` check. A job that starts after the lock check records its request after the list was
     taken, so its request survives; a job that ran before the lock check has published what the check reads.
-    Nothing is ended while a BGM job of the source holds its lock, except by that job itself.
+    Nothing is ended while a BGM job of the source holds its lock, except by that job itself, and nothing while a
+    naming worker of the source holds its lease: a launch worker's request check under that lease stays true for
+    the whole of its naming.
     """
+    with _background_worker_lease(state_root, source_sha256) as acquired:
+        if acquired:
+            _end_listed_requests(state_root, source_sha256, source, inside_bgm_job=inside_bgm_job)
+
+
+def _end_listed_requests(state_root: Path, source_sha256: str, source: Path | None, *,
+                         inside_bgm_job: bool) -> None:
     snapshot = _requests(state_root, source_sha256)
     if not snapshot:
         return

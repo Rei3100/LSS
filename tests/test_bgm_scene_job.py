@@ -1794,3 +1794,17 @@ def test_a_launch_worker_rechecks_the_request_after_preparing_models(tmp_path, m
     monkeypatch.setattr(scene_job, "name_source_checked", lambda *a: pytest.fail("ended request was named"))
     result = scene_job.run_background_worker(state, source, digest, require_request=True)
     assert result["state"] == "not_requested"
+
+
+def test_no_request_ends_while_a_naming_worker_holds_the_source_lease(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    digest = "a" * 64
+    scene_job._record_request(state, tmp_path / "episode.mkv", digest)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    with scene_job._background_worker_lease(state, digest) as acquired:
+        assert acquired
+        scene_job._end_requests(state, digest, None, inside_bgm_job=True)
+        assert scene_job._requests(state, digest)
+    scene_job._end_requests(state, digest, None, inside_bgm_job=True)
+    assert not scene_job._requests(state, digest)
