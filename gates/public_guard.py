@@ -106,6 +106,8 @@ def url_rewrites(repo: Path) -> bool:
     """
     env = os.environ.copy()
     env["GIT_NO_REPLACE_OBJECTS"] = "1"
+    # GIT_CONFIG narrows `git config` to one file but does not change what ls-remote reads.
+    env.pop("GIT_CONFIG", None)
     proc = subprocess.run(["git", "-C", str(repo), "config", "--get-regexp", r"^url\..*\.(insteadof|pushinsteadof)$"],
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     return proc.returncode != 1
