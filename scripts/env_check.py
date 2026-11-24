@@ -10,8 +10,8 @@ import argparse
 import hashlib
 import json
 import os
-import re
 from pathlib import Path
+import shutil
 import subprocess
 import tomllib
 
@@ -24,21 +24,28 @@ ROOT = Path(__file__).resolve().parents[1]
 ADMINISTRATIVE = ("gh -*", "gh api *", "gh repo -*", "gh repo edit *", "gh repo delete *", "gh repo rename *",
                   "gh repo archive *", "gh repo create *", "gh repo new *", "gh repo deploy-key *",
                   "gh secret *", "gh variable *", "gh ruleset *", "gh rs *", "gh alias *")
-# Strings without escapes only: a backslash could hide the closing quote from this check but not from Codex.
-CODEX_RULE = re.compile(r'prefix_rule\(\s*pattern\s*=\s*\[\s*"[^"\\]+"(?:\s*,\s*"[^"\\]+")*\s*\]\s*,'
-                        r'\s*decision\s*=\s*"(?:forbidden|prompt|allow)"\s*\)')
-CODEX_GH_RULE = re.compile(r'prefix_rule\(\s*pattern\s*=\s*\[\s*"gh"\s*\]\s*,\s*decision\s*=\s*"forbidden"\s*\)')
+# Codex's own parser judges the rules file: it drops the whole project file on any parse error (tabs, escapes,
+# non-ASCII spaces), which no line pattern here can follow. The probe is an administrative command.
+CODEX_PROBE = ("gh", "-R", "owner/name", "secret", "set", "NAME")
 
 
-def codex_refuses_gh(text: str) -> bool:
-    """True when every line of a Codex .rules file is a one-line prefix rule or a comment, and one forbids gh.
+def codex_refuses_gh(rules: Path, run=subprocess.run) -> bool | None:
+    """True when Codex parses the rules file and forbids every gh command by its ["gh"] prefix rule.
 
-    Codex drops the whole project file on a parse error, so a line of any other shape fails the check.
+    None when the codex CLI is not installed; False on a parse error or any other decision.
     """
-    lines = [line.split("#", 1)[0].strip() for line in text.splitlines()]
-    lines = [line for line in lines if line]
-    return (all(CODEX_RULE.fullmatch(line) for line in lines)
-            and any(CODEX_GH_RULE.fullmatch(line) for line in lines))
+    codex = shutil.which("codex")
+    if not codex:
+        return None
+    try:
+        result = run([codex, "execpolicy", "check", "--rules", str(rules), *CODEX_PROBE],
+                     capture_output=True, text=True, timeout=60)
+        verdict = json.loads(result.stdout) if result.returncode == 0 else {}
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return False
+    matched = [rule.get("prefixRuleMatch", {}) for rule in verdict.get("matchedRules", []) if isinstance(rule, dict)]
+    return verdict.get("decision") == "forbidden" and any(
+        m.get("matchedPrefix") == ["gh"] and m.get("decision") == "forbidden" for m in matched)
 
 
 def check(root: Path = ROOT, environ=None) -> dict:
@@ -151,18 +158,16 @@ def check(root: Path = ROOT, environ=None) -> dict:
         checks["codex_send_rules"] = "PASS" if 'decision = "forbidden"' in rules.read_text(encoding="utf-8") else "FAIL"
     # Administrative commands are denied to both engines: Claude through the project denies of each shell,
     # Codex by refusing gh altogether in its project rules (its hook cannot block). A file that exists but
-    # lacks a denial is FAIL; UNKNOWN only when a file is missing.
+    # lacks a denial, or that Codex cannot parse, is FAIL; UNKNOWN when a file or the codex CLI is missing.
     if checks.get(".claude/settings.json") == "FAIL":
         checks["administrative_deny"] = "FAIL"
     elif ".claude/settings.json" not in settings or not rules.is_file():
         checks["administrative_deny"] = "UNKNOWN"
     else:
-        try:
-            codex_admin = codex_refuses_gh(rules.read_text(encoding="utf-8"))
-        except (OSError, UnicodeError):
-            codex_admin = False
+        codex_admin = codex_refuses_gh(rules)
         claude_admin = all(f"{tool}({cmd})" in denies for tool in ("Bash", "PowerShell") for cmd in ADMINISTRATIVE)
-        checks["administrative_deny"] = "PASS" if claude_admin and codex_admin else "FAIL"
+        checks["administrative_deny"] = ("FAIL" if not claude_admin or codex_admin is False else
+                                         "UNKNOWN" if codex_admin is None else "PASS")
     return {"status": "FAIL" if "FAIL" in checks.values() else "UNKNOWN" if "UNKNOWN" in checks.values() else "PASS",
             "checks": dict(sorted(checks.items()))}
 
