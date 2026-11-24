@@ -1727,6 +1727,7 @@ def _run_bgm_candidate_request(
                                               memory_refresh=memory_refresh)
     if outcome.disposition is ResultDisposition.FAILED or len(request.sources) != 1:
         return outcome
+    saved = _file_stamps(outcome.outputs)   # before any wait: the saved files as this request published them
     try:
         from lss.bgm import reference_acquisition
         source = request.sources[0].resolve()
@@ -1742,10 +1743,25 @@ def _run_bgm_candidate_request(
             return outcome
     except quitting.JobAbandonedError:
         return outcome   # 先の結果は公開済み。次の処理で新しい参照の run を作る
-    except OSError:
+    except Exception:  # noqa: BLE001 - the optional recheck cannot hide the result already published
         return outcome
-    return _run_bgm_candidate_request_once(request, state_root=state_root, analyze=analyze,
-                                           memory_refresh=memory_refresh)
+    later = _run_bgm_candidate_request_once(request, state_root=state_root, analyze=analyze,
+                                            memory_refresh=memory_refresh)
+    # The later decision only improves on a result already saved. When it fails while every saved file of the
+    # first decision is untouched, that result still answers the request; a moved or rewritten file means it does not.
+    if (later.disposition is ResultDisposition.FAILED and later.error_code != "job_abandoned"
+            and saved is not None and _file_stamps(outcome.outputs) == saved):
+        return outcome
+    return later
+
+
+def _file_stamps(paths) -> tuple | None:
+    """Size and modification time of each file, or None when any is missing (a replaced file changes them)."""
+    try:
+        stamps = tuple((str(path), os.stat(path).st_size, os.stat(path).st_mtime_ns) for path in paths)
+    except OSError:
+        return None
+    return stamps or None
 
 
 def _run_bgm_candidate_request_once(
@@ -1890,9 +1906,7 @@ def _run_bgm_candidate_request_once(
 
 def run_bgm_candidate_request(request: ProcessingRequest, *, state_root: Path | None = None, analyze=None) -> ProcessingOutcome:
     """Product entry with a projection for every disposition, including validation/execution failure."""
-    outcome = _run_bgm_candidate_request(request, state_root=state_root, analyze=analyze)
-    if outcome.disposition is ResultDisposition.PUBLISHED:
-        outcome = _refresh_bgm_from_memory(outcome, request, state_root=state_root, analyze=analyze)
+    outcome = _run_named_bgm_source(request, state_root=state_root, analyze=analyze)
     if outcome.product_result is not None:
         return outcome
     from lss.output import results
@@ -1901,46 +1915,79 @@ def run_bgm_candidate_request(request: ProcessingRequest, *, state_root: Path | 
         held_count=len(outcome.held_artifacts), zero_result=outcome.zero_result, error_code=outcome.error_code))
 
 
-def _refresh_bgm_from_memory(outcome: ProcessingOutcome, request: ProcessingRequest, *,
-                             state_root: Path | None = None, analyze=None) -> ProcessingOutcome:
-    """Revisit at most one older unresolved source after a normal BGM job grows local memory.
+def _claim_named_memory_refresh(request: ProcessingRequest, root: Path) -> dict | None:
+    """Claim a pending memory re-evaluation of the one source this request names, never of another source.
+
+    LSS acts inside the processing the user started: local cue memory may make the named source worth
+    analysing again, but it never schedules a source the user did not name.
+    """
+    if request.intent is not UserIntent.EXTRACT_BGM_CUES or len(request.sources) != 1 or request.urls:
+        return None
+    try:
+        from lss.bgm import memory_refresh
+        plans = memory_refresh.pending(root, recipe_id=_bgm_candidate_recipe()["recipe_id"])
+        if not plans:
+            return None   # the source is hashed only when some plan could match it
+        source = request.sources[0].resolve()
+        if not source.is_file():
+            return None
+        source_sha256 = file_sha256(source)
+        plan = next((p for p in plans if p["source_sha256"] == source_sha256), None)
+        if plan is None or not memory_refresh.claim(root, plan):
+            return None
+        return plan
+    except Exception:  # noqa: BLE001 - optional memory cannot disable the ordinary request
+        return None
+
+
+def _release_memory_refresh(root: Path, plan: dict) -> None:
+    from lss.bgm import memory_refresh
+    try:
+        memory_refresh.release(root, plan)
+    except Exception:  # noqa: BLE001 - a stale claim of a dead process is resumable anyway
+        pass
+
+
+def _run_named_bgm_source(request: ProcessingRequest, *, state_root: Path | None = None,
+                          analyze=None) -> ProcessingOutcome:
+    """Run the named source, with its pending memory re-evaluation when one exists.
 
     This is a trigger, never permission to replace an asset. The ordinary source processing, never-lower
     guards, CurrentBest selection, journal, listening metadata and rollback decide the result. A separate
-    token-addressed run keeps the previous completed run reusable. Failure of this optional revisit cannot
-    turn the successfully saved foreground source into a failure. No recursive refresh or unbounded sweep.
+    token-addressed run keeps the previous completed run reusable. A failed re-evaluation is recorded as
+    terminal for its inputs and the ordinary run of the same source still answers the request.
     """
+    root = Path(state_root).resolve() if state_root is not None else session.state_dir().resolve()
+    plan = _claim_named_memory_refresh(request, root)
+    if plan is None:
+        return _run_bgm_candidate_request(request, state_root=state_root, analyze=analyze)
     from lss.bgm import memory_refresh
 
-    root = Path(state_root).resolve() if state_root is not None else session.state_dir().resolve()
     try:
-        # Two foreground sources may complete together. One optional revisit owns the planner and receipts.
-        with _BgmCandidateRunLock(root / memory_refresh.DIRECTORY, wait_seconds=0):
-            quitting.checkpoint()
-            plans = memory_refresh.pending(root, recipe_id=_bgm_candidate_recipe()["recipe_id"])
-            foreground = {str(p.resolve()) for p in request.sources}
-            foreground_sha = (outcome.product_result or {}).get("source_sha256")
-            plan = next((p for p in plans if p["source_sha256"] != foreground_sha
-                         and str(Path(p["source_path"]).resolve()) not in foreground), None)
-            if plan is None or not memory_refresh.claim(root, plan):
-                return outcome
-            # The nested entry has its own per-source lock; it does not schedule more jobs.
-            refreshed = _run_bgm_candidate_request(
-                ProcessingRequest.from_paths([Path(plan["source_path"])], UserIntent.EXTRACT_BGM_CUES),
-                state_root=root, analyze=analyze, memory_refresh=plan)
-            result = {"ok": refreshed.disposition in (ResultDisposition.PUBLISHED, ResultDisposition.HELD, ResultDisposition.ZERO),
-                      "disposition": refreshed.disposition.value, "error_code": refreshed.error_code,
-                      "outputs": [str(p) for p in refreshed.outputs], "record_path": str(refreshed.record_path or ""),
-                      "reused": refreshed.reused, "product_result": refreshed.product_result}
-            if refreshed.error_code == "job_abandoned":
-                # Leave the claim resumable: a user quit is neither a completed attempt nor a failed witness.
-                return outcome
-            memory_refresh.finish(root, plan, result)
-            projection = dict(outcome.product_result or {})
-            projection["related_bgm_refresh"] = {"source": plan["source_path"], **result}
-            return replace(outcome, product_result=projection)
-    except Exception:  # noqa: BLE001 - optional maintenance cannot invalidate a published foreground asset
-        return outcome
+        refreshed = _run_bgm_candidate_request(request, state_root=state_root, analyze=analyze,
+                                               memory_refresh=plan)
+    except quitting.JobAbandonedError:
+        refreshed = ProcessingOutcome(disposition=ResultDisposition.FAILED, error_code="job_abandoned")
+    except Exception:  # noqa: BLE001 - an unexpected re-evaluation error is a failed attempt, not a failed request
+        refreshed = ProcessingOutcome(disposition=ResultDisposition.FAILED,
+                                      error_code="bgm_memory_refresh_failed")
+    if refreshed.error_code == "job_abandoned":
+        # A user quit is neither a completed attempt nor a failed witness: return the claim for the next request.
+        _release_memory_refresh(root, plan)
+        return refreshed
+    ok = refreshed.disposition in (ResultDisposition.PUBLISHED, ResultDisposition.HELD, ResultDisposition.ZERO)
+    try:
+        recorded = memory_refresh.finish(root, plan, {
+            "ok": ok, "disposition": refreshed.disposition.value, "error_code": refreshed.error_code,
+            "outputs": [str(p) for p in refreshed.outputs], "record_path": str(refreshed.record_path or ""),
+            "reused": refreshed.reused, "product_result": refreshed.product_result})
+    except Exception:  # noqa: BLE001 - the receipt cannot invalidate the processed source
+        recorded = None
+    if recorded is None:
+        _release_memory_refresh(root, plan)   # never leave a claim running behind a live process
+    if ok:
+        return refreshed
+    return _run_bgm_candidate_request(request, state_root=state_root, analyze=analyze)
 
 
 def _process_bgm_candidates(source: Path, source_sha256: str, recipe: dict, run_dir: Path,
@@ -3536,11 +3583,11 @@ def existing_bgm_candidates(source: Path, source_sha256: str, *,
     """
     recipe = _bgm_candidate_recipe()
     root = Path(state_root).resolve() if state_root is not None else session.state_dir().resolve()
-    # A saved foreground source can still service an interrupted older-source revisit after restart.
-    # Do not let the UI's reuse shortcut hide pending work from the ordinary Product entry.
+    # A pending memory re-evaluation of this same source belongs to the ordinary entry, which the user
+    # started by naming it; the UI reuse shortcut must not hide it. Other sources' plans are irrelevant.
     try:
         from lss.bgm import memory_refresh
-        if any(plan["source_sha256"] != source_sha256
+        if any(plan["source_sha256"] == source_sha256
                for plan in memory_refresh.pending(root, recipe_id=recipe["recipe_id"])):
             return None
     except Exception:  # noqa: BLE001 - optional memory cannot disable normal reuse
