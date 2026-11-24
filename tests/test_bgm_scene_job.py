@@ -1623,3 +1623,35 @@ def test_launch_tries_the_newest_requested_place_first(tmp_path, library, monkey
     monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
     monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: True)
     assert scene_job._eligible_recovery_source(state, digest, [], now=0.0)["source"] == new_name
+
+
+def test_a_replaced_requested_file_does_not_end_the_request(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    original, replaced = tmp_path / "original.mkv", tmp_path / "requested.mkv"
+    original.write_bytes(b"episode")
+    replaced.write_bytes(b"another file now")
+    digest = hashlib.sha256(original.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    scene_job._record_request(state, replaced, digest)
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda root, sha, source=None, **k: source == original)
+    eligible = scene_job._eligible_recovery_source(state, digest, [original], now=0.0)
+    assert eligible["source"] == original and scene_job._requests(state, digest)
+    assert eligible["path_rejections"][0]["reason"] == "recorded_source_identity_mismatch"
+
+
+def test_the_bgm_job_itself_ends_requests_when_nothing_is_left_to_name(tmp_path, library, monkeypatch):
+    from lss import application as app
+    from lss.bgm import current_best
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    library[digest] = []
+    monkeypatch.setattr(scene_job, "available", lambda: True)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    with app._BgmCandidateRunLock(state / current_best.DIRECTORY / digest, wait_seconds=0):
+        scene_job._record_request(state, source, digest)
+        assert scene_job.start_in_background(state, source, digest)["state"] == "current"
+    assert not scene_job._requests(state, digest)

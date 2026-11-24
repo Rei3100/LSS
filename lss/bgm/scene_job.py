@@ -349,13 +349,14 @@ def _bgm_job_active(state_root: Path, source_sha256: str) -> bool:
     return False
 
 
-def _finish_requests(state_root: Path, source_sha256: str, *, finished_at: float) -> None:
+def _finish_requests(state_root: Path, source_sha256: str, *, finished_at: float,
+                     inside_bgm_job: bool = False) -> None:
     """Remove the requests a finished naming covered: those made no later than ``finished_at``.
 
     Nothing is removed while a BGM job of the source is running: it may still publish new cues whose naming its
     request stands for.
     """
-    if _bgm_job_active(state_root, source_sha256):
+    if not inside_bgm_job and _bgm_job_active(state_root, source_sha256):
         return
     for path, record in _requests(state_root, source_sha256):
         requested_at = record.get("requested_at")
@@ -1017,8 +1018,9 @@ def start_in_background(state_root: Path, source: Path, source_sha256: str) -> d
     pending = _pending_retry_with_budget(state_root, source_sha256, source=source)
     terminal = _next_transient_retry_after(state_root, source_sha256)
     if not needs_now and pending is None:
-        # Nothing of this naming is left to do: the requests made so far are covered.
-        _finish_requests(state_root, source_sha256, finished_at=_retry_clock())
+        # Nothing of this naming is left to do: the requests made so far are covered. The caller is the BGM job
+        # itself, after its publication, so its own lock does not mean more cues are coming.
+        _finish_requests(state_root, source_sha256, finished_at=_retry_clock(), inside_bgm_job=True)
         return ({"state": "retry_pending", "retry_after": terminal}
                 if terminal is not None else {"state": "current"})
     _record_request(state_root, Path(source).resolve(), source_sha256)
@@ -1167,18 +1169,6 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
         if not source.is_file():
             rejected_paths.append({"path": str(source), "reason": "recorded_source_missing"})
             continue
-        immediate = needs_naming(state_root, source_sha256, source=source, now=now)
-        retry_after = None if immediate else _pending_retry_with_budget(state_root, source_sha256, source=source)
-        if not immediate and retry_after is None:
-            # The user's requested naming has nothing left: end the requests so a later model or policy change
-            # does not turn them into launch-time work.
-            _finish_requests(state_root, source_sha256, finished_at=now)
-            continue
-        from lss.bgm import scene_runtime
-
-        if not _scene_models_cached() and not scene_runtime.bootstrap_supported():
-            return {"skip_reason": "scene_naming_models_not_cached", "source": source,
-                    "immediate": immediate, "retry_after": retry_after}
         try:
             stat = source.stat()
             cache_key = (str(source.resolve()).casefold(), stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
@@ -1195,6 +1185,19 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
             rejected_paths.append({"path": str(source), "reason": "recorded_source_identity_mismatch",
                                    "actual_sha256": actual_sha256})
             continue
+        # Only the verified original decides whether anything of the request is left.
+        immediate = needs_naming(state_root, source_sha256, source=source, now=now)
+        retry_after = None if immediate else _pending_retry_with_budget(state_root, source_sha256, source=source)
+        if not immediate and retry_after is None:
+            # The user's requested naming has nothing left: end the requests so a later model or policy change
+            # does not turn them into launch-time work.
+            _finish_requests(state_root, source_sha256, finished_at=now)
+            return None
+        from lss.bgm import scene_runtime
+
+        if not _scene_models_cached() and not scene_runtime.bootstrap_supported():
+            return {"skip_reason": "scene_naming_models_not_cached", "source": source,
+                    "immediate": immediate, "retry_after": retry_after}
         return {"source": source, "immediate": immediate or retry_after is None or retry_after <= now,
                 "retry_after": retry_after, "path_rejections": rejected_paths}
     if rejected_paths:
