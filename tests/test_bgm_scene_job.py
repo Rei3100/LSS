@@ -1818,3 +1818,11 @@ def test_a_failed_request_write_leaves_no_partial_file(tmp_path, monkeypatch):
     with pytest.raises(OSError):
         scene_job._record_request(state, tmp_path / "episode.mkv", "a" * 64)
     assert not list(scene_job._requests_dir(state).iterdir())
+
+
+def test_a_request_names_its_source_by_lowercase_digest(tmp_path):
+    state = tmp_path / "state"
+    path = scene_job._record_request(state, tmp_path / "episode.mkv", "A" * 64)
+    assert path.name.startswith("a" * 64 + "-")
+    [(listed, record)] = scene_job._requests(state, "a" * 64)
+    assert listed == path and record["source"] == str(tmp_path / "episode.mkv")
