@@ -136,3 +136,22 @@ The GPU helper's metadata is not proof of a live lease, so availability remains
 no state roots or junctions. `--github` is the sole opt-in to read-only `gh` PR and
 assigned-Issue queries, and requires the `gh` executable. Default operation is
 offline. This build never used that flag or contacted GitHub.
+
+## Decisions and their reconsideration conditions
+
+- **Linux runs the gate tests only.** The Product resolves `bin/ffmpeg.exe` and uses Windows APIs, so the
+  Product suite is a Windows suite. Rejected: running `-m "not local"` on Linux (it fails on the first
+  ffmpeg call and would need a port nobody uses). Reconsider when the Product gains a second platform.
+- **The Windows job installs CPU torch at the versions `setup-venv.ps1` pins, then fetches the pinned
+  ffmpeg and MSST definitions.** A rehearsal on a fresh clone with plain `pip` and no fetched material
+  failed 423 tests by the halfway point; with these steps 5832 tests ran and the only failures were tests
+  now listed in `tests/local_tests.py` and two hook tests that need `sh` on `PATH`. Rejected: a serial run
+  (`-j 1`), which does not fit a hosted job's time limit. Reconsider the worker count when hosted runner
+  sizes change. Dependencies other than torch are unpinned; a failure caused by an upstream release is
+  fixed by pinning that package in `requirements.txt`.
+- **Review mode is `local-records` until the review bot's identity is pinned.** The Codex review app
+  already reviews pull requests on its own, but the gate does not yet check which app posted a review.
+  Rejected: failing every B/C pull request closed until then (no Product change could integrate), and
+  counting any comment as a record (anyone may comment on a public pull request). Switch
+  `.github/review-policy.json` to `bot` once the gate's identity check has been tried against a real bot
+  review and an impostor review on the same pull request.
