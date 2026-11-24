@@ -44,6 +44,11 @@ def check(root: Path = ROOT, environ=None) -> dict:
                     for h in entry.get("hooks", []) if isinstance(h, dict)]
         checks[engine + "_hook"] = ("UNKNOWN" if name not in settings else
             "PASS" if any("py -3 -I" in c and "scripts/hooks/" in c for c in commands) else "FAIL")
+    if checks.get("codex_hook") == "PASS":
+        # Codex runs every shell command through its code-mode host, where a PreToolUse hook cannot block
+        # (measured with Codex CLI 0.172.0 on Windows). The file is checked, but Codex's secret protection
+        # rests on the profile's deny-read and the project rules, not on this hook.
+        checks["codex_hook"] = "NOT_RELIED"
     permissions = settings.get(".claude/settings.json", {}).get("permissions", {})
     if not isinstance(permissions, dict):
         permissions = {}

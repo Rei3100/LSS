@@ -179,7 +179,7 @@ def test_env_check_missing_optional_and_no_values(tmp_path):
     write_settings(tmp_path)
     result = env_check.check(tmp_path, {"LSS_PRIVATE_ROOT": str(tmp_path / "missing"), "LSS_DEV_STATE": str(tmp_path)})
     assert result["checks"]["claude_hook"] == "PASS"
-    assert result["checks"]["codex_hook"] == "PASS"
+    assert result["checks"]["codex_hook"] == "NOT_RELIED"   # present, but Codex cannot block with it
     assert result["checks"]["LSS_DEV_STATE"] == "PASS"
     assert str(tmp_path) not in json.dumps(result)
     (tmp_path / ".codex/hooks.json").write_text("invalid")
