@@ -100,22 +100,23 @@ class GuardError(Exception):
 
 
 def published_main(repo: Path, remote: str | None, url: str | None) -> str | None:
-    """The fetched main of the push's own destination as a commit id, or None.
+    """The main that the push destination itself reports now, as a local commit id, or None.
 
-    Only a push to `origin` whose fetch and push URLs are both the URL git is pushing to qualifies: then
-    refs/remotes/origin/main was fetched from the destination and its history is already published there.
+    Its history is already published at that destination. Local remote-tracking refs are not used: they can
+    still point at another remote's history after the URL changes. When the destination cannot be asked, or
+    reports a main this repository does not have, the caller scans the whole history.
     """
-    if remote != "origin" or not url:
+    if not remote or not url:
         return None
     try:
-        fetch_url = git(repo, "remote", "get-url", "origin").decode().strip()
-        push_urls = git(repo, "remote", "get-url", "--push", "--all", "origin").decode().split()
-        if fetch_url != url or push_urls != [url]:
+        lines = git(repo, "ls-remote", "--", url, "refs/heads/main").decode().splitlines()
+        fields = lines[0].split() if len(lines) == 1 else []
+        if len(fields) != 2 or fields[1] != "refs/heads/main" or not OID_RE.fullmatch(fields[0]):
             return None
-        oid = git(repo, "rev-parse", "--verify", "--quiet", "refs/remotes/origin/main^{commit}").decode().strip()
-    except GuardError:
+        oid, kind = resolve_object(repo, fields[0])
+    except (GuardError, IndexError):
         return None
-    return oid if OID_RE.fullmatch(oid) else None
+    return oid if kind == "commit" and oid == fields[0] else None
 
 
 def git(repo: Path, *args: str, input_data: bytes | None = None) -> bytes:
@@ -597,9 +598,9 @@ def pre_push(repo: Path, allowlist: Path | None, denylist: Path | None,
             else:
                 published = published_main(repo, remote, url)
                 if published:
-                    # A new branch: commits already on the fetched public main were published by an earlier push
-                    # and passed CI's guard; scanning them again protects nothing and grows with main's history.
-                    # lss-gh still scans every ancestor before it pushes.
+                    # A new branch: commits on the destination's current main are already published there;
+                    # scanning them again protects nothing and grows with main's history. lss-gh still scans
+                    # every ancestor before it pushes.
                     args.append("^" + published)
             # Always inspect the exact tip, even when rev-list is empty.
             commits.add(oid)

@@ -809,19 +809,26 @@ def test_a_new_branch_push_skips_commits_already_on_the_fetched_main(tmp_path, m
     assert asked == [("rev-list", HEAD, "^" + main)]
 
 
-@pytest.mark.parametrize("remote,url,fetch,push", [
-    ("origin", "https://example.invalid/a.git", "https://example.invalid/a.git", "https://example.invalid/a.git"),
-    ("mirror", "https://example.invalid/a.git", "https://example.invalid/a.git", "https://example.invalid/a.git"),
-    ("origin", "https://example.invalid/b.git", "https://example.invalid/a.git", "https://example.invalid/b.git"),
-    ("origin", "https://example.invalid/a.git", "https://example.invalid/a.git",
-     "https://example.invalid/a.git https://example.invalid/b.git"),
-    (None, None, "https://example.invalid/a.git", "https://example.invalid/a.git")])
-def test_only_a_push_to_the_fetched_origin_trusts_its_main(tmp_path, monkeypatch, remote, url, fetch, push):
+@pytest.mark.parametrize("reply,local,trusted", [
+    ("c" * 40 + "\trefs/heads/main\n", True, True),
+    ("c" * 40 + "\trefs/heads/main\n", False, False),     # the destination's main is not in this repository
+    ("", True, False),                                    # no main at the destination
+    (None, True, False),                                  # the destination cannot be asked
+    ("c" * 40 + "\trefs/heads/main\n" + "d" * 40 + "\trefs/heads/main\n", True, False)])
+def test_only_the_destinations_own_main_is_trusted(tmp_path, monkeypatch, reply, local, trusted):
     main = "c" * 40
+    asked = []
     def git(repo, *args):
-        if args[:2] == ("remote", "get-url"):
-            return (push if "--push" in args else fetch).encode()
-        return main.encode()
+        asked.append(args)
+        if reply is None:
+            raise gh.guard.GuardError("network")
+        return reply.encode()
+    def resolve(repo, oid):
+        if not local:
+            raise gh.guard.GuardError("missing")
+        return oid, "commit"
     monkeypatch.setattr(gh.guard, "git", git)
-    trusted = gh.guard.published_main(tmp_path, remote, url)
-    assert (trusted == main) == (remote == "origin" and url == fetch == push)
+    monkeypatch.setattr(gh.guard, "resolve_object", resolve)
+    assert (gh.guard.published_main(tmp_path, "origin", "https://example.invalid/a.git") == main) == trusted
+    assert asked == [("ls-remote", "--", "https://example.invalid/a.git", "refs/heads/main")]
+    assert gh.guard.published_main(tmp_path, None, None) is None
