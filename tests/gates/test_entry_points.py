@@ -52,7 +52,7 @@ def publication(tmp_path, monkeypatch):
                 return SimpleNamespace(stdout=replies["push_urls"])
             if parts == ["symbolic-ref", "--short", "HEAD"]:
                 return SimpleNamespace(stdout=replies["branch"])
-            if parts in (["rev-parse", "HEAD"], ["rev-list", HEAD]):
+            if parts in (["rev-parse", "HEAD"], ["rev-list", HEAD], ["--no-replace-objects", "rev-list", HEAD]):
                 return SimpleNamespace(stdout=HEAD)
         if argv[:3] == ["gh", "run", "view"]:
             return SimpleNamespace(stdout=json.dumps({"headSha": replies["run_head"],
@@ -803,10 +803,10 @@ def test_lss_gh_scans_only_commits_the_destinations_main_lacks(publication, monk
     scanned = []
     monkeypatch.setattr(gh.guard, "scan", lambda repo, oid, **k: scanned.append(oid) or {"result": "PASS"})
     def answer(argv, *, cwd, input=None):
-        if argv[3:] == ["rev-list", HEAD, "^" + "c" * 40]:
+        if argv[3:] == ["--no-replace-objects", "rev-list", HEAD, "^" + "c" * 40]:
             calls.append((argv, input))
             return SimpleNamespace(stdout=HEAD + "\n" + "b" * 40 + "\n")
-        if argv[3:] == ["rev-list", HEAD]:
+        if argv[3:] == ["--no-replace-objects", "rev-list", HEAD]:
             calls.append((argv, input))
             return SimpleNamespace(stdout="\n".join([HEAD, "b" * 40, "c" * 40]) + "\n")
         return runner(argv, cwd=cwd, input=input)
@@ -820,7 +820,7 @@ def test_lss_gh_scans_the_tip_even_when_main_already_holds_it(publication, monke
     scanned = []
     monkeypatch.setattr(gh.guard, "scan", lambda repo, oid, **k: scanned.append(oid) or {"result": "PASS"})
     def answer(argv, *, cwd, input=None):
-        if argv[3:] == ["rev-list", HEAD, "^" + HEAD]:
+        if argv[3:] == ["--no-replace-objects", "rev-list", HEAD, "^" + HEAD]:
             return SimpleNamespace(stdout="")
         return runner(argv, cwd=cwd, input=input)
     assert gh.main(["--dry-run", "push"], runner=answer) == 0
