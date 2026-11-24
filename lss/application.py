@@ -1816,6 +1816,13 @@ def _run_bgm_candidate_request_once(
         # 同じ原本のCurrentBestを扱う処理は、Recipeの版をまたいで一つずつ行う。
         with _BgmCandidateRunLock(root / current_best.DIRECTORY / source_sha256),                 _BgmCandidateRunLock(product_root):
             _ensure_bgm_candidate_recipe(product_root / "recipe.json", recipe)
+            try:
+                # Before any publication or reuse: an interruption after it still leaves the user's naming
+                # request for launch recovery. Naming the source here is within the job the user started.
+                from lss.bgm import scene_job
+                scene_job._record_request(root, source, source_sha256)
+            except Exception:  # noqa: BLE001 - naming never blocks or fails the BGM result
+                pass
             rebuilt: list[str] = []
             with quitting.writing_user_folder():
                 current_best.reconcile(root, source_sha256, _run_regenerator(root, source_sha256, rebuilt=rebuilt))

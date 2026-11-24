@@ -191,6 +191,9 @@ def _flac_view(path: Path, root: str) -> dict:
     return {"audio_stream_sha256": hashlib.sha256(stream).hexdigest(), "tags": _normalized(tags, root)}
 
 
+REQUEST_NAME = re.compile(r"(.*/jobs/requests/[0-9a-f]{64})-[0-9a-f]{32}\.json")
+
+
 def _snapshot(root: Path) -> dict:
     """Every file of a case: JSON normalised, FLAC as exact audio stream + tags, anything else as bytes.
 
@@ -203,6 +206,11 @@ def _snapshot(root: Path) -> dict:
         if not path.is_file() or path.name.startswith("."):
             continue
         relative = path.relative_to(root).as_posix()
+        request = REQUEST_NAME.fullmatch(relative)
+        if request:
+            # A naming request file is named by a random id; the snapshot compares how many there are.
+            count = sum(1 for key in files if key.startswith(request[1] + "-request-"))
+            relative = f"{request[1]}-request-{count}.json"
         if path.suffix == ".json":
             body = _normalized(json.loads(path.read_text(encoding="utf-8")), text)
             canonical = json.dumps(body, sort_keys=True, ensure_ascii=False)

@@ -34,7 +34,7 @@
         {
             "path": "docs/engine/LISTENING_AND_PRESENTATION.md",
             "class": "engineering_contract",
-            "sha256": "a719bbad86f90b10f6744afcdf25caee80318412915cd26153046649d928c765"
+            "sha256": "5fbbc961fb68c659730fc889ff0509e2c150d40ee1fbdcc1e70fba0e56241163"
         },
         {
             "path": "docs/engine/LOCAL_RUNTIME.md",

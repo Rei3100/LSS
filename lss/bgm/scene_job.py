@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import math
 import re
 import subprocess
@@ -253,7 +254,7 @@ def _next_transient_retry_after(state_root: Path, source_sha256: str) -> float |
 
 
 def _pending_retry_with_budget(state_root: Path, source_sha256: str, *, source: Path | None = None,
-                               models=None) -> float | None:
+                               models=None, strict: bool = False) -> float | None:
     """Earliest persisted transient retry whose current identity still has a bounded attempt available."""
     try:
         revision = _current_model_revision(models)
@@ -283,11 +284,130 @@ def _pending_retry_with_budget(state_root: Path, source_sha256: str, *, source: 
                 due.append(float(retry_after))
         return min(due) if due else None
     except Exception:  # noqa: BLE001 - an eligibility failure never blocks the published result
+        if strict:
+            raise
         return None
 
 
+def _requests_dir(state_root: Path) -> Path:
+    return Path(state_root) / scene_names.DIRECTORY / "jobs" / "requests"
+
+
+def _requests(state_root: Path, source_sha256: str) -> list[tuple[Path, dict]]:
+    """Naming requests of user-started jobs for this source, one immutable file per request."""
+    rows = []
+    folder = _requests_dir(state_root)
+    for path in sorted(folder.glob(f"{str(source_sha256).lower()}-*.json")) if folder.is_dir() else []:
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(record, dict):
+            rows.append((path, record))
+    requested_at = lambda row: row[1].get("requested_at") if isinstance(row[1].get("requested_at"), (int, float)) else 0.0
+    return sorted(rows, key=requested_at)   # oldest first
+
+
+def _record_request(state_root: Path, source: Path, source_sha256: str) -> Path:
+    """Remember that a job the user started asked for this source's naming, until a worker finishes it.
+
+    Launch recovery resumes only sources with a request (AGENTS.md section 2: no reprocessing of past media on
+    LSS's own initiative; J6: interrupted jobs are recovered). Each request is its own file, so finishing one never
+    removes a request that arrived later.
+    """
+    import uuid
+
+    folder = _requests_dir(state_root)
+    folder.mkdir(parents=True, exist_ok=True)
+    name = f"{str(source_sha256).lower()}-{uuid.uuid4().hex}"
+    temporary = folder / f"{name}.tmp"
+    path = folder / f"{name}.json"
+    try:
+        temporary.write_text(json.dumps({"source_sha256": str(source_sha256).lower(), "source": str(source),
+                                         "requested_at": _retry_clock()}, ensure_ascii=False), encoding="utf-8")
+        os.replace(temporary, path)
+    except BaseException:
+        # A failed write leaves no partial file behind; the caller decides what a missing request means.
+        temporary.unlink(missing_ok=True)
+        raise
+    return path
+
+
+def _bgm_job_active(state_root: Path, source_sha256: str) -> bool:
+    """Whether a BGM job holds this source's CurrentBest lock (it will publish, then request naming itself)."""
+    from lss.bgm import current_best
+
+    path = Path(state_root) / current_best.DIRECTORY / str(source_sha256).lower() / ".owner.lock"
+    if not path.is_file():
+        return False
+    try:
+        with path.open("r+b") as stream:
+            if os.name == "nt":
+                import msvcrt
+                msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
+            else:  # pragma: no cover - Product runtime is Windows
+                import fcntl
+                fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                fcntl.flock(stream, fcntl.LOCK_UN)
+    except OSError:
+        return True
+    return False
+
+
+def _nothing_left(state_root: Path, source_sha256: str, source: Path | None) -> bool:
+    """Strictly: no naming due now and no budgeted retry later. An unreadable state is not "nothing left",
+    and neither is a CurrentBest switch still in progress (its new cues are not listed yet)."""
+    try:
+        from lss.bgm import current_best
+
+        if current_best.journal_path(Path(state_root), source_sha256).is_file():
+            return False
+        return (not needs_naming(state_root, source_sha256, source=source, strict=True)
+                and _pending_retry_with_budget(state_root, source_sha256, source=source, strict=True) is None)
+    except Exception:  # noqa: BLE001 - keep the request when the state cannot be read
+        return False
+
+
+def _end_requests(state_root: Path, source_sha256: str, source: Path | None, *,
+                  inside_bgm_job: bool = False) -> None:
+    """End the user's naming requests that the current state shows finished.
+
+    Order matters: the request list is taken first, then the source's BGM job lock, then the strict
+    ``_nothing_left`` check. A job that starts after the lock check records its request after the list was
+    taken, so its request survives; a job that ran before the lock check has published what the check reads.
+    Nothing is ended while a BGM job of the source holds its lock, except by that job itself, and nothing while a
+    naming worker of the source holds its lease: a launch worker's request check under that lease stays true for
+    the whole of its naming.
+    """
+    with _background_worker_lease(state_root, source_sha256) as acquired:
+        if acquired:
+            _end_listed_requests(state_root, source_sha256, source, inside_bgm_job=inside_bgm_job)
+
+
+def _end_listed_requests(state_root: Path, source_sha256: str, source: Path | None, *,
+                         inside_bgm_job: bool) -> None:
+    snapshot = _requests(state_root, source_sha256)
+    if not snapshot:
+        return
+    if not inside_bgm_job and _bgm_job_active(state_root, source_sha256):
+        return   # the running job publishes, then ends or keeps its own request in start_in_background
+    if not _nothing_left(state_root, source_sha256, source):
+        return
+    cutoff = _retry_clock()
+    for path, record in snapshot:
+        requested_at = record.get("requested_at")
+        if isinstance(requested_at, (int, float)) and requested_at > cutoff:
+            continue
+        try:
+            path.unlink()
+        except OSError:
+            pass
+
+
 def run_background_worker(state_root: Path, source: Path, source_sha256: str, *, wait=None, clock=None,
-                          wait_for_retries: bool = True) -> dict:
+                          wait_for_retries: bool = True, require_request: bool = False) -> dict:
     """Run bounded naming attempts, sleeping without model/GPU resources only for persisted transient errors.
 
     A deploy/rollback stop request (``scene_stop``) ends the worker between cues, download blocks and waits;
@@ -295,14 +415,22 @@ def run_background_worker(state_root: Path, source: Path, source_sha256: str, *,
     """
     scene_stop.enable()
     try:
-        return _run_background_worker(state_root, source, source_sha256, wait=wait or scene_stop.wait,
-                                      clock=clock, wait_for_retries=wait_for_retries)
+        result = _run_background_worker(state_root, source, source_sha256, wait=wait or scene_stop.wait,
+                                        clock=clock, wait_for_retries=wait_for_retries,
+                                        require_request=require_request)
     except scene_stop.StopRequested:
         return {"state": "stopped", "reason": "scene_worker_stop_requested"}
+    # The requested naming is over when nothing is left, or when only retries without a remaining budget are
+    # left: a later model or policy change then makes a reprocess candidate, not the user's unfinished job.
+    if result.get("state") in ("complete", "current", "retry_pending"):
+        # Requests that arrived during this worker (a second job of the same source was told already_running)
+        # are covered too when no BGM job of the source runs; otherwise only those made before it started.
+        _end_requests(state_root, source_sha256, Path(source))
+    return result
 
 
 def _run_background_worker(state_root: Path, source: Path, source_sha256: str, *, wait=None, clock=None,
-                           wait_for_retries: bool = True) -> dict:
+                           wait_for_retries: bool = True, require_request: bool = False) -> dict:
     source_sha256 = str(source_sha256).lower()
     if len(source_sha256) != 64 or any(char not in "0123456789abcdef" for char in source_sha256):
         raise ValueError("scene_naming_source_hash_invalid")
@@ -312,6 +440,9 @@ def _run_background_worker(state_root: Path, source: Path, source_sha256: str, *
     with _background_worker_lease(state_root, source_sha256) as acquired:
         if not acquired:
             return {"state": "already_running", "attempts": 0}
+        if require_request and not _requests(state_root, source_sha256):
+            # Launch recovery: another worker finished the request while this one waited in line.
+            return {"state": "not_requested", "attempts": 0}
         pending = _pending_retry_with_budget(state_root, source_sha256, source=source)
         if not needs_naming(state_root, source_sha256, source=source, now=clock()):
             if pending is None:
@@ -323,6 +454,8 @@ def _run_background_worker(state_root: Path, source: Path, source_sha256: str, *
             delay = max(0.0, pending - clock())
             if delay:
                 wait(delay)
+            if require_request and not _requests(state_root, source_sha256):
+                return {"state": "not_requested", "attempts": 0}
             if not needs_naming(state_root, source_sha256, source=source, now=clock()):
                 return {"state": "retry_pending", "attempts": 0, "retry_after": pending}
 
@@ -347,6 +480,9 @@ def _run_background_worker(state_root: Path, source: Path, source_sha256: str, *
         result = None
         attempts = 0
         while attempts < MAX_BACKGROUND_ATTEMPTS:
+            if require_request and not _requests(state_root, source_sha256):
+                # A user job ended the request while this launch worker prepared models or waited.
+                return {"state": "not_requested", "attempts": attempts}
             # The checked entry rehashes the source before every attempt; model construction and release live
             # entirely inside name_source, so no model/GPU resource survives into the sleep below.
             result = name_source_checked(state_root, source, source_sha256)
@@ -871,7 +1007,7 @@ def _work_info_enabled() -> bool:
 
 
 def needs_naming(state_root: Path, source_sha256: str, *, source: Path | None = None,
-                 models=None, now: float | None = None) -> bool:
+                 models=None, now: float | None = None, strict: bool = False) -> bool:
     """Whether a cue is new or an unresolved attempt has changed inputs / reached retry backoff."""
     try:
         revision = _current_model_revision(models)
@@ -896,6 +1032,8 @@ def needs_naming(state_root: Path, source_sha256: str, *, source: Path | None = 
                 return True
         return False
     except Exception:  # noqa: BLE001 - a failed check never blocks the BGM result
+        if strict:
+            raise
         return False
 
 
@@ -923,8 +1061,12 @@ def start_in_background(state_root: Path, source: Path, source_sha256: str) -> d
     pending = _pending_retry_with_budget(state_root, source_sha256, source=source)
     terminal = _next_transient_retry_after(state_root, source_sha256)
     if not needs_now and pending is None:
+        # Nothing of this naming is left to do: the requests made so far are covered. The caller is the BGM job
+        # itself, after its publication, so its own lock does not mean more cues are coming.
+        _end_requests(state_root, source_sha256, Path(source), inside_bgm_job=True)
         return ({"state": "retry_pending", "retry_after": terminal}
                 if terminal is not None else {"state": "current"})
+    _record_request(state_root, Path(source).resolve(), source_sha256)
     # A child may already be sleeping through the retry delay. The OS lock check is
     # authoritative across the development and frozen command routes.
     with _background_worker_lease(state_root, source_sha256) as acquired:
@@ -1044,7 +1186,24 @@ def _recovery_attempt_state(state_root: Path, source_sha256: str) -> str:
 
 def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[Path], *, now: float,
                               verified_paths: dict | None = None) -> dict | None:
-    """Check current cue eligibility before invoking the worker's final source hash guard."""
+    """Check current cue eligibility before invoking the worker's final source hash guard.
+
+    Only a source whose naming a user-started job requested and did not finish is eligible: a newer model, policy
+    or public information alone makes a reprocess candidate, never launch-time work on a source.
+    """
+    requests = _requests(state_root, source_sha256)
+    if not requests:
+        return None
+    # The user may have named the source at a new place; try the requested places before older runs' paths.
+    requested = [str(record["source"]) for _, record in reversed(requests)   # newest request first
+                 if isinstance(record.get("source"), str) and record["source"]]
+    seen = set()
+    ordered = []
+    for path in [Path(text) for text in requested] + list(paths):
+        if str(path).casefold() not in seen:
+            seen.add(str(path).casefold())
+            ordered.append(path)
+    paths = ordered
     published = _published(state_root, source_sha256)
     if not published:
         return None
@@ -1053,15 +1212,12 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
         if not source.is_file():
             rejected_paths.append({"path": str(source), "reason": "recorded_source_missing"})
             continue
-        immediate = needs_naming(state_root, source_sha256, source=source, now=now)
-        retry_after = None if immediate else _pending_retry_with_budget(state_root, source_sha256, source=source)
-        if not immediate and retry_after is None:
-            continue
         from lss.bgm import scene_runtime
 
         if not _scene_models_cached() and not scene_runtime.bootstrap_supported():
+            # No hashing or model work without a usable backend; the request stays for a later launch.
             return {"skip_reason": "scene_naming_models_not_cached", "source": source,
-                    "immediate": immediate, "retry_after": retry_after}
+                    "immediate": False, "retry_after": None}
         try:
             stat = source.stat()
             cache_key = (str(source.resolve()).casefold(), stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
@@ -1078,6 +1234,18 @@ def _eligible_recovery_source(state_root: Path, source_sha256: str, paths: list[
             rejected_paths.append({"path": str(source), "reason": "recorded_source_identity_mismatch",
                                    "actual_sha256": actual_sha256})
             continue
+        # Only the verified original decides whether anything of the request is left.
+        try:
+            immediate = needs_naming(state_root, source_sha256, source=source, now=now, strict=True)
+            retry_after = None if immediate else _pending_retry_with_budget(state_root, source_sha256,
+                                                                            source=source, strict=True)
+        except Exception:  # noqa: BLE001 - unreadable naming state: keep the request for a later launch
+            return None
+        if not immediate and retry_after is None:
+            # The user's requested naming has nothing left: end the requests so a later model or policy change
+            # does not turn them into launch-time work.
+            _end_requests(state_root, source_sha256, source)
+            return None
         return {"source": source, "immediate": immediate or retry_after is None or retry_after <= now,
                 "retry_after": retry_after, "path_rejections": rejected_paths}
     if rejected_paths:
@@ -1154,7 +1322,7 @@ def run_current_best_recovery(state_root: Path, *, wait=None, clock=None) -> dic
                 _recovery_log(state_root, {"state": "source_started", "source_sha256": digest})
                 try:
                     result = run_background_worker(state_root, item["source"], digest, wait=wait, clock=clock,
-                                                   wait_for_retries=False)
+                                                   wait_for_retries=False, require_request=True)
                     outcomes.append({"source_sha256": digest, "result": result})
                 except Exception as exc:  # noqa: BLE001 - a source failure is durable and isolated
                     outcomes.append({"source_sha256": digest, "state": "failed",
@@ -1189,7 +1357,7 @@ def run_current_best_recovery(state_root: Path, *, wait=None, clock=None) -> dic
             _recovery_log(state_root, {"state": "source_started", "source_sha256": digest,
                                        "retry_after": item["retry_after"]})
             try:
-                result = run_background_worker(state_root, item["source"], digest, wait=wait, clock=clock)
+                result = run_background_worker(state_root, item["source"], digest, wait=wait, clock=clock, require_request=True)
                 outcomes.append({"source_sha256": digest, "result": result})
             except Exception as exc:  # noqa: BLE001
                 outcomes.append({"source_sha256": digest, "state": "failed",

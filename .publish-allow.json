@@ -1438,8 +1438,8 @@
       "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
     },
     "docs/engine/LISTENING_AND_PRESENTATION.md": {
-      "blob_oid": "3eeba81f86dc2048b9aaeab1d108e6330b3abafc",
-      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+      "blob_oid": "ce630b9d9ee91cc1756275079a8fd77c1e906382",
+      "reason": "Content, rights and privacy reviewed after one sentence on launch-time naming recovery was added; no work names, paths or secrets added (2026-11-24)"
     },
     "docs/engine/LOCAL_RUNTIME.md": {
       "blob_oid": "ec11b562d44659f1ad2cedafc559344becc36a59",
