@@ -151,8 +151,25 @@ offline. This build never used that flag or contacted GitHub.
   failed 423 tests by the halfway point; with these steps 5832 tests ran and the only failures were tests
   now listed in `tests/local_tests.py` and two hook tests that need `sh` on `PATH`. Rejected: a serial run
   (`-j 1`), which does not fit a hosted job's time limit. Reconsider the worker count when hosted runner
-  sizes change. Dependencies other than torch are unpinned; a failure caused by an upstream release is
-  fixed by pinning that package in `requirements.txt`.
+  sizes change.
+- **Every other package is installed at the development venv's version.** `requirements*.txt` name what is
+  needed; `constraints.txt`, written by `scripts/freeze_constraints.py` from `pip freeze --all` of the
+  development venv, fixes each version for the hosted Windows job and `setup-venv.ps1`. torch, torchaudio and
+  torchvision stay pinned where they are installed (separate CUDA and CPU indexes), and pip is left to the
+  runner. After changing the venv, run the script and commit both files; `--check` reports drift. Rejected:
+  pinning only after an upstream release breaks a run (the hosted result could change without a commit).
+  Reconsider if a package has no wheel for the hosted runner at the pinned version.
+- **Only collaborators can open pull requests; anyone signed in can open issues.** The repository's
+  `pull_request_creation_policy` is `collaborators_only`, and no interaction limit is set (both read
+  through the REST API on 2026-11-24). The repository response has no field that limits who opens issues,
+  and the settings page was not read. Issue and comment text from other accounts is data: the review collector counts only
+  owner and collaborator comments, and the public surface scan checks what is posted. Refusal for a signed-in
+  non-collaborator was not tried (it would need a second account). Reconsider if outside issues become a
+  burden (a temporary interaction limit is available).
+- **Actions are pinned by full commit SHA, without `actions.lock`.** The workflows use only
+  `actions/checkout` and `actions/setup-python`, both JavaScript actions (`runs: using: node24`) that call no
+  other action, so there is no transitive action dependency for a lock file to fix. Reconsider when a
+  composite or Docker action, or an action that uses another action, is added.
 - **Review mode is `local-records` until the review bot's identity is pinned.** The Codex review app
   already reviews pull requests on its own, but the gate does not yet check which app posted a review.
   Rejected: failing every B/C pull request closed until then (no Product change could integrate), and
