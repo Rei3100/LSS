@@ -11,10 +11,41 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
+
+# Administrative gh commands Claude's project settings deny in both shells. "gh -*" and "gh repo -*" cover
+# options placed before a subcommand (gh -R owner/name secret set, gh repo --yes=true delete); gh api is denied
+# whole, because bundled short options (-iXPOST) hide the method from any narrower pattern; gh alias is denied
+# because an alias expands inside gh, past every pattern.
+ADMINISTRATIVE = ("gh -*", "gh api *", "gh repo -*", "gh repo edit *", "gh repo delete *", "gh repo rename *",
+                  "gh repo archive *", "gh repo create *", "gh repo new *", "gh repo deploy-key *",
+                  "gh secret *", "gh variable *", "gh ruleset *", "gh rs *", "gh alias *")
+# Codex's own parser judges the rules file: it drops the whole project file on any parse error (tabs, escapes,
+# non-ASCII spaces), which no line pattern here can follow. The probe is an administrative command.
+CODEX_PROBE = ("gh", "-R", "owner/name", "secret", "set", "NAME")
+
+
+def codex_refuses_gh(rules: Path, run=subprocess.run) -> bool | None:
+    """True when Codex parses the rules file and forbids every gh command by its ["gh"] prefix rule.
+
+    None when the codex CLI is not installed; False on a parse error or any other decision.
+    """
+    codex = shutil.which("codex")
+    if not codex:
+        return None
+    try:
+        result = run([codex, "execpolicy", "check", "--rules", str(rules), *CODEX_PROBE],
+                     capture_output=True, text=True, timeout=60)
+        verdict = json.loads(result.stdout) if result.returncode == 0 else {}
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return False
+    matched = [rule.get("prefixRuleMatch", {}) for rule in verdict.get("matchedRules", []) if isinstance(rule, dict)]
+    return verdict.get("decision") == "forbidden" and any(
+        m.get("matchedPrefix") == ["gh"] and m.get("decision") == "forbidden" for m in matched)
 
 
 def check(root: Path = ROOT, environ=None) -> dict:
@@ -59,8 +90,6 @@ def check(root: Path = ROOT, environ=None) -> dict:
         checks[".claude/settings.json"] = "FAIL"
     checks["project_allow_deny"] = ("PASS" if permissions.get("allow") and denies else
                                       "FAIL" if permissions else "UNKNOWN")
-    checks["administrative_deny"] = ("PASS" if all(any(cmd in d for d in denies)
-        for cmd in ("gh api", "gh repo edit", "gh secret", "gh ruleset", "gh repo delete")) else "UNKNOWN")
     for name in ("LSS_PRIVATE_ROOT", "LSS_DEV_STATE"):
         value = env.get(name)
         if not value:
@@ -127,6 +156,18 @@ def check(root: Path = ROOT, environ=None) -> dict:
     checks["codex_send_rules"] = "UNKNOWN"
     if rules.is_file():
         checks["codex_send_rules"] = "PASS" if 'decision = "forbidden"' in rules.read_text(encoding="utf-8") else "FAIL"
+    # Administrative commands are denied to both engines: Claude through the project denies of each shell,
+    # Codex by refusing gh altogether in its project rules (its hook cannot block). A file that exists but
+    # lacks a denial, or that Codex cannot parse, is FAIL; UNKNOWN when a file or the codex CLI is missing.
+    if checks.get(".claude/settings.json") == "FAIL":
+        checks["administrative_deny"] = "FAIL"
+    elif ".claude/settings.json" not in settings or not rules.is_file():
+        checks["administrative_deny"] = "UNKNOWN"
+    else:
+        codex_admin = codex_refuses_gh(rules)
+        claude_admin = all(f"{tool}({cmd})" in denies for tool in ("Bash", "PowerShell") for cmd in ADMINISTRATIVE)
+        checks["administrative_deny"] = ("FAIL" if not claude_admin or codex_admin is False else
+                                         "UNKNOWN" if codex_admin is None else "PASS")
     return {"status": "FAIL" if "FAIL" in checks.values() else "UNKNOWN" if "UNKNOWN" in checks.values() else "PASS",
             "checks": dict(sorted(checks.items()))}
 
