@@ -36,9 +36,12 @@ def _cue(folder, source_sha, start, seconds=20, tone=220):
             "start": float(start), "end": float(start + seconds)}
 
 
-def _write_current_best_for_recovery(state, source, source_sha, cues, *, run_key="candidate"):
+def _write_current_best_for_recovery(state, source, source_sha, cues, *, run_key="candidate", requested=True):
     from pathlib import Path
     from lss.bgm import current_best
+
+    if requested:   # the user's BGM job asked for this source's naming (start_in_background)
+        scene_job._record_request(Path(state), Path(source), source_sha)
 
     run_path = Path(state) / "bgm-candidates" / run_key / "run" / "run.json"
     run_path.parent.mkdir(parents=True, exist_ok=True)
@@ -848,6 +851,7 @@ def test_startup_recovery_does_not_hash_or_download_when_models_are_not_cached(t
     monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: False)
     monkeypatch.setattr(scene_job, "run_background_worker", lambda *args, **kwargs:
                         pytest.fail("uncached startup recovery must not load or fetch models"))
+    monkeypatch.setattr(scene_job, "_sha256_file", lambda *a: pytest.fail("uncached startup recovery must not hash"))
 
     result = scene_job.run_current_best_recovery(state)
 
@@ -933,6 +937,7 @@ def test_startup_recovery_skips_a_changed_recorded_path_for_another_current_path
         run_path.write_text(json.dumps(run), encoding="utf-8")
         rows.append(current_best.file_entry(run, run_key, run_path, item, cue["path"], adoption="adopted"))
     old_source.write_bytes(b"replaced bytes at old recorded path")
+    scene_job._record_request(state, old_source, digest)   # the job named the old place
     current_best._write_json_atomic(current_best.record_path(state, digest), {
         "type": current_best.RECORD_TYPE, "schema_version": current_best.SCHEMA_VERSION,
         "source_sha256": digest,
@@ -980,6 +985,7 @@ def test_startup_recovery_restarts_only_a_current_published_cue(tmp_path, librar
         "current": {"files": files, "pinned": False, "evaluated_runs": ["candidate"]}, "history": []})
 
     launches = []
+    scene_job._record_request(state, source, source_sha)
     monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
     monkeypatch.setattr(scene_job, "run_background_worker",
                         lambda root, path, digest, **kwargs: launches.append((root, path, digest, kwargs)) or
@@ -988,7 +994,7 @@ def test_startup_recovery_restarts_only_a_current_published_cue(tmp_path, librar
 
     assert result["started"] == 1 and result["skipped"] == 0
     assert launches == [(state.resolve(), source.resolve(), source_sha,
-                         {"wait": None, "clock": scene_job._retry_clock, "wait_for_retries": False})]
+                         {"wait": None, "clock": scene_job._retry_clock, "wait_for_retries": False, "require_request": True})]
 
 
 def test_startup_recovery_checks_due_sources_before_future_waits_and_skips_ineligible(tmp_path, library, monkeypatch):
@@ -1470,3 +1476,353 @@ def test_refresh_failure_keeps_message_and_ignored_member_path():
     # Case 5: member_path different from path -> memory_path_ignored key present
     r5 = scene_job._refresh_failure('asset5', exc4, Path('/diff'), Path('/base'))
     assert r5["memory_path_ignored"] == str(Path('/diff'))
+
+
+def test_launch_recovery_leaves_a_source_whose_naming_no_user_job_requested(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
+    launched = []
+    monkeypatch.setattr(scene_job, "run_background_worker",
+                        lambda root, path, digest, **kwargs: launched.append(digest) or {"state": "complete"})
+    sources = {}
+    for label, requested in (("requested", True), ("library", False)):
+        source = tmp_path / f"{label}.mkv"
+        source.write_bytes(label.encode())
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()
+        cue = _cue(tmp_path / f"public-{label}", digest, 400)
+        library[digest] = [cue]
+        _write_current_best_for_recovery(state, source, digest, [cue], run_key=label, requested=requested)
+        sources[label] = digest
+    # Both have unnamed cues (a newer LSS could name them), but only the user's unfinished job is resumed.
+    scene_job.run_current_best_recovery(state)
+    assert launched == [sources["requested"]]
+
+
+def test_the_request_record_lives_from_the_user_job_until_its_naming_is_finished(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    monkeypatch.setattr(scene_job, "available", lambda: True)
+    monkeypatch.setattr(scene_job.subprocess, "Popen", lambda *a, **k: type("P", (), {"pid": 1})())
+    assert scene_job.start_in_background(state, source, digest)["state"] == "started"
+    assert scene_job._requests(state, digest)
+    monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "retry_pending"})
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: 5000.0)
+    scene_job.run_background_worker(state, source, digest)
+    assert scene_job._requests(state, digest)   # a budgeted retry remains the user's job
+    monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "complete"})
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    scene_job.run_background_worker(state, source, digest)
+    assert not scene_job._requests(state, digest)
+
+
+def test_an_exhausted_retry_budget_ends_the_request(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "retry_pending"})
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    scene_job.run_background_worker(state, source, digest)
+    assert not scene_job._requests(state, digest)
+
+
+def test_a_finishing_worker_covers_a_request_that_arrived_while_nothing_is_left(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    now = [100.0]
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: now[0])
+    def worker(*a, **k):
+        now[0] = 200.0
+        scene_job._record_request(state, source, digest)   # a second job was told already_running
+        now[0] = 300.0
+        return {"state": "complete"}
+    monkeypatch.setattr(scene_job, "_run_background_worker", worker)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    scene_job.run_background_worker(state, source, digest)
+    assert not scene_job._requests(state, digest)
+
+
+def test_unreadable_naming_state_keeps_the_request(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: 100.0)
+    scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
+    def unreadable(*a, **k):
+        raise OSError("state temporarily locked")
+    monkeypatch.setattr(scene_names, "cue_record", unreadable)
+    # A launch at a later time would remove the request if the unreadable state counted as "nothing left".
+    assert scene_job._eligible_recovery_source(state, digest, [source], now=200.0) is None
+    assert scene_job._requests(state, digest)
+    monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "current"})
+    scene_job.run_background_worker(state, source, digest)   # the worker end asks the same strict question
+    assert scene_job._requests(state, digest)
+
+
+def test_a_waiting_budgeted_retry_keeps_later_requests(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    now = [100.0]
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: now[0])
+    def worker(*a, **k):
+        now[0] = 200.0
+        scene_job._record_request(state, source, digest)
+        now[0] = 300.0
+        return {"state": "complete"}
+    monkeypatch.setattr(scene_job, "_run_background_worker", worker)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: 5000.0)   # a cue waits for retry
+    scene_job.run_background_worker(state, source, digest)
+    assert scene_job._requests(state, digest)
+
+
+def test_a_finishing_worker_keeps_a_request_that_arrived_after_it_started(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    now = [100.0]
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: now[0])
+    def worker(*a, **k):
+        now[0] = 200.0
+        scene_job._record_request(state, source, digest)   # the user's next job asks again meanwhile
+        return {"state": "complete"}
+    monkeypatch.setattr(scene_job, "_run_background_worker", worker)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: True)   # the later job's cues still need names
+    scene_job.run_background_worker(state, source, digest)
+    assert scene_job._requests(state, digest)
+
+
+def test_launch_recovery_tries_the_requested_place_of_a_moved_source(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    old_place, new_place = tmp_path / "old.mkv", tmp_path / "moved" / "episode.mkv"
+    old_place.write_bytes(b"episode")
+    digest = hashlib.sha256(old_place.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    new_place.parent.mkdir()
+    old_place.rename(new_place)
+    scene_job._record_request(state, new_place, digest)
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: True)
+    eligible = scene_job._eligible_recovery_source(state, digest, [old_place], now=0.0)
+    assert eligible["source"] == new_place
+
+
+def test_a_worker_that_waited_in_line_does_not_name_a_request_already_finished(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: pytest.fail("finished request re-examined"))
+    assert scene_job.run_background_worker(state, source, digest, require_request=True)["state"] == "not_requested"
+
+
+def test_start_with_nothing_left_to_name_ends_the_requests(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    library[digest] = []
+    scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "available", lambda: True)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    assert scene_job.start_in_background(state, source, digest)["state"] == "current"
+    assert not scene_job._requests(state, digest)
+
+
+def test_launch_eligibility_ends_a_request_with_nothing_left(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: 100.0)
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
+    scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    assert scene_job._eligible_recovery_source(state, digest, [source], now=200.0) is None
+    assert not scene_job._requests(state, digest)
+
+
+def test_requests_stay_while_the_sources_bgm_job_holds_its_lock(tmp_path, monkeypatch):
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    from lss import application as app
+    from lss.bgm import current_best
+    state = tmp_path / "state"
+    digest = "a" * 64
+    scene_job._record_request(state, tmp_path / "episode.mkv", digest)
+    with app._BgmCandidateRunLock(state / current_best.DIRECTORY / digest, wait_seconds=0):
+        scene_job._end_requests(state, digest, None)
+        assert scene_job._requests(state, digest)
+    scene_job._end_requests(state, digest, None)
+    assert not scene_job._requests(state, digest)
+
+
+def test_launch_tries_the_newest_requested_place_first(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    old_name, new_name = tmp_path / "old-name.mkv", tmp_path / "new-name.mkv"
+    old_name.write_bytes(b"episode")
+    new_name.write_bytes(b"episode")
+    digest = hashlib.sha256(old_name.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    clock = iter([300.0, 100.0])   # the newer request is written first: order must follow requested_at
+    monkeypatch.setattr(scene_job, "_retry_clock", lambda: next(clock))
+    scene_job._record_request(state, new_name, digest)
+    scene_job._record_request(state, old_name, digest)
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: True)
+    assert scene_job._eligible_recovery_source(state, digest, [], now=0.0)["source"] == new_name
+
+
+def test_a_replaced_requested_file_does_not_end_the_request(tmp_path, library, monkeypatch):
+    state = tmp_path / "state"
+    original, replaced = tmp_path / "original.mkv", tmp_path / "requested.mkv"
+    original.write_bytes(b"episode")
+    replaced.write_bytes(b"another file now")
+    digest = hashlib.sha256(original.read_bytes()).hexdigest()
+    library[digest] = [_cue(tmp_path / "public", digest, 400)]
+    scene_job._record_request(state, replaced, digest)
+    monkeypatch.setattr(scene_job, "_scene_models_cached", lambda: True)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda root, sha, source=None, **k: source == original)
+    eligible = scene_job._eligible_recovery_source(state, digest, [original], now=0.0)
+    assert eligible["source"] == original and scene_job._requests(state, digest)
+    assert eligible["path_rejections"][0]["reason"] == "recorded_source_identity_mismatch"
+
+
+def test_the_bgm_job_itself_ends_requests_when_nothing_is_left_to_name(tmp_path, library, monkeypatch):
+    from lss import application as app
+    from lss.bgm import current_best
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    library[digest] = []
+    monkeypatch.setattr(scene_job, "available", lambda: True)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    with app._BgmCandidateRunLock(state / current_best.DIRECTORY / digest, wait_seconds=0):
+        scene_job._record_request(state, source, digest)
+        assert scene_job.start_in_background(state, source, digest)["state"] == "current"
+    assert not scene_job._requests(state, digest)
+
+
+def test_a_currentbest_switch_in_progress_keeps_the_requests(tmp_path, monkeypatch):
+    from lss.bgm import current_best
+    state = tmp_path / "state"
+    digest = "a" * 64
+    scene_job._record_request(state, tmp_path / "episode.mkv", digest)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    journal = current_best.journal_path(state, digest)
+    journal.parent.mkdir(parents=True, exist_ok=True)
+    journal.write_text("{}", encoding="utf-8")
+    scene_job._end_requests(state, digest, None)
+    assert scene_job._requests(state, digest)
+
+
+def test_a_job_that_starts_during_the_check_keeps_its_request(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    digest = "a" * 64
+    scene_job._record_request(state, tmp_path / "episode.mkv", digest)
+    def check(*a, **k):
+        scene_job._record_request(state, tmp_path / "episode.mkv", digest)   # a new job begins meanwhile
+        return False
+    monkeypatch.setattr(scene_job, "needs_naming", check)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    scene_job._end_requests(state, digest, None)
+    assert len(scene_job._requests(state, digest)) == 1   # only the request listed before the check ended
+
+
+def test_a_launch_worker_rechecks_the_request_after_waiting(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    request = scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: 50.0)
+    def wait(seconds):
+        request.unlink()   # the user's job ended the request meanwhile
+    result = scene_job.run_background_worker(state, source, digest, wait=wait, clock=lambda: 0.0,
+                                             require_request=True)
+    assert result["state"] == "not_requested"
+
+
+def test_a_finishing_worker_leaves_requests_while_the_bgm_job_runs(tmp_path, monkeypatch):
+    from lss import application as app
+    from lss.bgm import current_best
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    monkeypatch.setattr(scene_job, "_run_background_worker", lambda *a, **k: {"state": "complete"})
+    with app._BgmCandidateRunLock(state / current_best.DIRECTORY / digest, wait_seconds=0):
+        scene_job._record_request(state, source, digest)   # the job's request, made before the worker started
+        scene_job.run_background_worker(state, source, digest)
+        assert scene_job._requests(state, digest)
+
+
+def test_a_launch_worker_rechecks_the_request_after_preparing_models(tmp_path, monkeypatch):
+    from lss.bgm import scene_runtime
+    state = tmp_path / "state"
+    source = tmp_path / "episode.mkv"
+    source.write_bytes(b"episode")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    request = scene_job._record_request(state, source, digest)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: True)
+    monkeypatch.setattr(scene_runtime, "available", lambda: False)
+    monkeypatch.setattr(scene_runtime, "bootstrap_supported", lambda: True)
+    monkeypatch.setattr(scene_runtime, "ensure_bootstrapped", lambda: request.unlink())   # the job ended it meanwhile
+    monkeypatch.setattr(scene_job, "name_source_checked", lambda *a: pytest.fail("ended request was named"))
+    result = scene_job.run_background_worker(state, source, digest, require_request=True)
+    assert result["state"] == "not_requested"
+
+
+def test_no_request_ends_while_a_naming_worker_holds_the_source_lease(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    digest = "a" * 64
+    scene_job._record_request(state, tmp_path / "episode.mkv", digest)
+    monkeypatch.setattr(scene_job, "needs_naming", lambda *a, **k: False)
+    monkeypatch.setattr(scene_job, "_pending_retry_with_budget", lambda *a, **k: None)
+    with scene_job._background_worker_lease(state, digest) as acquired:
+        assert acquired
+        scene_job._end_requests(state, digest, None, inside_bgm_job=True)
+        assert scene_job._requests(state, digest)
+    scene_job._end_requests(state, digest, None, inside_bgm_job=True)
+    assert not scene_job._requests(state, digest)
+
+
+def test_a_failed_request_write_leaves_no_partial_file(tmp_path, monkeypatch):
+    state = tmp_path / "state"
+    def refuse(*a, **k):
+        raise OSError("disk full")
+    monkeypatch.setattr(scene_job.os, "replace", refuse)
+    with pytest.raises(OSError):
+        scene_job._record_request(state, tmp_path / "episode.mkv", "a" * 64)
+    assert not list(scene_job._requests_dir(state).iterdir())
+
+
+def test_a_request_names_its_source_by_lowercase_digest(tmp_path):
+    state = tmp_path / "state"
+    path = scene_job._record_request(state, tmp_path / "episode.mkv", "A" * 64)
+    assert path.name.startswith("a" * 64 + "-")
+    [(listed, record)] = scene_job._requests(state, "a" * 64)
+    assert listed == path and record["source"] == str(tmp_path / "episode.mkv")
