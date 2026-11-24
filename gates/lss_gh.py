@@ -22,10 +22,17 @@ def sibling(name):
 guard = sibling("public_guard")
 
 
+COMMAND_TIMEOUT = 120
+# The pre-push hook scans every commit the remote lacks (about 14 s each on this machine), so a new branch
+# with ten commits outlasts the ordinary limit; a push still ends within this bound.
+PUSH_TIMEOUT = 900
+
+
 def run(argv, *, cwd, input=None):
     # UTF-8 explicitly: the Windows default code page cannot carry every character of a body.
+    push = argv[:1] == ["git"] and argv[3:4] == ["push"]
     return subprocess.run(argv, cwd=cwd, input=input, text=True, encoding="utf-8", capture_output=True,
-                          check=True, timeout=120)
+                          check=True, timeout=PUSH_TIMEOUT if push else COMMAND_TIMEOUT)
 
 
 def numeric_id(value):

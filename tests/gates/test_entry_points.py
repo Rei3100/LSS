@@ -751,3 +751,12 @@ def test_dry_run_output_is_ascii_json(publication, tmp_path, capsysbinary):
     assert gh.main(["--dry-run", "issue-comment", "--issue", "7", "--body-file", str(path)], runner=runner) == 0
     out = capsysbinary.readouterr().out
     assert out.isascii() and json.loads(out)["stdin"] == "Reviewed \U0001f916\n"
+
+
+def test_only_git_push_gets_the_longer_timeout(monkeypatch):
+    seen = []
+    monkeypatch.setattr(gh.subprocess, "run", lambda argv, **k: seen.append((argv[:4], k["timeout"])))
+    gh.run(["git", "-C", "repo", "push", "origin", "x:refs/heads/y"], cwd=".")
+    gh.run(["git", "-C", "repo", "rev-parse", "HEAD"], cwd=".")
+    gh.run(["gh", "pr", "create"], cwd=".")
+    assert [t for _, t in seen] == [gh.PUSH_TIMEOUT, gh.COMMAND_TIMEOUT, gh.COMMAND_TIMEOUT]
