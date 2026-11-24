@@ -1446,8 +1446,8 @@
       "reason": "Content, rights and privacy reviewed after one sentence on launch-time naming recovery was added; no work names, paths or secrets added (2026-11-24)"
     },
     "docs/engine/LOCAL_RUNTIME.md": {
-      "blob_oid": "ec11b562d44659f1ad2cedafc559344becc36a59",
-      "reason": "Content, rights and privacy reviewed; work names replaced by corpus ids and machine paths by environment names (2026-11-11)"
+      "blob_oid": "e52de3f14e5a44d6a9d766149b57cc1d6bb4c7ab",
+      "reason": "Content, rights and privacy reviewed after the hidden_run form of the candidate build was added; no work names, paths or secrets added (2026-11-25)"
     },
     "docs/engine/QUALITY_AND_DECISIONS.md": {
       "blob_oid": "1b2440c325f13d8595a516bf3f016e8bcd3566c4",
