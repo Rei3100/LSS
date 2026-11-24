@@ -190,6 +190,7 @@ def test_default_denylist_uses_private_root_and_missing_stays_closed(tmp_path, m
 @pytest.mark.parametrize("ref", ["refs/heads/main", "refs/heads/codex/test", "refs/heads/claude/test-2/sub"])
 def test_pre_push_accepts_agent_refs_with_full_scan(tmp_path, monkeypatch, ref):
     import io
+    monkeypatch.setattr(gh.guard, "published_main", lambda repo: None)
     monkeypatch.setattr(gh.guard.sys, "stdin", io.StringIO(f"HEAD {HEAD} {ref} {'0' * 40}\n"))
     monkeypatch.setattr(gh.guard, "resolve_object", lambda *a: (HEAD, "commit"))
     monkeypatch.setattr(gh.guard, "git", lambda *a: (HEAD + "\n" + "b" * 40).encode())
@@ -792,3 +793,17 @@ def test_a_failed_tree_kill_still_ends_the_command_and_reports_the_timeout(tmp_p
     with pytest.raises(subprocess.TimeoutExpired):
         gh.run_bounded([sys.executable, "-c", "import time; time.sleep(60)"], cwd=tmp_path, timeout=2)
     assert time.monotonic() - started < 30
+
+
+def test_a_new_branch_push_skips_commits_already_on_the_fetched_main(tmp_path, monkeypatch):
+    import io
+    main = "c" * 40
+    monkeypatch.setattr(gh.guard.sys, "stdin", io.StringIO(f"HEAD {HEAD} refs/heads/claude/x {'0' * 40}\n"))
+    monkeypatch.setattr(gh.guard, "resolve_object", lambda *a: (HEAD, "commit"))
+    monkeypatch.setattr(gh.guard, "published_main", lambda repo: main)
+    asked = []
+    monkeypatch.setattr(gh.guard, "git", lambda repo, *args: asked.append(args) or HEAD.encode())
+    monkeypatch.setattr(gh.guard, "scan", lambda repo, oid, **k: {"result": "PASS", "files_checked": 1, "findings": [],
+                                                                  "object_oid": oid, "allowlist_sha256": "synthetic"})
+    assert gh.guard.pre_push(tmp_path, None, None) == 0
+    assert asked == [("rev-list", HEAD, "^" + main)]

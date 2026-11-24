@@ -99,6 +99,15 @@ class GuardError(Exception):
     """An incomplete check; messages must never contain input values."""
 
 
+def published_main(repo: Path) -> str | None:
+    """The fetched public main (refs/remotes/origin/main) as a commit id, or None when there is none."""
+    try:
+        oid = git(repo, "rev-parse", "--verify", "--quiet", "refs/remotes/origin/main^{commit}").decode().strip()
+    except GuardError:
+        return None
+    return oid if OID_RE.fullmatch(oid) else None
+
+
 def git(repo: Path, *args: str, input_data: bytes | None = None) -> bytes:
     env = os.environ.copy()
     # Replacements can hide the actual objects sent by push.
@@ -574,6 +583,13 @@ def pre_push(repo: Path, allowlist: Path | None, denylist: Path | None) -> int:
                 if remote_kind != "commit":
                     raise GuardError("Invalid remote tip")
                 args.append("^" + remote)
+            else:
+                published = published_main(repo)
+                if published:
+                    # A new branch: commits already on the fetched public main were published by an earlier push
+                    # and passed CI's guard; scanning them again protects nothing and grows with main's history.
+                    # lss-gh still scans every ancestor before it pushes.
+                    args.append("^" + published)
             # Always inspect the exact tip, even when rev-list is empty.
             commits.add(oid)
             commits.update(git(repo, *args).decode().splitlines())
