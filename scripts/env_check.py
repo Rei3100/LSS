@@ -10,23 +10,25 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# Administrative gh commands Claude's project settings deny in both shells. "gh -*" covers options placed
-# before a subcommand (gh -R owner/name secret set ...); the gh api entries cover attached short options.
-ADMINISTRATIVE = ("gh -*", "gh api *-X*", "gh api *-f*", "gh api *-F*", "gh repo edit *", "gh repo delete *",
-                  "gh repo rename *", "gh repo archive *", "gh repo create *", "gh repo new *",
-                  "gh repo deploy-key *", "gh secret *", "gh variable *", "gh ruleset *", "gh rs *")
-CODEX_GH_RULE = 'prefix_rule(pattern=["gh"],decision="forbidden")'
+# Administrative gh commands Claude's project settings deny in both shells. "gh -*" and "gh repo -*" cover
+# options placed before a subcommand (gh -R owner/name secret set, gh repo --yes=true delete); gh api is denied
+# whole, because bundled short options (-iXPOST) hide the method from any narrower pattern.
+ADMINISTRATIVE = ("gh -*", "gh api *", "gh repo -*", "gh repo edit *", "gh repo delete *", "gh repo rename *",
+                  "gh repo archive *", "gh repo create *", "gh repo new *", "gh repo deploy-key *",
+                  "gh secret *", "gh variable *", "gh ruleset *", "gh rs *")
+CODEX_GH_RULE = re.compile(r'prefix_rule\(\s*pattern\s*=\s*\[\s*"gh"\s*\]\s*,\s*decision\s*=\s*"forbidden"\s*\)')
 
 
-def effective_rules(text: str) -> set[str]:
-    """Rule lines of a Codex .rules file with comments and whitespace removed."""
-    return {"".join(line.split("#", 1)[0].split()) for line in text.splitlines()} - {""}
+def codex_refuses_gh(text: str) -> bool:
+    """True when an uncommented rule of a Codex .rules file forbids every gh command."""
+    return any(CODEX_GH_RULE.fullmatch(line.split("#", 1)[0].strip()) for line in text.splitlines())
 
 
 def check(root: Path = ROOT, environ=None) -> dict:
@@ -140,11 +142,13 @@ def check(root: Path = ROOT, environ=None) -> dict:
     # Administrative commands are denied to both engines: Claude through the project denies of each shell,
     # Codex by refusing gh altogether in its project rules (its hook cannot block). A file that exists but
     # lacks a denial is FAIL; UNKNOWN only when a file is missing.
-    if ".claude/settings.json" not in settings or not rules.is_file():
+    if checks.get(".claude/settings.json") == "FAIL":
+        checks["administrative_deny"] = "FAIL"
+    elif ".claude/settings.json" not in settings or not rules.is_file():
         checks["administrative_deny"] = "UNKNOWN"
     else:
         try:
-            codex_admin = CODEX_GH_RULE in effective_rules(rules.read_text(encoding="utf-8"))
+            codex_admin = codex_refuses_gh(rules.read_text(encoding="utf-8"))
         except (OSError, UnicodeError):
             codex_admin = False
         claude_admin = all(f"{tool}({cmd})" in denies for tool in ("Bash", "PowerShell") for cmd in ADMINISTRATIVE)

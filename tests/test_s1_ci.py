@@ -192,6 +192,10 @@ def test_env_check_missing_optional_and_no_values(tmp_path):
     (".claude/settings.json", '"PowerShell(gh secret *)",', ""),
     (".claude/settings.json", '"Bash(gh ruleset *)"', '"Bash(gh rulesets *)"'),
     (".claude/settings.json", '"Bash(gh -*)"', '"Bash(gh -R *)"'),
+    (".claude/settings.json", '"PowerShell(gh api *)",', ""),
+    (".claude/settings.json", '"Bash(gh repo -*)",', ""),
+    (".codex/rules/lss.rules", 'pattern = ["gh"]', 'pattern = ["g h"]'),
+    (".claude/settings.json", '"deny": [', '"deny": [[[['),
 ])
 def test_administrative_denials_missing_from_either_engine_fail(tmp_path, name, old, new):
     write_settings(tmp_path)
