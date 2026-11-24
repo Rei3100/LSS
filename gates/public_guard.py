@@ -99,9 +99,19 @@ class GuardError(Exception):
     """An incomplete check; messages must never contain input values."""
 
 
-def published_main(repo: Path) -> str | None:
-    """The fetched public main (refs/remotes/origin/main) as a commit id, or None when there is none."""
+def published_main(repo: Path, remote: str | None, url: str | None) -> str | None:
+    """The fetched main of the push's own destination as a commit id, or None.
+
+    Only a push to `origin` whose fetch and push URLs are both the URL git is pushing to qualifies: then
+    refs/remotes/origin/main was fetched from the destination and its history is already published there.
+    """
+    if remote != "origin" or not url:
+        return None
     try:
+        fetch_url = git(repo, "remote", "get-url", "origin").decode().strip()
+        push_urls = git(repo, "remote", "get-url", "--push", "--all", "origin").decode().split()
+        if fetch_url != url or push_urls != [url]:
+            return None
         oid = git(repo, "rev-parse", "--verify", "--quiet", "refs/remotes/origin/main^{commit}").decode().strip()
     except GuardError:
         return None
@@ -559,7 +569,8 @@ def emit(result: dict) -> int:
     return 0 if result["result"] == "PASS" else 2 if result["result"] == "ERROR" else 1
 
 
-def pre_push(repo: Path, allowlist: Path | None, denylist: Path | None) -> int:
+def pre_push(repo: Path, allowlist: Path | None, denylist: Path | None,
+             remote: str | None = None, url: str | None = None) -> int:
     try:
         commits = set()
         updates = 0
@@ -584,7 +595,7 @@ def pre_push(repo: Path, allowlist: Path | None, denylist: Path | None) -> int:
                     raise GuardError("Invalid remote tip")
                 args.append("^" + remote)
             else:
-                published = published_main(repo)
+                published = published_main(repo, remote, url)
                 if published:
                     # A new branch: commits already on the fetched public main were published by an earlier push
                     # and passed CI's guard; scanning them again protects nothing and grows with main's history.
@@ -617,9 +628,12 @@ def main(argv=None) -> int:
     modes.add_argument("--pre-push", action="store_true")
     parser.add_argument("--allowlist", type=Path, help="Explicit trusted policy; default: policy in checked tree")
     parser.add_argument("--denylist", type=Path, help="Private local denylist; environment override is also supported")
+    parser.add_argument("push_target", nargs="*", help="With --pre-push: the remote name and URL git passes to the hook")
     args = parser.parse_args(argv)
+    if args.push_target and (not args.pre_push or len(args.push_target) != 2):
+        parser.error("push_target is the hook's remote name and URL, with --pre-push only")
     if args.pre_push:
-        return pre_push(args.repo, args.allowlist, args.denylist)
+        return pre_push(args.repo, args.allowlist, args.denylist, *(args.push_target or (None, None)))
     return emit(scan(args.repo, args.tree_ish, args.staged, args.allowlist, args.denylist))
 
 

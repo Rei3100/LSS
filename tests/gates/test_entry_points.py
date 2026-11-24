@@ -190,7 +190,7 @@ def test_default_denylist_uses_private_root_and_missing_stays_closed(tmp_path, m
 @pytest.mark.parametrize("ref", ["refs/heads/main", "refs/heads/codex/test", "refs/heads/claude/test-2/sub"])
 def test_pre_push_accepts_agent_refs_with_full_scan(tmp_path, monkeypatch, ref):
     import io
-    monkeypatch.setattr(gh.guard, "published_main", lambda repo: None)
+    monkeypatch.setattr(gh.guard, "published_main", lambda *a: None)
     monkeypatch.setattr(gh.guard.sys, "stdin", io.StringIO(f"HEAD {HEAD} {ref} {'0' * 40}\n"))
     monkeypatch.setattr(gh.guard, "resolve_object", lambda *a: (HEAD, "commit"))
     monkeypatch.setattr(gh.guard, "git", lambda *a: (HEAD + "\n" + "b" * 40).encode())
@@ -800,10 +800,28 @@ def test_a_new_branch_push_skips_commits_already_on_the_fetched_main(tmp_path, m
     main = "c" * 40
     monkeypatch.setattr(gh.guard.sys, "stdin", io.StringIO(f"HEAD {HEAD} refs/heads/claude/x {'0' * 40}\n"))
     monkeypatch.setattr(gh.guard, "resolve_object", lambda *a: (HEAD, "commit"))
-    monkeypatch.setattr(gh.guard, "published_main", lambda repo: main)
+    monkeypatch.setattr(gh.guard, "published_main", lambda repo, remote, url: main if remote == "origin" else None)
     asked = []
     monkeypatch.setattr(gh.guard, "git", lambda repo, *args: asked.append(args) or HEAD.encode())
     monkeypatch.setattr(gh.guard, "scan", lambda repo, oid, **k: {"result": "PASS", "files_checked": 1, "findings": [],
                                                                   "object_oid": oid, "allowlist_sha256": "synthetic"})
-    assert gh.guard.pre_push(tmp_path, None, None) == 0
+    assert gh.guard.pre_push(tmp_path, None, None, "origin", "https://example.invalid/repo.git") == 0
     assert asked == [("rev-list", HEAD, "^" + main)]
+
+
+@pytest.mark.parametrize("remote,url,fetch,push", [
+    ("origin", "https://example.invalid/a.git", "https://example.invalid/a.git", "https://example.invalid/a.git"),
+    ("mirror", "https://example.invalid/a.git", "https://example.invalid/a.git", "https://example.invalid/a.git"),
+    ("origin", "https://example.invalid/b.git", "https://example.invalid/a.git", "https://example.invalid/b.git"),
+    ("origin", "https://example.invalid/a.git", "https://example.invalid/a.git",
+     "https://example.invalid/a.git https://example.invalid/b.git"),
+    (None, None, "https://example.invalid/a.git", "https://example.invalid/a.git")])
+def test_only_a_push_to_the_fetched_origin_trusts_its_main(tmp_path, monkeypatch, remote, url, fetch, push):
+    main = "c" * 40
+    def git(repo, *args):
+        if args[:2] == ("remote", "get-url"):
+            return (push if "--push" in args else fetch).encode()
+        return main.encode()
+    monkeypatch.setattr(gh.guard, "git", git)
+    trusted = gh.guard.published_main(tmp_path, remote, url)
+    assert (trusted == main) == (remote == "origin" and url == fetch == push)
