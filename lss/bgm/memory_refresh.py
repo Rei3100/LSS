@@ -188,6 +188,24 @@ def _source_path(rows: list[dict], source_sha: str) -> str | None:
     return None
 
 
+def _live(receipt: dict) -> bool:
+    return receipt.get("status") == "running" and _pid_alive(receipt.get("pid"))
+
+
+def _evaluated(state_root: Path, recipe_id, memory_recipe) -> dict[str, set[str]]:
+    """External PCM already queried by a terminal full-source attempt, per source, for these recipes."""
+    evaluated: dict[str, set[str]] = {}
+    for path in (Path(state_root) / DIRECTORY).glob("*.json"):
+        receipt = _read(path) or {}
+        prior = receipt.get("plan") or {}
+        if (receipt.get("type") == "bgm_memory_refresh_attempt" and receipt.get("policy") == POLICY
+                and receipt.get("status") in ("complete", "failed")
+                and prior.get("processing_recipe_id") == recipe_id
+                and prior.get("memory_recipe_id") == memory_recipe):
+            evaluated.setdefault(prior.get("source_sha256"), set()).update(prior.get("external_pcm_sha256") or [])
+    return evaluated
+
+
 def plans(state_root: Path, recipe_id: str | None = None) -> list[dict]:
     """Return eligible deterministic plans; malformed or unavailable state yields no plan."""
     try:
@@ -204,15 +222,7 @@ def plans(state_root: Path, recipe_id: str | None = None) -> list[dict]:
         present = {key: member for key, member in members.items()
                    if isinstance(member, dict) and _present(member)}
         memory_recipe = cue_memory.recipe_id()
-        evaluated: dict[str, set[str]] = {}
-        for path in (Path(state_root) / DIRECTORY).glob("*.json"):
-            receipt = _read(path) or {}
-            prior = receipt.get("plan") or {}
-            if (receipt.get("type") == "bgm_memory_refresh_attempt" and receipt.get("policy") == POLICY
-                    and receipt.get("status") in ("complete", "failed")
-                    and prior.get("processing_recipe_id") == recipe_id
-                    and prior.get("memory_recipe_id") == memory_recipe):
-                evaluated.setdefault(prior.get("source_sha256"), set()).update(prior.get("external_pcm_sha256") or [])
+        evaluated = _evaluated(Path(state_root), recipe_id, memory_recipe)
         for target_id, target in present.items():
             if not target.get("unresolved_extent"):
                 continue
@@ -257,12 +267,13 @@ def plans(state_root: Path, recipe_id: str | None = None) -> list[dict]:
                     token = hashlib.sha256(json.dumps(token_body, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
                     plan = {"source_path": source_path, "source_sha256": source_sha, "token": token,
                             "target_member": target_id, "witness_member": witness_id,
+                            "witness_pcm_sha256": witness.get("pcm_sha256"),
                             "processing_recipe_id": recipe_id, "memory_recipe_id": memory_recipe,
                             "external_pcm_sha256": external_pcm}
                     existing = _read(_attempt_path(Path(state_root), token))
                     if existing and existing.get("status") in ("complete", "failed"):
                         continue
-                    if existing and existing.get("status") == "running" and _pid_alive(existing.get("pid")):
+                    if existing and _live(existing):
                         continue
                     eligible.append((token, plan))
         # The caller excludes its foreground source, then executes only one plan.
@@ -304,22 +315,50 @@ def pending(state_root: Path, *, recipe_id: str | None = None) -> list[dict]:
     return plans(Path(state_root), recipe_id=recipe_id)
 
 
+def _claims_lock(state_root: Path) -> Path:
+    return Path(state_root) / DIRECTORY / "claims.lock"
+
+
 def claim(state_root: Path, plan: dict) -> bool:
-    """Atomically mark a plan running before work begins; terminal tokens cannot be claimed again."""
+    """Atomically mark a plan running before work begins; terminal tokens cannot be claimed again.
+
+    A live attempt for the same source blocks another token for it: unrelated library growth changes the token,
+    not the evidence, and the later request must not analyse the source a second time.
+    """
     state_root = Path(state_root)
     token = str(plan.get("token") or "")
     if len(token) != 64 or any(char not in "0123456789abcdef" for char in token):
         return False
     path = _attempt_path(state_root, token)
-    with _locked(path.with_suffix(".lock")):
+    with _locked(_claims_lock(state_root)):
         old = _read(path)
         if old and old.get("status") in ("complete", "failed"):
             return False
-        if old and old.get("status") == "running" and _pid_alive(old.get("pid")):
+        if old and _live(old):
+            return False
+        for other in path.parent.glob("*.json"):
+            receipt = _read(other) or {}
+            if (other != path and _live(receipt)
+                    and (receipt.get("plan") or {}).get("source_sha256") == plan.get("source_sha256")):
+                return False
+        # A plan computed before another attempt finished may name a witness that attempt already queried.
+        done = _evaluated(state_root, plan.get("processing_recipe_id"), plan.get("memory_recipe_id"))
+        if plan.get("witness_pcm_sha256") in done.get(plan.get("source_sha256"), set()):
             return False
         receipt = {"type": "bgm_memory_refresh_attempt", "policy": POLICY, "token": token,
                    "status": "running", "pid": os.getpid(), "plan": plan}
         _write_atomic(path, receipt)
+    return True
+
+
+def release(state_root: Path, plan: dict) -> bool:
+    """Return this process's unfinished claim (a user quit), so the next request naming the source resumes it."""
+    path = _attempt_path(Path(state_root), str(plan.get("token") or ""))
+    with _locked(_claims_lock(Path(state_root))):
+        receipt = _read(path)
+        if not receipt or receipt.get("status") != "running" or receipt.get("pid") != os.getpid():
+            return False
+        path.unlink()
     return True
 
 
@@ -328,7 +367,7 @@ def finish(state_root: Path, plan: dict, outcome: dict) -> Path | None:
     path = _attempt_path(Path(state_root), str(plan.get("token") or ""))
     if not path.is_file():
         return None
-    with _locked(path.with_suffix(".lock")):
+    with _locked(_claims_lock(Path(state_root))):
         receipt = _read(path)
         if not receipt or receipt.get("status") != "running":
             return None
