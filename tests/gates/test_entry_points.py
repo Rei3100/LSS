@@ -34,6 +34,7 @@ def publication(tmp_path, monkeypatch):
     monkeypatch.setenv("LSS_GITHUB_REPOSITORY", "example-owner/LSS")
     monkeypatch.setenv("LSS_PUBLISH_DENYLIST", str(deny))
     monkeypatch.setattr(gh.guard, "scan", lambda *a, **k: {"result": "PASS"})
+    monkeypatch.setattr(gh.guard, "published_main", lambda *a: None)
     calls = []
     replies = {"branch": "codex/test", "run_head": HEAD, "pr_branch": "codex/test",
                "cross_repository": False, "origin": "https://github.com/example-owner/LSS.git\n",
@@ -793,6 +794,37 @@ def test_a_failed_tree_kill_still_ends_the_command_and_reports_the_timeout(tmp_p
     with pytest.raises(subprocess.TimeoutExpired):
         gh.run_bounded([sys.executable, "-c", "import time; time.sleep(60)"], cwd=tmp_path, timeout=2)
     assert time.monotonic() - started < 30
+
+
+@pytest.mark.parametrize("published, expected", [("c" * 40, [HEAD, "b" * 40]), (None, [HEAD, "b" * 40, "c" * 40])])
+def test_lss_gh_scans_only_commits_the_destinations_main_lacks(publication, monkeypatch, published, expected):
+    runner, calls, _ = publication
+    monkeypatch.setattr(gh.guard, "published_main", lambda repo, remote, url: published if remote == "origin" else None)
+    scanned = []
+    monkeypatch.setattr(gh.guard, "scan", lambda repo, oid, **k: scanned.append(oid) or {"result": "PASS"})
+    def answer(argv, *, cwd, input=None):
+        if argv[3:] == ["rev-list", HEAD, "^" + "c" * 40]:
+            calls.append((argv, input))
+            return SimpleNamespace(stdout=HEAD + "\n" + "b" * 40 + "\n")
+        if argv[3:] == ["rev-list", HEAD]:
+            calls.append((argv, input))
+            return SimpleNamespace(stdout="\n".join([HEAD, "b" * 40, "c" * 40]) + "\n")
+        return runner(argv, cwd=cwd, input=input)
+    assert gh.main(["--dry-run", "push"], runner=answer) == 0
+    assert scanned == expected
+
+
+def test_lss_gh_scans_the_tip_even_when_main_already_holds_it(publication, monkeypatch):
+    runner, calls, _ = publication
+    monkeypatch.setattr(gh.guard, "published_main", lambda *a: HEAD)
+    scanned = []
+    monkeypatch.setattr(gh.guard, "scan", lambda repo, oid, **k: scanned.append(oid) or {"result": "PASS"})
+    def answer(argv, *, cwd, input=None):
+        if argv[3:] == ["rev-list", HEAD, "^" + HEAD]:
+            return SimpleNamespace(stdout="")
+        return runner(argv, cwd=cwd, input=input)
+    assert gh.main(["--dry-run", "push"], runner=answer) == 0
+    assert scanned == [HEAD]
 
 
 def test_a_new_branch_push_skips_commits_already_on_the_fetched_main(tmp_path, monkeypatch):
