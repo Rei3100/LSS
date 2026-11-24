@@ -109,8 +109,9 @@ reviews (T11), and Claude/Codex/mixed provenance and owner swaps (T12).
 
 Run `python scripts/env_check.py` for status codes only. It parses project JSON
 and TOML settings, checks isolated hook registrations in both agents, allow/deny
-presence, administrative deny restoration, Codex forbidden rules, explicit
-environment-root resolution and state junction drift. Missing optional settings
+presence, administrative denials (each `gh` administration pattern in both of Claude's shells, and
+Codex's project rules parsed by `codex execpolicy check` refusing every `gh` command; Codex has no
+GitHub role), Codex forbidden rules, explicit environment-root resolution and state junction drift. Missing optional settings
 are `UNKNOWN`; installed broken settings are `FAIL`. A registered Codex hook is
 `NOT_RELIED`: Codex CLI 0.172.0 on Windows runs shell commands through its
 code-mode host, where a PreToolUse hook that exits 2 does not stop the command, so

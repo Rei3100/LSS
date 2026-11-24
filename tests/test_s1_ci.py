@@ -186,6 +186,57 @@ def test_env_check_missing_optional_and_no_values(tmp_path):
     assert env_check.check(tmp_path, {})["status"] == "FAIL"
 
 
+def copy_rules(tmp_path):
+    rules = tmp_path / ".codex/rules/lss.rules"
+    rules.parent.mkdir(parents=True, exist_ok=True)
+    rules.write_bytes((ROOT / ".codex/rules/lss.rules").read_bytes())
+    return rules
+
+
+@pytest.mark.parametrize("entry", ['"PowerShell(gh secret *)",', '"Bash(gh ruleset *)",', '"Bash(gh -*)",',
+                                   '"PowerShell(gh api *)",', '"Bash(gh repo -*)",', '"Bash(gh alias *)",'])
+def test_a_missing_claude_administrative_denial_fails(tmp_path, monkeypatch, entry):
+    monkeypatch.setattr(env_check, "codex_refuses_gh", lambda rules: True)
+    write_settings(tmp_path)
+    copy_rules(tmp_path)
+    assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "PASS"
+    settings = tmp_path / ".claude/settings.json"
+    text = settings.read_text(encoding="utf-8")
+    assert entry in text
+    settings.write_text(text.replace(entry, ""), encoding="utf-8")
+    assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "FAIL"
+
+
+@pytest.mark.parametrize("codex, expected", [(True, "PASS"), (False, "FAIL"), (None, "UNKNOWN")])
+def test_codex_verdict_and_missing_files_decide_the_administrative_check(tmp_path, monkeypatch, codex, expected):
+    monkeypatch.setattr(env_check, "codex_refuses_gh", lambda rules: codex)
+    write_settings(tmp_path)
+    assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "UNKNOWN"   # no rules file
+    copy_rules(tmp_path)
+    assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == expected
+    (tmp_path / ".claude/settings.json").write_text('{"permissions": {"deny": [[', encoding="utf-8")
+    assert env_check.check(tmp_path, {})["checks"]["administrative_deny"] == "FAIL"
+
+
+@pytest.mark.skipif(not env_check.shutil.which("codex"), reason="needs the codex CLI to parse the rules")
+@pytest.mark.parametrize("old, new", [
+    ('prefix_rule(pattern = ["gh"]', '# prefix_rule(pattern = ["gh"]'),
+    ('["gh"]', '["g h"]'),
+    ('["gh"]', '["gh","api"]'),
+    ('prefix_rule(pattern = ["git","push"]', '\tprefix_rule(pattern = ["git","push"]'),
+    ('["git","push"]', '["git\\","push"]'),
+    ('pattern = ["git"', 'pattern = ["git"'),
+    ('prefix_rule(pattern = ["git","push"]', 'prefix_rule(\nprefix_rule(pattern = ["git","push"]'),
+])
+def test_codex_parses_the_project_rules_and_refuses_gh(tmp_path, old, new):
+    rules = copy_rules(tmp_path)
+    assert env_check.codex_refuses_gh(rules) is True
+    text = rules.read_text(encoding="utf-8")
+    assert old in text
+    rules.write_text(text.replace(old, new, 1), encoding="utf-8")
+    assert env_check.codex_refuses_gh(rules) is False
+
+
 def test_gate_copy_manifest_detects_drift(tmp_path):
     import hashlib
     gates = tmp_path / "bin"
