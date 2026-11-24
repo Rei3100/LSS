@@ -829,6 +829,16 @@ def test_only_the_destinations_own_main_is_trusted(tmp_path, monkeypatch, reply,
         return oid, "commit"
     monkeypatch.setattr(gh.guard, "git", git)
     monkeypatch.setattr(gh.guard, "resolve_object", resolve)
+    monkeypatch.setattr(gh.guard, "url_rewrites", lambda repo: False)
     assert (gh.guard.published_main(tmp_path, "origin", "https://example.invalid/a.git") == main) == trusted
     assert asked == [("ls-remote", "--", "https://example.invalid/a.git", "refs/heads/main")]
     assert gh.guard.published_main(tmp_path, None, None) is None
+
+
+def test_a_url_rewrite_rule_disables_the_trust(tmp_path):
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    assert gh.guard.url_rewrites(tmp_path) is False
+    subprocess.run(["git", "-C", str(tmp_path), "config", "url.https://example.invalid/b/.insteadOf",
+                    "https://example.invalid/a/"], check=True)
+    assert gh.guard.url_rewrites(tmp_path) is True
+    assert gh.guard.published_main(tmp_path, "origin", "https://example.invalid/a/repo.git") is None

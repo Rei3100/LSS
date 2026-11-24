@@ -99,6 +99,18 @@ class GuardError(Exception):
     """An incomplete check; messages must never contain input values."""
 
 
+def url_rewrites(repo: Path) -> bool:
+    """Whether git may rewrite URLs (url.*.insteadOf / pushInsteadOf); then a query can reach another place.
+
+    Unknown counts as yes.
+    """
+    env = os.environ.copy()
+    env["GIT_NO_REPLACE_OBJECTS"] = "1"
+    proc = subprocess.run(["git", "-C", str(repo), "config", "--get-regexp", r"^url\..*\.(insteadof|pushinsteadof)$"],
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+    return proc.returncode != 1
+
+
 def published_main(repo: Path, remote: str | None, url: str | None) -> str | None:
     """The main that the push destination itself reports now, as a local commit id, or None.
 
@@ -106,7 +118,7 @@ def published_main(repo: Path, remote: str | None, url: str | None) -> str | Non
     still point at another remote's history after the URL changes. When the destination cannot be asked, or
     reports a main this repository does not have, the caller scans the whole history.
     """
-    if not remote or not url:
+    if not remote or not url or url_rewrites(repo):
         return None
     try:
         lines = git(repo, "ls-remote", "--", url, "refs/heads/main").decode().splitlines()
