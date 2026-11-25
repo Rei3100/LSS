@@ -176,8 +176,45 @@ def test_a_protected_development_state_is_not_resolved_in_test_mode(tmp_path, mo
     monkeypatch.setenv("LSS_TEST_MODE", "1")
     monkeypatch.setenv("LSS_PROTECTED_STATE_ROOTS", str(real))
     assert dev_state.dev_state_root() == checkout.resolve() / ".state"
-    monkeypatch.setenv("LSS_PROTECTED_STATE_ROOTS", "")
+    monkeypatch.setenv("LSS_PROTECTED_STATE_ROOTS", str(tmp_path / "unrelated"))
     assert dev_state.dev_state_root() == real.resolve()
+
+
+@pytest.mark.parametrize("protected", [None, "", " "])
+def test_test_mode_refuses_development_state_without_protected_roots(tmp_path, monkeypatch, protected):
+    checkout = tmp_path / "checkout"
+    state = checkout / ".state"
+    state.mkdir(parents=True)
+    monkeypatch.setenv("LSS_DEV_STATE", str(state))
+    monkeypatch.setenv("LSS_STATE_DIR", str(tmp_path / "test-state"))
+    if protected is None:
+        monkeypatch.delenv("LSS_PROTECTED_STATE_ROOTS", raising=False)
+    else:
+        monkeypatch.setenv("LSS_PROTECTED_STATE_ROOTS", protected)
+
+    with pytest.raises(PermissionError, match="protected development state"):
+        dev_state.dev_state_root(checkout)
+
+
+@pytest.mark.parametrize("configured", [False, True])
+def test_test_mode_never_falls_back_to_a_protected_checkout_state(tmp_path, monkeypatch, configured):
+    checkout = tmp_path / "checkout"
+    state = checkout / ".state"
+    state.mkdir(parents=True)
+    test_state = tmp_path / "test-state"
+    test_state.mkdir()
+    monkeypatch.setenv("LSS_STATE_DIR", str(test_state))
+    monkeypatch.setenv("LSS_PROTECTED_STATE_ROOTS", str(state))
+    if configured:
+        monkeypatch.setenv("LSS_DEV_STATE", str(state))
+    else:
+        monkeypatch.delenv("LSS_DEV_STATE", raising=False)
+
+    isolated = dev_state.dev_state_root(checkout)
+    assert isolated.is_relative_to(test_state.resolve())
+    assert not isolated.exists()
+    with pytest.raises(SystemExit, match="owns them"):
+        dev_state.require_owned_for_deletion(checkout)
 
 
 def test_evidence_home_uses_configured_state_parent(tmp_path, monkeypatch):
@@ -241,6 +278,18 @@ def _directory_link(link, target):
         link.symlink_to(target, target_is_directory=True)
     except (OSError, NotImplementedError) as exc:
         pytest.skip(f"Directory symlinks are unavailable: {exc}")
+
+
+def test_deletion_refuses_an_unconfigured_checkout_state_link(tmp_path, monkeypatch):
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    _directory_link(checkout / ".state", outside)
+    monkeypatch.delenv("LSS_DEV_STATE", raising=False)
+
+    with pytest.raises(SystemExit, match="owns them"):
+        dev_state.require_owned_for_deletion(checkout)
 
 
 def test_state_link_keeps_evidence_beside_the_link(tmp_path, monkeypatch):

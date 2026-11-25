@@ -20,12 +20,14 @@ def cleanup(tmp_path, monkeypatch):
     import storage_tiers
     from tests.machine_config_fixtures import machine_policy
     monkeypatch.setattr(storage_tiers, "load_policy", lambda: machine_policy(tmp_path))
-    monkeypatch.setattr(module, "ROOT", tmp_path)
+    monkeypatch.delenv("LSS_DEV_STATE", raising=False)
+    root = (tmp_path / "checkout").resolve()
+    monkeypatch.setattr(module, "ROOT", root)
     monkeypatch.setattr(module, "tracked_files", lambda prefix=".state": list(tracked))
     tracked: list[Path] = []
     module.tracked_list = tracked
-    (tmp_path / ".state" / "validation").mkdir(parents=True)
-    (tmp_path / ".providers").mkdir()
+    (root / ".state" / "validation").mkdir(parents=True)
+    (root / ".providers").mkdir()
     return module
 
 
@@ -164,3 +166,89 @@ def test_a_tracked_test_run_record_is_never_removed_from_the_working_tree(cleanu
     assert kept not in cleanup.stale_dev_reports(1)
     cleanup.prune(True, 0, 1)
     assert (kept / "report.json").is_file()
+
+
+def test_validation_media_gc_refuses_state_outside_the_checkout(cleanup, tmp_path, monkeypatch):
+    state = tmp_path / "other-checkout" / ".state"
+    stem = state / "validation" / "case" / "music.wav"
+    stem.parent.mkdir(parents=True)
+    stem.write_bytes(b"outside media")
+    monkeypatch.setenv("LSS_DEV_STATE", str(state))
+
+    rows, unreadable = cleanup.validation_media_candidates()
+    assert unreadable == []
+    assert [(row["path"], row["class"]) for row in rows] == [(stem.resolve().as_posix(), "RETIRE")]
+    assert cleanup.validation_media_gc(False, quiet=True) == 0
+    with pytest.raises(SystemExit, match="owns them"):
+        cleanup.validation_media_gc(True, quiet=True)
+    assert stem.read_bytes() == b"outside media"
+    assert not list(stem.parent.parent.glob("media-gc-*.json"))
+
+
+def _directory_link(link, target):
+    from storage_tiers import make_junction
+
+    try:
+        make_junction(link, target)
+    except (OSError, NotImplementedError) as exc:
+        pytest.skip(f"Directory links are unavailable: {exc}")
+
+
+@pytest.mark.parametrize("base_name", [".providers", ".state/work", ".state/validation/dev"])
+def test_prune_skips_a_linked_cleanup_base(cleanup, tmp_path, base_name):
+    outside = tmp_path / "outside"
+    candidate = outside / "old-run"
+    candidate.mkdir(parents=True)
+    payload = candidate / "keep.wav"
+    payload.write_bytes(b"outside media")
+    base = cleanup.ROOT / base_name
+    if base.is_dir():
+        base.rmdir()
+    _directory_link(base, outside)
+
+    assert cleanup.prune(True, limit=0, keep_reports=0) == 0
+    assert payload.read_bytes() == b"outside media"
+
+
+def test_prune_refuses_a_linked_validation_receipt_directory(cleanup, tmp_path):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    validation = cleanup.ROOT / ".state/validation"
+    validation.rmdir()
+    _directory_link(validation, outside)
+
+    with pytest.raises(cleanup.StorageMutationRefused, match="receipt path"):
+        cleanup.prune(True, limit=0, keep_reports=0)
+    assert list(outside.iterdir()) == []
+
+
+def test_provider_media_gc_refuses_media_behind_a_linked_root(cleanup, tmp_path):
+    outside = tmp_path / "outside"
+    run = outside / "run"
+    run.mkdir(parents=True)
+    (run / "plan.json").write_text("{}", encoding="utf-8")
+    stem = run / "keep.wav"
+    stem.write_bytes(b"outside media")
+    providers = cleanup.ROOT / ".providers"
+    providers.rmdir()
+    _directory_link(providers, outside)
+
+    with pytest.raises(SystemExit, match="keep.wav"):
+        cleanup.provider_media_gc(True, quiet=True)
+    assert stem.read_bytes() == b"outside media"
+
+
+def test_retire_keeps_the_target_of_linked_media(cleanup, tmp_path):
+    rejected = comparison(cleanup, "rejected", records={"decision": "REJECTED"})
+    outside = tmp_path / "outside.wav"
+    outside.write_bytes(b"outside media")
+    link = rejected / "linked.wav"
+    try:
+        link.symlink_to(outside)
+    except (OSError, NotImplementedError) as exc:
+        pytest.skip(f"File symlinks are unavailable: {exc}")
+
+    assert cleanup.retire(True) == 0
+    assert outside.read_bytes() == b"outside media"
+    assert link.is_symlink()
+    assert not (rejected / "case-0.wav").exists()

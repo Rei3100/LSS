@@ -11,17 +11,23 @@ def dev_state_root(checkout_root: Path | None = None) -> Path:
     """Use explicit development state, or the caller's legacy checkout state.
 
     Callers that already accept a checkout root may supply it for the legacy
-    fallback. No directory is created, and explicit configuration never falls
-    back when it is invalid.
+    fallback. Tests use a temporary development directory when that checkout
+    state is protected. No directory is created.
     """
     value = os.environ.get("LSS_DEV_STATE")
     if value is not None and _protected_in_test(value):
-        # Tests never resolve the real development records (conftest protects them);
-        # they get the (test-replaced) checkout root instead.
+        # A protected override can fall back to a test-supplied checkout.
         value = None
     if value is None:
         root = CHECKOUT_ROOT if checkout_root is None else Path(checkout_root)
-        return root.resolve() / ".state"
+        state = root.resolve() / ".state"
+        if _protected_in_test(str(state)):
+            # Use the test run's temporary state directory for the development fallback.
+            test_state = Path(os.environ.get("LSS_STATE_DIR", ""))
+            if not test_state.is_absolute() or _protected_in_test(str(test_state / "development")):
+                raise PermissionError("Tests cannot resolve a protected development state")
+            return test_state.resolve() / "development"
+        return state
     root = Path(value)
     if not root.is_absolute():
         raise ValueError("LSS_DEV_STATE must be an absolute path to an existing directory")
@@ -81,7 +87,7 @@ def require_owned_for_deletion(checkout_root: Path | None = None) -> Path:
     """
     root = (CHECKOUT_ROOT if checkout_root is None else Path(checkout_root)).resolve()
     state = dev_state_root(root)
-    if state != root / ".state":
+    if state.resolve() != root / ".state":
         raise SystemExit("Deleting development records runs only from the checkout that owns them")
     return state
 
@@ -89,15 +95,14 @@ def require_owned_for_deletion(checkout_root: Path | None = None) -> Path:
 def _protected_in_test(value: str) -> bool:
     if os.environ.get("LSS_TEST_MODE") != "1":
         return False
+    items = [item.strip() for item in os.environ.get("LSS_PROTECTED_STATE_ROOTS", "").split(os.pathsep)
+             if item.strip()]
+    if not items:
+        return True
     try:
         target = Path(value).resolve()
-    except (OSError, RuntimeError):
+        lexical_target = Path(os.path.abspath(value))
+        return any(lexical_target.is_relative_to(Path(os.path.abspath(item)))
+                   or target.is_relative_to(Path(item).resolve()) for item in items)
+    except (OSError, RuntimeError, ValueError):
         return True
-    for item in os.environ.get("LSS_PROTECTED_STATE_ROOTS", "").split(os.pathsep):
-        if item.strip():
-            try:
-                if Path(item).resolve() == target:
-                    return True
-            except (OSError, RuntimeError):
-                continue
-    return False

@@ -39,6 +39,19 @@ def _prunable_roots() -> tuple[Path, ...]:
     return (dev_state_root(ROOT) / "validation", ROOT / ".providers", ROOT / ".state/work")
 
 
+def _local_cleanup_path(path: Path) -> bool:
+    from storage_tiers import is_link
+
+    return not is_link(path) and path.resolve() == path
+
+
+def _cleanup_receipt(prefix: str) -> Path:
+    record = dev_state_root(ROOT) / "validation" / f"{prefix}-{int(time.time())}.json"
+    if not _local_cleanup_path(record):
+        raise StorageMutationRefused(f"Storage mutation refused: linked cleanup receipt path: {record}")
+    return record
+
+
 def _reported_path(path: Path) -> str:
     """Preserve legacy relative rows; use absolute rows for external state."""
     return (path.relative_to(ROOT) if path.is_relative_to(ROOT) else path).as_posix()
@@ -204,10 +217,10 @@ def survey() -> list[dict]:
     tracked = {path.resolve() for path in tracked_files(".")}
     rows = []
     for base in _prunable_roots():
-        if not base.is_dir():
+        if not _local_cleanup_path(base) or not base.is_dir():
             continue
         for entry in sorted(base.iterdir()):
-            if not entry.is_dir() or entry.name == "dev":
+            if not _local_cleanup_path(entry) or not entry.is_dir() or entry.name == "dev":
                 continue
             resolved = entry.resolve()
             # 自分の中の記録が自分を指すのは参照とみなさない。外から必要とされているかを見る。
@@ -262,6 +275,7 @@ def prune(apply_changes: bool, limit: int, keep_reports: int = 30) -> int:
         from storage_tiers import load_policy, require_machine_overlay
         require_machine_overlay(load_policy())
         require_owned_for_deletion(ROOT)
+        record = _cleanup_receipt("disk-cleanup")
     rows, unreadable = survey()
     if unreadable:
         raise SystemExit("参照元を読めないため削除しません:\n  " + "\n  ".join(unreadable))
@@ -274,12 +288,14 @@ def prune(apply_changes: bool, limit: int, keep_reports: int = 30) -> int:
               f"試験の実行記録 {len(reports)}件（新しい{keep_reports}件と参照済みは残す）", flush=True)
         if apply_changes:
             for path in reports:
+                if not _local_cleanup_path(path):
+                    raise SystemExit(f"削除対象の所在が不正です: {path}")
                 shutil.rmtree(path)
         freed += size
+    roots = _prunable_roots()
     for row in candidates:
         target = ROOT / row["path"]
-        if not target.is_dir() or not any(target.resolve().is_relative_to(base.resolve())
-                                          for base in _prunable_roots()):
+        if target.parent not in roots or not _local_cleanup_path(target) or not target.is_dir():
             raise SystemExit(f"削除対象の所在が不正です: {target}")
         print(f"{'削除' if apply_changes else '削除候補'}: {_human(row['bytes']):>9}  {row['path']}",
               flush=True)
@@ -293,7 +309,6 @@ def prune(apply_changes: bool, limit: int, keep_reports: int = 30) -> int:
                "rule": "外部からの参照なし・Git未追跡・保護対象なしの作業物と、古い試験の実行記録のみ",
                "removed": candidates}
     if apply_changes:
-        record = dev_state_root(ROOT) / "validation" / f"disk-cleanup-{int(time.time())}.json"
         record.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
         summary["record"] = str(record)
     print(json.dumps({key: value for key, value in summary.items() if key != "removed"},
@@ -308,11 +323,13 @@ MEDIA_SUFFIXES = frozenset({".wav", ".flac", ".mkv", ".mp4", ".m4a", ".mp3", ".a
 
 
 def rejected_directories(rows: list[dict]) -> list[dict]:
+    base = dev_state_root(ROOT) / "validation"
     selected = []
     for row in rows:
-        if not (ROOT / row["path"]).resolve().is_relative_to((dev_state_root(ROOT) / "validation").resolve()):
+        directory = ROOT / row["path"]
+        if directory.parent != base or not _local_cleanup_path(directory):
             continue
-        decisions = _decisions(ROOT / row["path"])
+        decisions = _decisions(directory)
         matched = sorted({value for value in decisions
                           if any(marker in value.lower() for marker in REJECTION_MARKERS)})
         if matched:
@@ -326,6 +343,7 @@ def retire(apply_changes: bool) -> int:
         from storage_tiers import load_policy, require_machine_overlay
         require_machine_overlay(load_policy())
         require_owned_for_deletion(ROOT)
+        record = _cleanup_receipt("media-retirement")
     rows, unreadable = survey()
     if unreadable:
         raise SystemExit("参照元を読めないため退役しません: " + ", ".join(unreadable))
@@ -333,19 +351,18 @@ def retire(apply_changes: bool) -> int:
     tracked = {path.resolve() for path in tracked_files(".")}
     classes, freed = [], 0
     for row in rejected_directories(rows):
-        directory = (ROOT / row["path"]).resolve()
+        directory = ROOT / row["path"]
         victims = []
-        for item in sorted(directory.rglob("*")):
-            if not item.is_file() or item.suffix.lower() not in MEDIA_SUFFIXES:
+        for item in sorted(local_files(directory)):
+            if item.suffix.lower() not in MEDIA_SUFFIXES or not _local_cleanup_path(item):
                 continue
-            resolved = item.resolve()
-            if resolved in tracked:
+            if item in tracked:
                 continue
-            outside = [source for source in referenced.get(resolved, set())
+            outside = [source for source in referenced.get(item, set())
                        if directory not in source.parents and source != directory]
             if outside:
                 continue
-            victims.append(resolved)
+            victims.append(item)
         if not victims:
             continue
         size = sum(path.stat().st_size for path in victims)
@@ -355,6 +372,8 @@ def retire(apply_changes: bool) -> int:
               f"{row['path']}  ({', '.join(row['decisions'])[:60]})", flush=True)
         if apply_changes:
             for path in victims:
+                if not _local_cleanup_path(path):
+                    raise SystemExit(f"退役対象の所在が不正です: {path}")
                 path.unlink()
         freed += size
     summary = {"schema_version": 1, "applied": apply_changes,
@@ -363,7 +382,6 @@ def retire(apply_changes: bool) -> int:
                "directories": len(classes), "freed_bytes": freed, "freed": _human(freed),
                "classes": classes}
     if apply_changes:
-        record = dev_state_root(ROOT) / "validation" / f"media-retirement-{int(time.time())}.json"
         record.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
         summary["record"] = str(record)
     print(json.dumps({key: value for key, value in summary.items() if key != "classes"},
@@ -625,18 +643,20 @@ def _media_gc(rows: list[dict], unreadable: list[str], apply_changes: bool,
         for row in victims:
             print(f"{'退役' if apply_changes else '退役候補'}: {_human(row['bytes']):>9}  {row['path']}  ({row['reason']})")
     if apply_changes:
-        resolved = []
-        root = root.resolve()
+        record = _cleanup_receipt(receipt_prefix)
+        targets = []
         for row in victims:
-            path = (ROOT / row["path"]).resolve()
-            if not path.is_file() or not path.is_relative_to(root):
+            path = ROOT / row["path"]
+            if not path.is_relative_to(root) or not _local_cleanup_path(path) or not path.is_file():
                 raise SystemExit(f"退役対象の所在が不正です: {path}")
             if allowed_names is not None and path.name.lower() not in allowed_names:
                 raise SystemExit(f"退役対象名が不正です: {path}")
             if path.stat().st_size != row["bytes"]:
                 raise SystemExit(f"監査後にサイズが変化しました: {path}")
-            resolved.append(path)
-        for path in resolved:
+            targets.append(path)
+        for path in targets:
+            if not _local_cleanup_path(path):
+                raise SystemExit(f"退役対象の所在が不正です: {path}")
             path.unlink()
     applied_status = ("RETIRED_REBUILDABLE_MEDIA_WITH_UNKNOWN_PRESERVED"
                       if apply_changes and unknown else
@@ -647,7 +667,6 @@ def _media_gc(rows: list[dict], unreadable: list[str], apply_changes: bool,
                "retire_files": len(victims), "keep_files": len(keep), "unknown_files": len(unknown),
                "freed_bytes": freed, "freed": _human(freed)}
     if apply_changes:
-        record = dev_state_root(ROOT) / "validation" / f"{receipt_prefix}-{int(time.time())}.json"
         record.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
         summary["record"] = str(record)
     print(json.dumps(summary, ensure_ascii=False), flush=True)
@@ -658,8 +677,11 @@ def validation_media_gc(apply_changes: bool, quiet: bool = False) -> int:
     if apply_changes:
         from storage_tiers import load_policy, require_machine_overlay
         require_machine_overlay(load_policy())
+        state = require_owned_for_deletion(ROOT)
+    else:
+        state = dev_state_root(ROOT)
     rows, unreadable = validation_media_candidates()
-    return _media_gc(rows, unreadable, apply_changes, dev_state_root(ROOT) / "validation",
+    return _media_gc(rows, unreadable, apply_changes, state / "validation",
                      TRISTEM_NAMES, "media-gc", quiet)
 
 
@@ -678,11 +700,11 @@ DEV_REPORT_ROOT = Path("validation/dev")
 def stale_dev_reports(keep: int) -> list[Path]:
     """試験のたびに増える実行記録のうち、新しい方からkeep件と参照済みを残す。"""
     base = dev_state_root(ROOT) / DEV_REPORT_ROOT
-    if not base.is_dir():
+    if not _local_cleanup_path(base) or not base.is_dir():
         return []
     referenced, _ = referenced_paths()
     tracked = {path.resolve() for path in tracked_files(".")}
-    entries = sorted((path for path in base.iterdir() if path.is_dir()),
+    entries = sorted((path for path in base.iterdir() if _local_cleanup_path(path) and path.is_dir()),
                      key=lambda path: path.stat().st_mtime, reverse=True)
     stale = []
     for path in entries[keep:]:
