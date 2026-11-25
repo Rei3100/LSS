@@ -438,6 +438,36 @@ def test_unrestricted_top_album_is_fully_verified_even_when_its_title_does_not_m
     assert result["verified_tracks"] == ["c2"]
 
 
+def test_top_album_restricted_during_its_full_verification_passes_the_exemption_on(
+    state, tmp_path, monkeypatch,
+):
+    # 最上位の盤は見本では止まらず、全曲の確認の途中で認証が要ると分かる。次の盤が最上位の扱いを受ける。
+    monkeypatch.setattr(ra, "SAMPLE_TRACKS", 2)
+    monkeypatch.setattr(ra, "VERIFY_BUDGET", 2)
+    monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
+    top_ids = ["a1", "a2", "a3", "a4"]
+    runner_up_ids = ["b1", "b2", "b3"]
+    seeds = {track: seed for seed, track in enumerate(runner_up_ids, start=800)}
+    seeds["b2"] = 44
+    media = {track: _track(tmp_path / "remote" / f"{track}.flac", seed) for track, seed in seeds.items()}
+    backend = FakeBackend(media, failures={"a1": [FailureKind.UNAVAILABLE], "a4": [FailureKind.UNAVAILABLE],
+                                           "a2": [FailureKind.AUTH_REQUIRED], "a3": [FailureKind.AUTH_REQUIRED]})
+    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["A", "B"]},
+                      listings={"A": ("番組名 オリジナル・サウンドトラック", top_ids),
+                                "B": ("別の作品 サウンドトラック", runner_up_ids)})
+    source = _episode(tmp_path / "『番組名』第1話.wav", [(seeds["b2"], 10.0, 30.0)])
+
+    result = ra.discover(source, source_sha256="y" * 64, cache_dir=_cache(state), state_root=state,
+                         search=catalog, backend=backend, pacing=NO_WAIT, courtesy=_polite())
+
+    top = result["albums"]["https://music.example.test/browse/A"]
+    runner_up = result["albums"]["https://music.example.test/browse/B"]
+    assert top["full_verification"] is True and top["state"] == "restricted"
+    assert runner_up["full_verification"] is True
+    assert runner_up["full_verification_reason"] == "top_restricted"
+    assert result["verified_tracks"] == ["b2"]
+
+
 def test_full_verification_stops_when_the_album_becomes_restricted_even_with_a_shared_track(
     state, tmp_path, monkeypatch,
 ):
