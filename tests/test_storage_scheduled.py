@@ -1,6 +1,7 @@
 """Scheduler ownership, unattended maintenance and hot-asset falsifiers."""
 import json
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -99,7 +100,8 @@ def test_hot_environment_prevents_parent_demotion(tmp_path, monkeypatch):
     import storage_budget
     monkeypatch.setattr(storage_budget, 'protected_paths', lambda *_: [])
     monkeypatch.setattr(storage_budget, 'completed_paths', lambda *_: [])
-    rows = tiers.candidates(p, tmp_path, processes=[])
+    # An explicit now: a file time and time.time() in the same Windows clock tick can round 1 ulp apart.
+    rows = tiers.candidates(p, tmp_path, now=time.time() + 60, processes=[])
     assert [r.path for r in rows if r.eligible] == [str(cold)]
     assert tiers._never(base / 'venv/model.bin', tmp_path, p)
 
