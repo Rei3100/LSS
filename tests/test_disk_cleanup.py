@@ -194,6 +194,42 @@ def _directory_link(link, target):
         pytest.skip(f"Directory links are unavailable: {exc}")
 
 
+def test_local_cleanup_path_refuses_case_only_redirection(cleanup, monkeypatch):
+    path = cleanup.ROOT / ".state" / "work"
+    path.mkdir()
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "resolve", lambda self: path.with_name("WORK"))
+        assert not cleanup._local_cleanup_path(path)
+
+
+def test_prune_rechecks_parent_junction_after_printing_candidate(cleanup, tmp_path, monkeypatch):
+    candidate = comparison(cleanup, "old-run")
+    parent = candidate.parent
+    outside = tmp_path / "outside"
+    outside_candidate = outside / candidate.name
+    outside_candidate.mkdir(parents=True)
+    payload = outside_candidate / "keep.wav"
+    payload.write_bytes(b"outside media")
+    resolve = Path.resolve
+
+    def replace_parent(*args, **kwargs):
+        if args[0].endswith(".state/validation/old-run"):
+            parent.rename(parent.with_name("original-validation"))
+            _directory_link(parent, outside)
+
+    def resolve_candidate(path, *args, **kwargs):
+        # Exercise the explicit parent check even when resolve returns the original spelling.
+        return candidate if path == candidate else resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(cleanup, "print", replace_parent, raising=False)
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "resolve", resolve_candidate)
+        patch.setattr(cleanup.shutil, "rmtree", lambda path: pytest.fail(f"Attempted to delete {path}"))
+        with pytest.raises(SystemExit, match="old-run"):
+            cleanup.prune(True, limit=0)
+    assert payload.read_bytes() == b"outside media"
+
+
 @pytest.mark.parametrize("base_name", [".providers", ".state/work", ".state/validation/dev"])
 def test_prune_skips_a_linked_cleanup_base(cleanup, tmp_path, base_name):
     outside = tmp_path / "outside"
@@ -236,6 +272,82 @@ def test_provider_media_gc_refuses_media_behind_a_linked_root(cleanup, tmp_path)
     with pytest.raises(SystemExit, match="keep.wav"):
         cleanup.provider_media_gc(True, quiet=True)
     assert stem.read_bytes() == b"outside media"
+
+
+@pytest.mark.parametrize("link_kind", ["real", "simulated", "local-dependency"])
+def test_provider_media_gc_keeps_linked_media_and_removes_local_media(
+    cleanup, tmp_path, monkeypatch, link_kind,
+):
+    import storage_tiers
+
+    run = cleanup.ROOT / ".providers" / "run"
+    run.mkdir()
+    local = run / "local.wav"
+    local.write_bytes(b"local media")
+    link = run / "linked.wav"
+    local_dependency = link_kind == "local-dependency"
+    target = (run if local_dependency else tmp_path) / "target.wav"
+    target.write_bytes(b"linked media")
+    plan = {"input": link.name} if local_dependency else {}
+    (run / "plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    if link_kind == "real":
+        try:
+            link.symlink_to(target)
+        except (OSError, NotImplementedError) as exc:
+            pytest.skip(f"File symlinks are unavailable: {exc}")
+    else:
+        link.touch()
+        is_link = storage_tiers.is_link
+        resolve = Path.resolve
+        monkeypatch.setattr(storage_tiers, "is_link", lambda path: path == link or is_link(path))
+        monkeypatch.setattr(Path, "resolve", lambda path, *args, **kwargs:
+                            target if path == link else resolve(path, *args, **kwargs))
+
+    rows, unreadable = cleanup.provider_media_candidates()
+    assert unreadable == []
+    by_name = {Path(row["path"]).name: row for row in rows}
+    assert by_name[link.name]["class"] == "KEEP"
+    assert by_name[link.name]["reason"] == "linked"
+    assert by_name[local.name]["class"] == "RETIRE"
+    if local_dependency:
+        assert by_name[target.name]["class"] == "KEEP"
+        assert "dependency reference" in by_name[target.name]["reason"]
+    assert cleanup.provider_media_gc(True, quiet=True) == 0
+    assert target.read_bytes() == b"linked media"
+    assert storage_tiers.is_link(link) and link.exists()
+    assert not local.exists()
+
+
+def test_provider_media_gc_rechecks_parent_before_each_unlink(cleanup, tmp_path, monkeypatch):
+    run = cleanup.ROOT / ".providers" / "run"
+    parent = run / "stems"
+    parent.mkdir(parents=True)
+    (run / "plan.json").write_text("{}", encoding="utf-8")
+    first = run / "first.wav"
+    first.write_bytes(b"first" * 10)
+    second = parent / "second.wav"
+    second.write_bytes(b"second")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    payload = outside / second.name
+    payload.write_bytes(b"second")
+    resolve = Path.resolve
+    unlink = Path.unlink
+
+    def unlink_and_replace_parent(path):
+        assert path == first, f"Attempted to delete {path} after its parent was replaced"
+        unlink(path)
+        parent.rename(run / "original-stems")
+        _directory_link(parent, outside)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, "unlink", unlink_and_replace_parent)
+        patch.setattr(Path, "resolve", lambda path, *args, **kwargs:
+                      second if path == second else resolve(path, *args, **kwargs))
+        with pytest.raises(SystemExit, match="second.wav"):
+            cleanup.provider_media_gc(True, quiet=True)
+    assert not first.exists()
+    assert payload.read_bytes() == b"second"
 
 
 def test_retire_keeps_the_target_of_linked_media(cleanup, tmp_path):

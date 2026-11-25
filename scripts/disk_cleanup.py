@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Iterable
 from pathlib import Path
 
 try:
@@ -42,7 +43,23 @@ def _prunable_roots() -> tuple[Path, ...]:
 def _local_cleanup_path(path: Path) -> bool:
     from storage_tiers import is_link
 
-    return not is_link(path) and path.resolve() == path
+    return not is_link(path) and str(path.resolve()) == str(path)
+
+
+def _local_deletion_path(path: Path) -> bool:
+    """Recheck the checkout and every component down to the deletion target."""
+    from storage_tiers import is_link
+
+    root_parts = ROOT.parts
+    relative_parts = path.parts[len(root_parts):]
+    if path.parts[:len(root_parts)] != root_parts or not relative_parts:
+        return False
+    parent = ROOT
+    for part in relative_parts:
+        if part == ".." or is_link(parent):
+            return False
+        parent /= part
+    return _local_cleanup_path(path)
 
 
 def _cleanup_receipt(prefix: str) -> Path:
@@ -288,7 +305,7 @@ def prune(apply_changes: bool, limit: int, keep_reports: int = 30) -> int:
               f"試験の実行記録 {len(reports)}件（新しい{keep_reports}件と参照済みは残す）", flush=True)
         if apply_changes:
             for path in reports:
-                if not _local_cleanup_path(path):
+                if not _local_deletion_path(path):
                     raise SystemExit(f"削除対象の所在が不正です: {path}")
                 shutil.rmtree(path)
         freed += size
@@ -300,6 +317,8 @@ def prune(apply_changes: bool, limit: int, keep_reports: int = 30) -> int:
         print(f"{'削除' if apply_changes else '削除候補'}: {_human(row['bytes']):>9}  {row['path']}",
               flush=True)
         if apply_changes:
+            if not _local_deletion_path(target):
+                raise SystemExit(f"削除対象の所在が不正です: {target}")
             shutil.rmtree(target)
         freed += row["bytes"]
     summary = {"schema_version": 1, "status": "PRUNED_UNREFERENCED_WORK" if apply_changes
@@ -372,7 +391,7 @@ def retire(apply_changes: bool) -> int:
               f"{row['path']}  ({', '.join(row['decisions'])[:60]})", flush=True)
         if apply_changes:
             for path in victims:
-                if not _local_cleanup_path(path):
+                if not _local_deletion_path(path):
                     raise SystemExit(f"退役対象の所在が不正です: {path}")
                 path.unlink()
         freed += size
@@ -413,7 +432,7 @@ PROVIDER_RUN_RECORDS = frozenset({
 def _path_key(path: Path) -> str:
     try:
         return str(path.resolve()).casefold()
-    except (OSError, ValueError):
+    except (OSError, RuntimeError, ValueError):
         return str(path).casefold()
 
 
@@ -435,10 +454,10 @@ def _resolve_candidate(value: str, source: Path, candidates: dict[str, Path], na
     return found
 
 
-def _json_candidate_refs(source: Path, candidates: dict[str, Path]) -> list[tuple[str, str]]:
+def _json_candidate_refs(source: Path, candidates: dict[str, Path],
+                         names: set[str]) -> list[tuple[str, str]]:
     data = json.loads(source.read_text(encoding="utf-8"))
     hits: list[tuple[str, str]] = []
-    names = {p.name.casefold() for p in candidates.values()}
 
     def walk(value, pointer: str = "$") -> None:
         if isinstance(value, dict):
@@ -455,7 +474,7 @@ def _json_candidate_refs(source: Path, candidates: dict[str, Path]) -> list[tupl
     return hits
 
 
-def _raw_candidate_refs(source: Path, candidates: dict[str, Path]) -> list[tuple[str, str]]:
+def _raw_candidate_refs(source: Path, paths: list[tuple[str, Path]]) -> list[tuple[str, str]]:
     """Fallback for intentionally malformed/partial JSON.
 
     Parse failure is not treated as a global I/O failure. We scan the raw text for
@@ -463,12 +482,12 @@ def _raw_candidate_refs(source: Path, candidates: dict[str, Path]) -> list[tuple
     """
     text = source.read_text(encoding="utf-8", errors="ignore")
     haystack = text.replace("\\\\", "\\").replace("/", "\\").casefold()
-    hits: list[tuple[str, str]] = []
-    for key, path in candidates.items():
+    hits: set[tuple[str, str]] = set()
+    for key, path in paths:
         variants: list[str] = []
         try:
             variants.append(str(path.resolve()))
-        except (OSError, ValueError):
+        except (OSError, RuntimeError, ValueError):
             variants.append(str(path))
         try:
             variants.append(str(path.relative_to(ROOT)))
@@ -482,21 +501,30 @@ def _raw_candidate_refs(source: Path, candidates: dict[str, Path]) -> list[tuple
         except ValueError:
             pass
         if any(v.replace("/", "\\").casefold() in haystack for v in variants if v):
-            hits.append((key, "$[UNPARSEABLE_JSON]"))
-    return hits
+            hits.add((key, "$[UNPARSEABLE_JSON]"))
+    return sorted(hits)
 
 
-def _collect_json_refs(candidates: dict[str, Path]) -> tuple[dict[str, list[tuple[Path, str]]], list[str]]:
+def _collect_json_refs(
+    candidates: dict[str, Path], linked_paths: Iterable[Path] = (),
+) -> tuple[dict[str, list[tuple[Path, str]]], list[str]]:
+    paths = list(candidates.items())
+    # A reference through a linked filename can still protect its local target.
+    for path in linked_paths:
+        key = _path_key(path)
+        if key in candidates:
+            paths.append((key, path))
+    names = {path.name.casefold() for _, path in paths}
     refs: dict[str, list[tuple[Path, str]]] = {key: [] for key in candidates}
     unreadable: list[str] = []
     for source in reference_sources():
         if source.suffix.lower() != ".json":
             continue
         try:
-            hits = _json_candidate_refs(source, candidates)
+            hits = _json_candidate_refs(source, candidates, names)
         except (UnicodeError, ValueError):
             try:
-                hits = _raw_candidate_refs(source, candidates)
+                hits = _raw_candidate_refs(source, paths)
             except OSError as exc:
                 unreadable.append(f"{source}: {exc}")
                 continue
@@ -578,28 +606,40 @@ def _provider_run_root(path: Path, base: Path) -> Path | None:
 
 
 def provider_media_candidates() -> tuple[list[dict], list[str]]:
+    from storage_tiers import is_link
+
     base = ROOT / ".providers"
     if not base.is_dir():
         return [], []
     run_roots: dict[str, Path] = {}
     paths = []
+    linked_paths = []
+    rows = []
     for path in base.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in MEDIA_SUFFIXES or _provider_protected(path, base):
+        if path.suffix.lower() not in MEDIA_SUFFIXES or _provider_protected(path, base):
+            continue
+        linked = is_link(path)
+        if not linked and not path.is_file():
             continue
         run_root = _provider_run_root(path, base)
         if run_root is None:
             continue
+        if linked:
+            linked_paths.append(path)
+            rows.append({"path": _reported_path(path), "bytes": 0,
+                         "class": "KEEP", "reason": "linked"})
+            continue
         paths.append(path)
         run_roots[_path_key(path)] = run_root.resolve()
     candidates = {_path_key(path): path for path in paths}
-    refs, unreadable = _collect_json_refs(candidates)
+    refs, unreadable = _collect_json_refs(candidates, linked_paths)
     try:
         tracked = {_path_key(path) for path in tracked_files(".providers")}
     except (OSError, subprocess.SubprocessError) as exc:
-        return [{"path": str(path.relative_to(ROOT).as_posix()), "bytes": path.stat().st_size,
-                 "class": "UNKNOWN", "reason": f"git ls-files failed: {exc}"} for path in paths], unreadable
+        rows.extend({"path": _reported_path(path), "bytes": path.stat().st_size,
+                     "class": "UNKNOWN", "reason": f"git ls-files failed: {exc}"} for path in paths)
+        return rows, unreadable
 
-    rows = []
     for key, path in candidates.items():
         if key in tracked:
             cls, reason = "KEEP", "git-tracked media"
@@ -655,7 +695,7 @@ def _media_gc(rows: list[dict], unreadable: list[str], apply_changes: bool,
                 raise SystemExit(f"監査後にサイズが変化しました: {path}")
             targets.append(path)
         for path in targets:
-            if not _local_cleanup_path(path):
+            if not _local_deletion_path(path):
                 raise SystemExit(f"退役対象の所在が不正です: {path}")
             path.unlink()
     applied_status = ("RETIRED_REBUILDABLE_MEDIA_WITH_UNKNOWN_PRESERVED"

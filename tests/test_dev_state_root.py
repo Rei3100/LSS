@@ -166,6 +166,23 @@ def test_cleanup_entry_points_refuse_external_state_before_surveying(tmp_path, m
         storage_retention.validation_gc(policy, disk_cleanup.ROOT, apply=True)
 
 
+def test_deletion_refuses_case_only_state_redirection(tmp_path, monkeypatch):
+    checkout = tmp_path.resolve()
+    state = checkout / ".state"
+    state.mkdir()
+    monkeypatch.delenv("LSS_DEV_STATE", raising=False)
+    resolve = Path.resolve
+
+    def resolve_redirected(path, *args, **kwargs):
+        if str(path) == str(state):
+            return checkout / ".STATE"
+        return resolve(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "resolve", resolve_redirected)
+    with pytest.raises(SystemExit, match="owns them"):
+        dev_state.require_owned_for_deletion(checkout)
+
+
 def test_a_protected_development_state_is_not_resolved_in_test_mode(tmp_path, monkeypatch):
     checkout = tmp_path / "checkout"
     checkout.mkdir()

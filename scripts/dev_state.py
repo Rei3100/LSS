@@ -87,7 +87,7 @@ def require_owned_for_deletion(checkout_root: Path | None = None) -> Path:
     """
     root = (CHECKOUT_ROOT if checkout_root is None else Path(checkout_root)).resolve()
     state = dev_state_root(root)
-    if state.resolve() != root / ".state":
+    if str(state.resolve()) != str(root / ".state"):
         raise SystemExit("Deleting development records runs only from the checkout that owns them")
     return state
 
