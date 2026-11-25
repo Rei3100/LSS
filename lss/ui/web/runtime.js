@@ -154,11 +154,12 @@
 
     canvas.replaceChildren();
     canvas.hidden = false;
-    const root = ReactDOM.createRoot(canvas);
-    root.render(React.createElement(Component, defaults));
+    // A legacy root keeps every update in one synchronous lane, in call order: a click
+    // rendered between a timer's update and its commit cannot roll this.state back.
+    ReactDOM.render(React.createElement(Component, defaults), canvas);
     window.addEventListener('pagehide', function unmount(event) {
       if (event.persisted) return;
-      root.unmount();
+      ReactDOM.unmountComponentAtNode(canvas);
       window.removeEventListener('pagehide', unmount);
     });
   }
