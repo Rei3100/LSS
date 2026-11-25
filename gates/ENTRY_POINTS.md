@@ -158,15 +158,16 @@ checkout. Additional fields are below.
 | `machine_idle` | Candidate receipt's numeric Unix-seconds `observed_at` is at most 60 seconds old, `product_running: false`, integer `other_gpu_jobs: 0`, `user_heavy_use: false` |
 | `checkout_head` | HEAD equals the candidate source commit |
 | `checkout_clean` | `git status --porcelain --untracked-files=all` returns no entries |
-| `deploy_base` | Deployment base is an existing directory and neither it nor its ancestors are links or reparse points |
-| `deploy_log` | Parent directory exists. An existing log opens for append without writing to it. For a missing log, a temporary file probes whether the parent accepts new files without creating the log. |
-| `launch_receipt` | Parent directory exists, the receipt path has no existing entry, it resolves to a different path from the log, and `<receipt>.tmp` is not a directory |
-| `pwsh` | The hidden launcher's executable lookup resolves `pwsh` to an existing file |
+| `deploy_base` | Deployment base is an existing directory and neither it nor its ancestors are links or reparse points. Any `.LSS-deploy.json` or `.LSS.previous` entry blocks deployment. The base and frozen package directory are distinct and neither contains the other. The comparison ignores case and uses directory boundaries. |
+| `deploy_log` | The log path and its resolved location are outside the frozen package and deployment base. The parent directory exists. The gate opens an existing log for append without writing. It leaves a missing log uncreated. |
+| `launch_receipt` | The receipt path and its resolved location are outside the frozen package and deployment base. The parent directory exists. Both the receipt and `<receipt>.tmp` must be absent, and both resolve to paths distinct from the log. |
+| `pwsh` | The gate uses `shutil.which` to find `pwsh.exe` on Windows or `pwsh` elsewhere using absolute directories from `PATH`. It skips relative entries and implicit lookup in the caller's working directory. It passes the resolved executable to the hidden launcher. |
+
+The gate hashes the package directory at preflight and cannot detect changes between preflight and the copy. The freeze protects the package during that interval.
 
 The freshness check uses local time. Receipt observations are not a process or
 GPU lock; a job starting after observation remains a race. Build/verifier names
-are an accountable record, not cryptographic proof of independence. Package
-checks rehash bytes; they do not enforce freeze ACLs. T17 must remove each real
-receipt in turn, observe refusal, then use valid receipts for an authorized real
+are an accountable record, not cryptographic proof of independence. T17 must
+remove each real receipt in turn, observe refusal, then use valid receipts for an authorized real
 hidden deployment and independent installed verification. T3 must establish the
 wrapper permission behavior. These machine-dependent claims remain deferred.

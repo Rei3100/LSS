@@ -12,7 +12,6 @@ import shutil
 import stat
 import subprocess
 import sys
-import tempfile
 import time
 
 CONDITIONS = ("integrated_main", "frozen_candidate", "packaged_acceptance",
@@ -78,10 +77,35 @@ def has_reparse_ancestor(path):
     return any(link_like(entry) for entry in (path, *path.parents))
 
 
+def path_entry_exists(path):
+    try:
+        path.lstat()
+    except FileNotFoundError:
+        return False
+    return True
+
+
+def path_contains(parent, child):
+    # PowerShell compares entire path components without regard to case.
+    parent_prefix = os.path.normpath(parent).rstrip(os.sep) + os.sep
+    child_prefix = os.path.normpath(child).rstrip(os.sep) + os.sep
+    return child_prefix[:len(parent_prefix)].casefold() == parent_prefix.casefold()
+
+
 def resolve_pwsh():
-    # Match hidden_run.py's lookup before resolving the command it will launch.
-    path = Path(shutil.which("pwsh") or "pwsh").resolve()
-    return path if path.is_file() else None
+    # Python 3.11 does not add PATHEXT when shutil.which receives an absolute path.
+    executable = "pwsh.exe" if os.name == "nt" else "pwsh"
+    for entry in os.environ.get("PATH", "").split(os.pathsep):
+        directory = Path(entry)
+        if not directory.is_absolute():
+            continue
+        # An absolute command keeps shutil.which from adding the working directory on Windows.
+        found = shutil.which(str(directory / executable))
+        if found and Path(found).is_absolute():
+            path = Path(found).resolve()
+            if path.is_file():
+                return path
+    return None
 
 
 def evaluate(state, *, git_reader=git, now=None):
@@ -94,15 +118,18 @@ def preflight(state, *, git_reader=git, now=None):
     checks = dict.fromkeys(CONDITIONS, False)
     details = {}
 
-    def check(name, action):
+    def checked_value(name, action):
         try:
-            value = action()
-            checks[name] = bool(value)
-            return value
+            return action()
         except InvalidField as error:
             details[name] = str(error)
         except CHECK_ERRORS:
-            checks[name] = False
+            pass
+
+    def check(name, action):
+        value = checked_value(name, action)
+        checks[name] = bool(value)
+        return value
 
     @cache
     def checkout():
@@ -140,32 +167,31 @@ def preflight(state, *, git_reader=git, now=None):
     check("integrated_main", lambda: field(manifest, "source_commit") ==
           git_reader(checkout(), *INTEGRATED_MAIN_ARGS))
 
-    def frozen():
-        root = checkout_path(field(manifest, "package_dir"))
+    package_dir = checked_value("frozen_candidate", lambda: checkout_path(field(manifest, "package_dir")))
+
+    def frozen(root):
         commit = field(manifest, "source_commit")
         exe_hash = field(manifest, "exe_sha256")
         tree_hash = field(manifest, "tree_sha256")
         build = load(field(state, "build_receipt", absolute=True))
         if has_reparse_ancestor(root):
-            return None
+            return False
         rows = field(manifest, "files_sha256", (dict,))
         actual = {}
         for path in root.rglob("*"):
             if link_like(path):
-                return None
+                return False
             if path.is_file():
                 actual[path.relative_to(root).as_posix()] = {"bytes": path.stat().st_size, "sha256": sha(path)}
         tree = hashlib.sha256("".join(f"{k}\t{v['sha256']}\n" for k, v in sorted(actual.items())).encode()).hexdigest()
-        if (manifest["type"] == "lss_frozen_candidate_package" and
+        return (manifest["type"] == "lss_frozen_candidate_package" and
                 actual == rows and bool(actual) and
                 all(type(row["bytes"]) is int for row in rows.values()) and tree == tree_hash and
                 actual["LSS.exe"]["sha256"] == exe_hash and
                 build["status"] == "complete" and build["phase"] == "complete" and
                 build["commit"] == commit and build["exe_sha256"] == exe_hash and
-                checkout_path(field(build, "candidate")) == root):
-            return root
-        return None
-    package_dir = check("frozen_candidate", frozen)
+                checkout_path(field(build, "candidate")) == root)
+    check("frozen_candidate", lambda: package_dir is not None and frozen(package_dir))
     check("packaged_acceptance", lambda: receipt("packaged_receipt")["scope"] == "real-machine-package")
 
     def independent():
@@ -185,14 +211,14 @@ def preflight(state, *, git_reader=git, now=None):
                 (field(item, "change_kind") != "timing-only" or item.get("pcm_identical") is True))
     check("answer_key_non_regression", answers)
 
-    @cache
-    def deploy_base_path():
-        return checkout_path(field(state, "deploy_base", absolute=True))
+    base = checked_value("deploy_base", lambda: checkout_path(field(state, "deploy_base", absolute=True)))
 
     def rollback():
+        if base is None:
+            return False
         item = receipt("rollback_receipt", candidate=False)
         current = load(field(state, "current_product", absolute=True))
-        deployed = deploy_base_path() / "LSS" / "LSS.exe"
+        deployed = base / "LSS" / "LSS.exe"
         return (checkout_path(field(current, "deployed_executable")) == deployed and
                 checkout_path(field(item, "exe")) == deployed and
                 item["exe_sha256"] == field(current, "exe_sha256") == sha(deployed) and
@@ -211,32 +237,40 @@ def preflight(state, *, git_reader=git, now=None):
     check("checkout_clean", lambda: not git_reader(checkout(), *CHECKOUT_STATUS_ARGS))
 
     def deploy_base():
-        path = deploy_base_path()
-        return path if path.is_dir() and not has_reparse_ancestor(path) else None
-    base = check("deploy_base", deploy_base)
+        return (base is not None and base.is_dir() and not has_reparse_ancestor(base) and
+                not path_entry_exists(base / ".LSS-deploy.json") and
+                not path_entry_exists(base / ".LSS.previous") and
+                (package_dir is None or not (path_contains(base, package_dir) or path_contains(package_dir, base))))
+    check("deploy_base", deploy_base)
+
+    protected_roots = tuple(root for root in (package_dir, base) if root is not None)
+
+    def outside_deploy_paths(path, resolved):
+        return not any(path_contains(root, path) or path_contains(root.resolve(), resolved)
+                       for root in protected_roots)
 
     def deploy_log():
-        path = Path(field(state, "deploy_log", absolute=True)).resolve()
-        if not path.parent.is_dir():
+        requested = Path(field(state, "deploy_log", absolute=True))
+        path = requested.resolve()
+        if not outside_deploy_paths(requested, path) or not path.parent.is_dir():
             return None
         try:
             info = path.stat()
         except FileNotFoundError:
-            # Probe the parent without creating the configured log.
-            with tempfile.TemporaryFile(dir=path.parent):
-                pass
-        else:
-            if not stat.S_ISREG(info.st_mode):
-                return None
-            os.close(os.open(path, os.O_WRONLY | os.O_APPEND))
+            return path
+        if not stat.S_ISREG(info.st_mode):
+            return None
+        os.close(os.open(path, os.O_WRONLY | os.O_APPEND))
         return path
     log = check("deploy_log", deploy_log)
 
     def launch_receipt():
         path = Path(field(state, "launch_receipt", absolute=True))
         temporary = path.with_suffix(path.suffix + ".tmp")
-        return (path.parent.is_dir() and not os.path.lexists(path) and
-                not temporary.is_dir() and path.resolve() != log)
+        resolved = path.resolve()
+        return (outside_deploy_paths(path, resolved) and path.parent.is_dir() and
+                not path_entry_exists(path) and not path_entry_exists(temporary) and
+                log not in (resolved, temporary.resolve()))
     check("launch_receipt", launch_receipt)
     pwsh = check("pwsh", resolve_pwsh)
     result = verdict(checks, details)

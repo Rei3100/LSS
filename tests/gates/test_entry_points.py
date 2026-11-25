@@ -4,8 +4,10 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
+import tempfile
 from types import SimpleNamespace
 
 import pytest
@@ -969,6 +971,141 @@ def test_check_only_refuses_missing_pwsh(release, tmp_path, monkeypatch, capsys)
     assert deployment.main(["--state", write("state", state), "--check-only"],
                            git_reader=clean_release_git) == 1
     assert json.loads(capsys.readouterr().out)["failures"] == ["pwsh"]
+
+
+@pytest.mark.parametrize("marker", ["pending", "corrupt", "other-target", "orphaned-previous"])
+def test_check_only_refuses_unresolved_deployment(release, monkeypatch, capsys, marker):
+    state, write = release
+    base = Path(state["deploy_base"])
+    journal = base / ".LSS-deploy.json"
+    previous = base / ".LSS.previous"
+    if marker in ("pending", "orphaned-previous"):
+        previous.mkdir()
+    if marker == "corrupt":
+        journal.write_text("{", encoding="utf-8")
+    elif marker != "orphaned-previous":
+        target = base / ("LSS" if marker == "pending" else "other")
+        journal.write_text(json.dumps({"version": 1, "phase": "awaiting_acceptance",
+            "target": str(target), "staging": str(base / ".LSS.staging"),
+            "previous": str(previous), "runtime_entries": ["LSS.exe"]}), encoding="utf-8")
+    monkeypatch.setattr(deployment.time, "time", lambda: 1000)
+
+    assert deployment.main(["--state", write("state", state), "--check-only"],
+                           git_reader=clean_release_git) == 1
+    assert json.loads(capsys.readouterr().out)["failures"] == ["deploy_base"]
+
+
+@pytest.mark.parametrize("base_location", ["parent", "same", "child"])
+def test_check_only_refuses_overlapping_package_and_deploy_base(release, tmp_path, monkeypatch, capsys, base_location):
+    state, write = release
+    manifest = deployment.load(state["manifest"])
+    parent = tmp_path / "package-parent"
+    parent.mkdir()
+    package = Path(manifest["package_dir"]).rename(parent / "package")
+    manifest["package_dir"] = str(package)
+    state["manifest"] = write("manifest", manifest)
+    build = deployment.load(state["build_receipt"])
+    build["candidate"] = str(package)
+    state["build_receipt"] = write("build", build)
+    base = {"parent": parent, "same": package, "child": package / "nested"}[base_location]
+    base.mkdir(exist_ok=True)
+    state["deploy_base"] = str(base)
+    monkeypatch.setattr(deployment.time, "time", lambda: 1000)
+
+    assert deployment.main(["--state", write("state", state), "--check-only"],
+                           git_reader=clean_release_git) == 1
+    assert json.loads(capsys.readouterr().out)["failures"] == ["rollback_ready", "deploy_base"]
+
+
+@pytest.mark.parametrize("temporary_entry", ["file", "directory", "configured-log"])
+def test_check_only_requires_unused_receipt_temporary_path(release, monkeypatch, capsys, temporary_entry):
+    state, write = release
+    temporary = Path(state["launch_receipt"] + ".tmp")
+    if temporary_entry == "file":
+        temporary.write_text("existing receipt data", encoding="utf-8")
+    elif temporary_entry == "directory":
+        temporary.mkdir()
+    else:
+        state["deploy_log"] = str(temporary)
+    monkeypatch.setattr(deployment.time, "time", lambda: 1000)
+
+    assert deployment.main(["--state", write("state", state), "--check-only"],
+                           git_reader=clean_release_git) == 1
+    assert json.loads(capsys.readouterr().out)["failures"] == ["launch_receipt"]
+
+
+def test_check_only_ignores_pwsh_in_the_callers_directory(release, tmp_path, monkeypatch, capsys):
+    state, write = release
+    caller = tmp_path / "caller"
+    caller.mkdir()
+    on_path = tmp_path / "bin"
+    on_path.mkdir()
+    name = "pwsh.exe" if sys.platform == "win32" else "pwsh"
+    for candidate in {caller / "pwsh", caller / name}:
+        candidate.touch()
+        candidate.chmod(0o755)
+    monkeypatch.chdir(caller)
+    monkeypatch.setenv("PATH", os.pathsep.join([".", str(on_path)]))
+    monkeypatch.delenv("NoDefaultCurrentDirectoryInExePath", raising=False)
+    monkeypatch.setenv("PATHEXT", ".EXE")
+    monkeypatch.setattr(deployment, "shutil", shutil)
+    monkeypatch.setattr(deployment.time, "time", lambda: 1000)
+    args = ["--state", write("state", state), "--check-only"]
+
+    assert deployment.main(args, git_reader=clean_release_git) == 1
+    assert json.loads(capsys.readouterr().out)["failures"] == ["pwsh"]
+
+    valid = on_path / name
+    valid.touch()
+    valid.chmod(0o755)
+    result, plan = deployment.preflight(state, git_reader=clean_release_git, now=1000)
+    assert result["result"] == "PASS"
+    assert plan.pwsh == valid.resolve()
+
+
+@pytest.mark.parametrize("output", ["deploy_log", "launch_receipt"])
+@pytest.mark.parametrize("root_key", ["package_dir", "deploy_base"])
+def test_check_only_keeps_launcher_outputs_outside_protected_roots(release, monkeypatch, capsys, output, root_key):
+    state, write = release
+    paths = deployment.load(state["manifest"]) if root_key == "package_dir" else state
+    root = Path(paths[root_key])
+    name = Path(state[output]).name
+    state[output] = str(root / name)
+    monkeypatch.setattr(deployment.time, "time", lambda: 1000)
+    args = ["--state", write("state", state), "--check-only"]
+
+    assert deployment.main(args, git_reader=clean_release_git) == 1
+    assert json.loads(capsys.readouterr().out)["failures"] == [output]
+    assert not Path(state[output]).exists()
+
+    sibling = root.with_name(root.name + "-outputs")
+    sibling.mkdir()
+    state[output] = str(sibling / name)
+    write("state", state)
+    assert deployment.main(args, git_reader=clean_release_git) == 0
+    assert json.loads(capsys.readouterr().out)["result"] == "PASS"
+
+
+def test_check_only_accepts_missing_log_without_opening_a_temporary_file(release, monkeypatch, capsys):
+    state, write = release
+    log = Path(state["deploy_log"])
+
+    def delete_access_denied(*args, **kwargs):
+        raise PermissionError("delete access denied")
+
+    monkeypatch.setattr(tempfile, "TemporaryFile", delete_access_denied)
+    monkeypatch.setattr(deployment.time, "time", lambda: 1000)
+
+    assert deployment.main(["--state", write("state", state), "--check-only"],
+                           git_reader=clean_release_git) == 0
+    assert json.loads(capsys.readouterr().out)["result"] == "PASS"
+    assert not log.exists()
+
+
+def test_deployment_contract_documents_package_hash_window():
+    guide = (ROOT / "gates" / "ENTRY_POINTS.md").read_text(encoding="utf-8")
+    assert ("The gate hashes the package directory at preflight and cannot detect changes between preflight and the copy. "
+            "The freeze protects the package during that interval.") in guide.splitlines()
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows junction")
