@@ -367,6 +367,181 @@ def test_an_album_that_needs_a_paid_or_member_login_is_not_requested_track_by_tr
     assert backend.downloads == []
 
 
+@pytest.mark.parametrize(
+    ("top_restricted", "runner_up_score", "full_downloads"),
+    [
+        pytest.param(True, 1.0, 1, id="restricted_top_uses_positive_runner_up"),
+        pytest.param(False, 1.0, 2, id="unrestricted_top_keeps_runner_up_sample_only"),
+        pytest.param(True, 0.0, 0, id="restricted_top_skips_zero_score_albums"),
+    ],
+)
+def test_full_verification_uses_the_top_available_album(
+    state, tmp_path, monkeypatch, top_restricted, runner_up_score, full_downloads,
+):
+    # 各盤の最初と最後を見本にして、一致する曲は次点の盤の真ん中に置く。
+    monkeypatch.setattr(ra, "SAMPLE_TRACKS", 2)
+    monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
+    top_ids = ["a1", "a2", "a3", "a4"]
+    runner_up_ids = ["b1", "b2", "b3"]
+    seeds = {track: seed for seed, track in enumerate(top_ids + runner_up_ids, start=400)}
+    seeds["b2"] = 42
+    media = {track: _track(tmp_path / "remote" / f"{track}.flac", seed) for track, seed in seeds.items()}
+    failures = {track: [FailureKind.AUTH_REQUIRED] for track in top_ids} if top_restricted else {}
+    backend = FakeBackend(media, failures=failures)
+    runner_up_title = "別の作品 サウンドトラック" if runner_up_score else "別の作品の曲集"
+    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["A", "B"]},
+                      listings={"A": ("番組名 オリジナル・サウンドトラック", top_ids),
+                                "B": (runner_up_title, runner_up_ids)})
+    source = _episode(tmp_path / "『番組名』第1話.wav", [(seeds["b2"], 10.0, 30.0)])
+
+    result = ra.discover(source, source_sha256="r" * 64, cache_dir=_cache(state), state_root=state,
+                         search=catalog, backend=backend, pacing=NO_WAIT, courtesy=_polite())
+
+    top = result["albums"]["https://music.example.test/browse/A"]
+    runner_up = result["albums"]["https://music.example.test/browse/B"]
+    assert top["album_rank"] == 0 and (top["state"] == "restricted") == top_restricted
+    assert top.get("full_verification", False) is (not top_restricted)
+    assert runner_up["album_rank"] == 1 and runner_up["score"] == runner_up_score
+    assert result["counters"]["full_verification_downloads"] == full_downloads
+    if top_restricted and runner_up_score > 0:
+        assert runner_up["full_verification"] is True
+        assert runner_up["full_verification_reason"] == "top_restricted"
+        assert result["verified_tracks"] == ["b2"]
+    else:
+        assert "full_verification" not in runner_up
+        assert "full_verification_reason" not in runner_up
+        assert "b2" not in backend.downloads
+        assert result["state"] == "no_verified_release"
+
+
+def test_unrestricted_top_album_is_fully_verified_even_when_its_title_does_not_match(
+    state, tmp_path, monkeypatch,
+):
+    # 公式の盤の題が作品名と違う表記でも、制限のない最上位の盤は全曲で確かめる（元の順位0の扱い）。
+    monkeypatch.setattr(ra, "SAMPLE_TRACKS", 2)
+    monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
+    ids = ["c1", "c2", "c3"]
+    seeds = {track: seed for seed, track in enumerate(ids, start=700)}
+    seeds["c2"] = 43
+    media = {track: _track(tmp_path / "remote" / f"{track}.flac", seed) for track, seed in seeds.items()}
+    backend = FakeBackend(media)
+    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["C"]},
+                      listings={"C": ("Original Score Collection", ids)})
+    source = _episode(tmp_path / "『番組名』第1話.wav", [(seeds["c2"], 10.0, 30.0)])
+
+    result = ra.discover(source, source_sha256="z" * 64, cache_dir=_cache(state), state_root=state,
+                         search=catalog, backend=backend, pacing=NO_WAIT, courtesy=_polite())
+
+    top = result["albums"]["https://music.example.test/browse/C"]
+    assert top["album_rank"] == 0 and top["score"] == 0
+    assert top["full_verification"] is True and "full_verification_reason" not in top
+    assert result["verified_tracks"] == ["c2"]
+
+
+def test_top_album_restricted_during_its_full_verification_passes_the_exemption_on(
+    state, tmp_path, monkeypatch,
+):
+    # 最上位の盤は見本では止まらず、全曲の確認の途中で認証が要ると分かる。次の盤が最上位の扱いを受ける。
+    monkeypatch.setattr(ra, "SAMPLE_TRACKS", 2)
+    monkeypatch.setattr(ra, "VERIFY_BUDGET", 2)
+    monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
+    top_ids = ["a1", "a2", "a3", "a4"]
+    runner_up_ids = ["b1", "b2", "b3"]
+    seeds = {track: seed for seed, track in enumerate(runner_up_ids, start=800)}
+    seeds["b2"] = 44
+    media = {track: _track(tmp_path / "remote" / f"{track}.flac", seed) for track, seed in seeds.items()}
+    backend = FakeBackend(media, failures={"a1": [FailureKind.UNAVAILABLE], "a4": [FailureKind.UNAVAILABLE],
+                                           "a2": [FailureKind.AUTH_REQUIRED], "a3": [FailureKind.AUTH_REQUIRED]})
+    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["A", "B"]},
+                      listings={"A": ("番組名 オリジナル・サウンドトラック", top_ids),
+                                "B": ("別の作品 サウンドトラック", runner_up_ids)})
+    source = _episode(tmp_path / "『番組名』第1話.wav", [(seeds["b2"], 10.0, 30.0)])
+
+    result = ra.discover(source, source_sha256="y" * 64, cache_dir=_cache(state), state_root=state,
+                         search=catalog, backend=backend, pacing=NO_WAIT, courtesy=_polite())
+
+    top = result["albums"]["https://music.example.test/browse/A"]
+    runner_up = result["albums"]["https://music.example.test/browse/B"]
+    assert top["full_verification"] is True and top["state"] == "restricted"
+    assert runner_up["full_verification"] is True
+    assert runner_up["full_verification_reason"] == "top_restricted"
+    assert result["verified_tracks"] == ["b2"]
+
+
+def test_full_verification_stops_when_the_album_becomes_restricted_even_with_a_shared_track(
+    state, tmp_path, monkeypatch,
+):
+    # 見本の取得枠は最上位の盤で使い切る。共通の曲は別の盤の見本にも残る。
+    monkeypatch.setattr(ra, "SAMPLE_TRACKS", 2)
+    monkeypatch.setattr(ra, "VERIFY_BUDGET", 2)
+    monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
+    top_ids = ["a1", "a2", "a3", "shared", "a5"]
+    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["A", "B"]},
+                      listings={"A": ("番組名 オリジナル・サウンドトラック", top_ids),
+                                "B": ("別の作品の曲集", ["shared"])})
+    backend = FakeBackend({}, failures={"a1": [FailureKind.UNAVAILABLE], "a5": [FailureKind.UNAVAILABLE],
+                                        "a2": [FailureKind.AUTH_REQUIRED], "a3": [FailureKind.AUTH_REQUIRED],
+                                        "shared": [FailureKind.UNAVAILABLE]})
+    source = tmp_path / "『番組名』第1話.wav"
+
+    result = ra.discover(source, source_sha256="r" * 64, cache_dir=_cache(state), state_root=state,
+                         search=catalog, backend=backend, pacing=NO_WAIT, courtesy=_polite(),
+                         query_samples=np.zeros(LOW, np.float32))
+
+    top_url = "https://music.example.test/browse/A"
+    other_url = "https://music.example.test/browse/B"
+    top = result["albums"][top_url]
+    assert top["full_verification"] is True and top["state"] == "restricted"
+    assert result["albums"][other_url]["state"] == "candidate"
+    assert result["counters"]["full_verification_downloads"] == 2
+    shared = result["candidates"]["shared"]
+    assert shared["state"] == "pending"
+    assert {(origin["kind"], origin["album_url"]) for origin in shared["origins"]} == {
+        ("album_sample", other_url), ("album_full", top_url),
+    }
+    assert backend.failures["shared"] == [FailureKind.UNAVAILABLE]
+
+
+def test_search_refresh_drops_the_rank_of_the_old_restricted_top(state, tmp_path, monkeypatch):
+    monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
+    source = tmp_path / "『番組名』第1話.wav"
+    source_sha256 = "r" * 64
+    old_url = "https://music.example.test/browse/A"
+    hint = ra.work_hint(source, source_sha256, state)
+    saved = ra._new_opportunity(hint, None, source_sha256, 1000.0)
+    saved.update(state="no_verified_release", searched_at_epoch=1000.0, theme_songs_searched_at_epoch=1000.0,
+                 albums={old_url: dict(url=old_url, album_rank=0, score=3.0, state="restricted")})
+    ra._save_opportunity(saved, state)
+    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["B", "C"]},
+                      listings={"B": ("別の作品 サウンドトラック", ["b1"]),
+                                "C": ("別の作品 サウンドトラック", ["c1"])})
+    backend = FakeBackend({}, failures={"b1": [FailureKind.UNAVAILABLE], "c1": [FailureKind.UNAVAILABLE]})
+
+    result = ra.discover(source, source_sha256=source_sha256, cache_dir=_cache(state), state_root=state,
+                         search=catalog, backend=backend, pacing=NO_WAIT, courtesy=_polite(),
+                         query_samples=np.zeros(LOW, np.float32), now=1000.0 + ra.RETRY_AFTER_SECONDS)
+
+    assert result["albums"][old_url]["state"] == "restricted"
+    assert "album_rank" not in result["albums"][old_url]
+    top = result["albums"]["https://music.example.test/browse/B"]
+    assert top["album_rank"] == 0 and top["full_verification"] is True
+    assert "full_verification_reason" not in top
+    runner_up = result["albums"]["https://music.example.test/browse/C"]
+    assert runner_up["album_rank"] == 1 and "full_verification" not in runner_up
+
+
+def test_current_album_ranks_survive_a_resumed_opportunity(state, tmp_path):
+    # 検索の後に先送りされた機会を再開しても、順位が今回の検索のものだという印は残る。古い保存には付かない。
+    source = tmp_path / "『番組名』第1話.wav"
+    hint = ra.work_hint(source, "r" * 64, state)
+    saved = ra._new_opportunity(hint, None, "r" * 64, 1000.0)
+    assert saved["album_ranks_current"] is False
+    saved["album_ranks_current"] = True
+    assert ra._new_opportunity(hint, saved, "r" * 64, 2000.0)["album_ranks_current"] is True
+    legacy = {k: v for k, v in saved.items() if k != "album_ranks_current"}
+    assert ra._new_opportunity(hint, legacy, "r" * 64, 2000.0)["album_ranks_current"] is False
+
+
 def test_a_members_album_skipped_without_login_is_tried_again_after_logging_in(state, tmp_path):
     """ログインが無い時に会員向けとして打ち切った盤は、LSSでログインした後の機会に取り直す（早期の打ち切りを残さない）。"""
     from lss.acquisition.store import AuthMethod
