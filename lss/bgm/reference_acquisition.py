@@ -738,6 +738,11 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
             return any(row["state"] == "verified" and not from_theme(key)
                        for key, row in opportunity["candidates"].items())
 
+        def can_substitute(album_row: dict) -> bool:
+            rank = album_row.get("album_rank")
+            return (rank is not None and rank > 0 and 0 < album_row.get("score", 0) < STRONG_SCORE
+                    and not album_row.get("full_verification") and album_row.get("state") != "restricted")
+
         if not verified_any():
             for row in opportunity["candidates"].values():
                 if row["state"] == "not_needed":
@@ -754,9 +759,19 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
                       if row["state"] == "verified" and not row.get("release_checked")]
         incomplete = [url for url in opportunity["releases"]
                       if opportunity["albums"].get(url, {}).get("state") not in ("acquired", "restricted", "needs_login")]
+        albums = opportunity["albums"]
+        replaced_top_urls = {row.get("full_verification_replaces") for row in albums.values()}
         if fresh and themes_fresh and not undecided and not unreleased and not incomplete:
-            has = any(row["state"] == "verified" for row in opportunity["candidates"].values())
-            return finish("verified" if has else "no_verified_release", reused=True)
+            # 見本を確認済みでも、認証で止まった最上位の盤に代わる候補が残っていれば確認を続ける。
+            pending_substitute = (
+                not verified_any()
+                and any(row.get("album_rank") == 0 and row.get("state") == "restricted"
+                        and url not in replaced_top_urls for url, row in albums.items())
+                and any(can_substitute(row) for row in albums.values())
+            )
+            if not pending_substitute:
+                has = any(row["state"] == "verified" for row in opportunity["candidates"].values())
+                return finish("verified" if has else "no_verified_release", reused=True)
 
         ensure = ensure_provider if ensure_provider is not None else _default_ensure(search, backend)
         ensured: list = []
@@ -1008,26 +1023,22 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
             # 全曲で確かめ直す（全曲の確認の上限つき）。
             top_url = None
             top_album = None
-            for url, album_row in sorted(opportunity["albums"].items(),
+            for url, album_row in sorted(albums.items(),
                                          key=lambda item: item[1].get("album_rank", 99)):
                 if should_stop():
                     break
                 rank = album_row.get("album_rank")
-                if rank is None or album_row.get("full_verification"):
-                    continue
                 # 最上位の盤が認証で止まったら、題が検索に合う次の盤を1つだけ代わりに確かめる。
                 # 前の機会に代わりの盤を確かめていたら、さらに次の盤へは広げない。
-                if rank == 0 and not any(row.get("full_verification_replaces") == url
-                                         for row in opportunity["albums"].values()):
+                if rank == 0 and url not in replaced_top_urls:
                     top_url, top_album = url, album_row
-                if album_row.get("state") == "restricted":
+                if rank is None or album_row.get("full_verification") or album_row.get("state") == "restricted":
                     continue
                 score = album_row.get("score", 0)
                 replaced_url = None
-                if (rank != 0 and score > 0 and top_album is not None
-                        and top_album.get("state") == "restricted"):
+                if (top_album is not None and top_album.get("state") == "restricted" and can_substitute(album_row)
+                        and counters["full_verification_downloads"] < MAX_TRACKS):
                     replaced_url = top_url
-                    top_album = None
                 if score < STRONG_SCORE and rank != 0 and replaced_url is None:
                     continue
                 listed_album = album(url)
@@ -1036,6 +1047,7 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
                 album_row["full_verification"] = True
                 if replaced_url is not None:
                     album_row.update(full_verification_reason="top_restricted", full_verification_replaces=replaced_url)
+                    top_album = None
                 rows = [_candidate(opportunity, track, {"kind": "album_full", "album_url": url,
                                                         "album_rank": rank,
                                                         "position": position})

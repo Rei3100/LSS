@@ -429,6 +429,101 @@ def test_full_verification_after_album_sampling(
         assert result["state"] == "no_verified_release"
 
 
+@pytest.fixture
+def saved_restricted_top(state, tmp_path, monkeypatch):
+    monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
+    source = tmp_path / "『番組名』第1話.wav"
+    source_sha256 = "r" * 64
+    hint = ra.work_hint(source, source_sha256, state)
+    saved = ra._new_opportunity(hint, None, source_sha256, 1000.0)
+    urls = {name: f"https://music.example.test/browse/{name}" for name in ("A", "B", "C")}
+    saved.update(state="no_verified_release", searched_at_epoch=1000.0, theme_songs_searched_at_epoch=1000.0,
+                 albums={urls["A"]: dict(url=urls["A"], album_rank=0, score=3.0, state="restricted",
+                                         full_verification=True),
+                         urls["B"]: dict(url=urls["B"], album_rank=1, score=1.0, state="candidate"),
+                         urls["C"]: dict(url=urls["C"], album_rank=2, score=1.0, state="candidate")})
+    ra._save_opportunity(saved, state)
+    search = Catalog(listings={"B": ("別の作品 サウンドトラック", ["b1"]),
+                               "C": ("別の作品 サウンドトラック", ["c1"])})
+    # 盤を選んで曲を要求したかだけを確かめる。曲は取得できないものとする。
+    backend = FakeBackend({}, failures={"b1": [FailureKind.UNAVAILABLE], "c1": [FailureKind.UNAVAILABLE]})
+
+    def discover(now=2000.0):
+        return ra.discover(source, source_sha256=source_sha256, cache_dir=_cache(state), state_root=state,
+                           search=search, backend=backend, pacing=NO_WAIT, courtesy=_polite(), now=now,
+                           query_samples=np.zeros(LOW, np.float32))
+
+    return discover, saved, search, urls
+
+
+def test_saved_restricted_top_can_be_replaced_after_full_verification_started(saved_restricted_top):
+    discover, _, search, urls = saved_restricted_top
+
+    result = discover()
+
+    assert result["albums"][urls["A"]]["full_verification"] is True
+    substitute = result["albums"][urls["B"]]
+    assert substitute["full_verification"] is True
+    assert substitute["full_verification_reason"] == "top_restricted"
+    assert substitute["full_verification_replaces"] == urls["A"]
+    assert result["counters"]["full_verification_downloads"] == 1
+    assert search.calls == [("tracks", urls["B"])]
+
+
+def test_restricted_top_is_replaced_only_once_across_discoveries(saved_restricted_top):
+    discover, _, search, urls = saved_restricted_top
+    first = discover()
+    assert first["albums"][urls["B"]]["full_verification_replaces"] == urls["A"]
+
+    # 検索の期限が切れ、前回の結果をそのまま返さない経路を通る。
+    second = discover(now=1000.0 + ra.RETRY_AFTER_SECONDS)
+
+    assert second["state"] == "no_verified_release"
+    assert second["counters"]["full_verification_downloads"] == 0
+    assert second["albums"][urls["B"]]["full_verification_replaces"] == urls["A"]
+    assert "full_verification" not in second["albums"][urls["C"]]
+    assert ("tracks", urls["C"]) not in search.calls
+
+
+def test_unreadable_album_listing_leaves_substitution_available(saved_restricted_top, monkeypatch):
+    discover, _, search, urls = saved_restricted_top
+    tracks = search.tracks
+
+    def read_listing(url):
+        if url == urls["B"]:
+            raise AcquisitionFailure(FailureKind.UNAVAILABLE, "album listing unavailable")
+        return tracks(url)
+
+    monkeypatch.setattr(search, "tracks", read_listing)
+    result = discover()
+
+    unreadable = result["albums"][urls["B"]]
+    assert unreadable["state"] == "resolve_failed"
+    assert "full_verification_reason" not in unreadable
+    assert result["albums"][urls["C"]]["full_verification_replaces"] == urls["A"]
+    assert result["counters"]["full_verification_downloads"] == 1
+
+
+@pytest.mark.parametrize("budget", [pytest.param(2, id="same_discovery"), pytest.param(1, id="next_discovery")])
+def test_strong_album_does_not_consume_the_restricted_top_substitute(saved_restricted_top, state, monkeypatch, budget):
+    discover, saved, _, urls = saved_restricted_top
+    saved["albums"][urls["B"]]["score"] = ra.STRONG_SCORE
+    ra._save_opportunity(saved, state)
+    monkeypatch.setattr(ra, "MAX_TRACKS", budget)
+
+    result = discover()
+
+    strong = result["albums"][urls["B"]]
+    assert strong["full_verification"] is True
+    assert "full_verification_reason" not in strong
+    assert result["counters"]["full_verification_downloads"] == budget
+    if budget == 1:
+        assert "full_verification" not in result["albums"][urls["C"]]
+        result = discover(now=3000.0)
+        assert result["counters"]["full_verification_downloads"] == 1
+    assert result["albums"][urls["C"]]["full_verification_replaces"] == urls["A"]
+
+
 def test_a_members_album_skipped_without_login_is_tried_again_after_logging_in(state, tmp_path):
     """ログインが無い時に会員向けとして打ち切った盤は、LSSでログインした後の機会に取り直す（早期の打ち切りを残さない）。"""
     from lss.acquisition.store import AuthMethod
