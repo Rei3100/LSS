@@ -594,16 +594,32 @@ def release(tmp_path):
         "current_product": write("current", {"deployed_executable": str(old), "exe_sha256": old_hash}),
         "rollback_receipt": write("rollback", {"status": "PASS", "exe": str(old), "exe_sha256": old_hash, "startup_pass": True}),
         "idle_receipt": write("idle", {**identity, "status": "PASS", "observed_at": 1000,
-            "product_running": False, "other_gpu_jobs": 0, "user_heavy_use": False})}
+            "product_running": False, "other_gpu_jobs": 0, "user_heavy_use": False}),
+        "deploy_base": str(tmp_path), "deploy_log": str(tmp_path / "deploy.log"),
+        "launch_receipt": str(tmp_path / "launch.json")}
     return state, write
 
 
-@pytest.mark.parametrize("condition,key", list(zip(deployment.CONDITIONS, ["repo", "build_receipt", "packaged_receipt",
-    "verification_receipt", "answer_key_receipt", "rollback_receipt", "idle_receipt"])))
+def clean_release_git(repo, *args):
+    return "" if args[0] == "status" else HEAD
+
+
+@pytest.mark.parametrize("condition,key", [
+    ("integrated_main", "repo"),
+    ("frozen_candidate", "build_receipt"),
+    ("packaged_acceptance", "packaged_receipt"),
+    ("independent_verification", "verification_receipt"),
+    ("answer_key_non_regression", "answer_key_receipt"),
+    ("rollback_ready", "rollback_receipt"),
+    ("machine_idle", "idle_receipt"),
+    ("deploy_base", "deploy_base"),
+    ("deploy_log", "deploy_log"),
+    ("launch_receipt", "launch_receipt"),
+])
 def test_each_missing_condition_is_named(release, condition, key):
     state, _ = release
     del state[key]
-    result = deployment.evaluate(state, git_reader=lambda *a: HEAD, now=1000)
+    result = deployment.evaluate(state, git_reader=clean_release_git, now=1000)
     assert result["result"] == "BLOCK"
     assert condition in result["failures"]
 
@@ -624,14 +640,73 @@ def test_invalid_receipts_fail_closed(release, receipt, field, value, condition)
     data = deployment.load(state[receipt])
     data[field] = value
     state[receipt] = write("changed", data)
-    assert condition in deployment.evaluate(state, git_reader=lambda *a: HEAD, now=1000)["failures"]
+    assert condition in deployment.evaluate(state, git_reader=clean_release_git, now=1000)["failures"]
+
+
+@pytest.mark.parametrize("receipt,field,value,condition", [
+    ("manifest", "package_dir", 42, "frozen_candidate"),
+    ("packaged_receipt", "builder", 42, "independent_verification"),
+    ("verification_receipt", "verifier", 42, "independent_verification"),
+    ("answer_key_receipt", "user_benefit", 42, "answer_key_non_regression"),
+    ("answer_key_receipt", "change_kind", 42, "answer_key_non_regression"),
+    ("idle_receipt", "other_gpu_jobs", False, "machine_idle"),
+    ("idle_receipt", "other_gpu_jobs", 0.0, "machine_idle"),
+])
+def test_wrong_receipt_field_type_fails_its_own_condition(release, receipt, field, value, condition):
+    state, write = release
+    data = deployment.load(state[receipt])
+    data[field] = value
+    state[receipt] = write("changed", data)
+
+    result = deployment.evaluate(state, git_reader=clean_release_git, now=1000)
+    assert result["result"] == "BLOCK"
+    assert result["failures"] == [condition]
+    assert result["failure_details"][condition] == f"{field} has the wrong type"
+
+
+def test_frozen_candidate_rejects_non_integer_file_size(release):
+    state, write = release
+    manifest = deployment.load(state["manifest"])
+    row = manifest["files_sha256"]["LSS.exe"]
+    row["bytes"] = float(row["bytes"])
+    state["manifest"] = write("changed", manifest)
+
+    result = deployment.evaluate(state, git_reader=clean_release_git, now=1000)
+    assert result["failures"] == ["frozen_candidate"]
+
+
+@pytest.mark.parametrize("key,conditions", [
+    ("repo", ("integrated_main", "checkout_head", "checkout_clean")),
+    ("manifest", ("frozen_candidate",)),
+    ("build_receipt", ("frozen_candidate",)),
+    ("packaged_receipt", ("packaged_acceptance", "independent_verification")),
+    ("verification_receipt", ("independent_verification",)),
+    ("answer_key", ("answer_key_non_regression",)),
+    ("answer_key_receipt", ("answer_key_non_regression",)),
+    ("current_product", ("answer_key_non_regression", "rollback_ready")),
+    ("rollback_receipt", ("rollback_ready",)),
+    ("idle_receipt", ("machine_idle",)),
+    ("deploy_base", ("deploy_base",)),
+    ("deploy_log", ("deploy_log",)),
+    ("launch_receipt", ("launch_receipt",)),
+])
+def test_relative_state_path_names_the_key(release, tmp_path, monkeypatch, key, conditions):
+    state, _ = release
+    monkeypatch.chdir(tmp_path)
+    state[key] = str(Path(state[key]).relative_to(tmp_path))
+
+    result = deployment.evaluate(state, git_reader=clean_release_git, now=1000)
+    assert result["result"] == "BLOCK"
+    for condition in conditions:
+        assert condition in result["failures"]
+        assert result["failure_details"][condition] == f"{key} must be an absolute path"
 
 
 def test_changed_package_fails_freeze(release):
     state, _ = release
     manifest = deployment.load(state["manifest"])
     (Path(manifest["package_dir"]) / "LSS.exe").write_bytes(b"changed")
-    assert "frozen_candidate" in deployment.evaluate(state, git_reader=lambda *a: HEAD, now=1000)["failures"]
+    assert "frozen_candidate" in deployment.evaluate(state, git_reader=clean_release_git, now=1000)["failures"]
 
 
 def test_full_pass_deploys_once_and_check_only_never_deploys(release, monkeypatch, capsys):
@@ -642,20 +717,97 @@ def test_full_pass_deploys_once_and_check_only_never_deploys(release, monkeypatc
     def deployer(*args):
         calls.append(args)
     for options in (["--check-only"], []):
-        assert deployment.main(["--state", path, *options], deployer=deployer, git_reader=lambda *a: HEAD) == 0
+        assert deployment.main(["--state", path, *options], deployer=deployer, git_reader=clean_release_git) == 0
         assert json.loads(capsys.readouterr().out)["result"] == "PASS"
     assert len(calls) == 1
     del state["idle_receipt"]
     path = write("state", state)
-    assert deployment.main(["--state", path], deployer=deployer, git_reader=lambda *a: HEAD) == 1
+    assert deployment.main(["--state", path], deployer=deployer, git_reader=clean_release_git) == 1
     assert len(calls) == 1
+
+
+@pytest.mark.parametrize("head,status,condition", [
+    ("b" * 40, "", "checkout_head"),
+    (HEAD, " M scripts/hidden_run.py", "checkout_clean"),
+    (HEAD, "?? untracked.py", "checkout_clean"),
+])
+def test_check_only_reports_wrong_or_dirty_checkout(release, monkeypatch, capsys, head, status, condition):
+    state, write = release
+    monkeypatch.setattr(deployment.time, "time", lambda: 1000)
+
+    def reader(repo, *args):
+        if args == ("rev-parse", "HEAD"):
+            return head
+        if args == ("status", "--porcelain", "--untracked-files=all"):
+            return status
+        return clean_release_git(repo, *args)
+
+    path = write("state", state)
+    assert deployment.main(["--state", path, "--check-only"], git_reader=reader) == 1
+    result = json.loads(capsys.readouterr().out)
+    assert result["result"] == "BLOCK"
+    assert result["failures"] == [condition]
+
+
+def test_deploy_refusal_preserves_preflight_verdict(release, monkeypatch, capsys):
+    state, write = release
+    monkeypatch.setattr(deployment.time, "time", lambda: 1000)
+
+    def changed_checkout(repo, *args):
+        return "?? untracked.py" if args[0] == "status" else HEAD
+
+    monkeypatch.setattr(deployment, "git", changed_checkout)
+    monkeypatch.setattr(deployment.subprocess, "run", lambda *a, **k: pytest.fail("Launcher called"))
+    path = write("state", state)
+    assert deployment.main(["--state", path], git_reader=clean_release_git) == 1
+    result = json.loads(capsys.readouterr().out)
+    assert result["result"] == "BLOCK"
+    assert all(result["conditions"].values())
+    assert result["failures"] == []
+    assert result["deployment"] == "REFUSED"
+    assert result["deployment_error"] == "checkout_clean: deployment checkout has local changes"
+
+
+@pytest.mark.parametrize("key,target", [
+    ("deploy_base", "missing"),
+    ("deploy_base", "previous.exe"),
+    ("deploy_log", "missing/deploy.log"),
+    ("deploy_log", "package"),
+    ("launch_receipt", "missing/launch.json"),
+    ("launch_receipt", "manifest.json"),
+    ("launch_receipt", "deploy.log"),
+])
+def test_check_only_rejects_unusable_launch_paths(release, tmp_path, monkeypatch, capsys, key, target):
+    state, write = release
+    monkeypatch.setattr(deployment.time, "time", lambda: 1000)
+    state[key] = str(tmp_path / target)
+
+    path = write("state", state)
+    assert deployment.main(["--state", path, "--check-only"], git_reader=clean_release_git) == 1
+    result = json.loads(capsys.readouterr().out)
+    assert result["result"] == "BLOCK"
+    assert result["failures"] == [key]
+
+
+def test_integrated_main_uses_verified_remote_tracking_commit(release):
+    state, _ = release
+    calls = []
+
+    def reader(repo, *args):
+        calls.append(args)
+        if args == ("rev-parse", "origin/main"):
+            return "b" * 40
+        return clean_release_git(repo, *args)
+
+    result = deployment.evaluate(state, git_reader=reader, now=1000)
+    assert result["conditions"]["integrated_main"] is True
+    assert ("rev-parse", "--verify", "refs/remotes/origin/main^{commit}") in calls
 
 
 def test_deploy_command_only_uses_hidden_launcher(release, monkeypatch):
     state, _ = release
-    state.update(deploy_log="synthetic.log", launch_receipt="launch.json", deploy_base="synthetic-deploy")
     calls = []
-    monkeypatch.setattr(deployment, "git", lambda repo, *args: "" if args[0] == "status" else HEAD)
+    monkeypatch.setattr(deployment, "git", clean_release_git)
     monkeypatch.setattr(deployment.subprocess, "run", lambda argv, **kwargs: calls.append(argv))
     deployment.deploy(state, deployment.load(state["manifest"]))
     assert len(calls) == 1
@@ -695,7 +847,7 @@ def test_frozen_package_rejects_real_junction(release, tmp_path):
     try:
         manifest["package_dir"] = str(link)
         state["manifest"] = write("linked-manifest", manifest)
-        assert "frozen_candidate" in deployment.evaluate(state, git_reader=lambda *a: HEAD, now=1000)["failures"]
+        assert "frozen_candidate" in deployment.evaluate(state, git_reader=clean_release_git, now=1000)["failures"]
     finally:
         link.rmdir()
 

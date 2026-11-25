@@ -104,15 +104,21 @@ this implementation performs a real GitHub write or network request.
 ## Deployment evidence contract
 
 `deploy-gated.cmd --check-only` evaluates without launching anything and prints
-one JSON verdict with `conditions` and named `failures`; exit 0 means PASS and
-exit 1 means BLOCK. Without `--check-only`, only a full pass invokes the hidden
-launcher once. The result then includes `deployment: LAUNCHED`, which does not
-claim completion. Use its launch receipt and the runbook's installed acceptance
-to establish actual deployment. The command preserves `-KeepPrevious`.
+one JSON verdict with `conditions` and named `failures`. Exit 0 means PASS and
+exit 1 means BLOCK. Without `--check-only`, a full pass allows one launch
+attempt. The gate rechecks HEAD, the remote-tracking commit and checkout
+cleanliness immediately before invoking the hidden launcher. If deployment
+raises an error after a full pass, the verdict is BLOCK and retains the
+preflight `conditions` and `failures`, with `deployment: REFUSED` and a
+`deployment_error` describing the refusal. A successful launch reports
+`deployment: LAUNCHED`. Use its launch receipt and the runbook's installed
+acceptance to establish actual deployment. The command preserves `-KeepPrevious`.
 
 `--state <json>` selects an explicit state file. The default is
-`$LSS_PRIVATE_ROOT/run/deploy-gate.json`. Paths in that file must be absolute;
-state and receipts stay private. It contains these path references:
+`$LSS_PRIVATE_ROOT/run/deploy-gate.json`. Each path in that file is an absolute
+path string. A relative path fails the condition that reads it and
+`failure_details` names the key. State and receipts stay private. The state
+contains these path references:
 
 | Key | Existing evidence or normalized receipt |
 | --- | --- |
@@ -134,17 +140,23 @@ existing receipts need a normalized JSON summary referring to their actual
 Evidence; this gate does not generate or invent PASS receipts. The live
 receipt-to-summary integration remains to be verified in T17. Every candidate
 receipt requires `status: PASS` and exact `source_commit`, `exe_sha256` and
-`tree_sha256` from the freeze manifest. Additional fields are below.
+`tree_sha256` from the freeze manifest. Fields of the wrong type fail the
+condition that reads them. Additional fields are below.
 
 | Condition | Exact check |
 | --- | --- |
-| `integrated_main` | Source commit equals locally recorded origin/main (conservatively requires the tip); no fetch |
+| `integrated_main` | Source commit equals the commit resolved by local `git rev-parse --verify refs/remotes/origin/main^{commit}`. The gate uses the locally recorded tip. |
 | `frozen_candidate` | Native frozen type; all package file names, sizes, hashes and tree digest match; no links; EXE hash matches; native build status/phase complete and commit, EXE hash and candidate directory match |
 | `packaged_acceptance` | Candidate receipt has `scope: real-machine-package` |
-| `independent_verification` | Nonempty packaged `builder` and verification `verifier` differ |
+| `independent_verification` | Nonempty packaged `builder` and verification `verifier` strings differ |
 | `answer_key_non_regression` | Candidate receipt has `baseline_exe_sha256` equal to current-product hash, exact `answer_key_sha256`, `non_regression: true`, nonempty `user_benefit`, and `change_kind`; timing-only additionally requires `pcm_identical: true` |
 | `rollback_ready` | Current-product `deployed_executable` exists and hashes to its `exe_sha256`; rollback receipt has same `exe`, `exe_sha256`, `status: PASS` and `startup_pass: true` |
-| `machine_idle` | Candidate receipt's Unix-seconds `observed_at` is at most 60 seconds old, `product_running: false`, `other_gpu_jobs: 0`, `user_heavy_use: false` |
+| `machine_idle` | Candidate receipt's numeric Unix-seconds `observed_at` is at most 60 seconds old, `product_running: false`, integer `other_gpu_jobs: 0`, `user_heavy_use: false` |
+| `checkout_head` | HEAD equals the candidate source commit |
+| `checkout_clean` | `git status --porcelain --untracked-files=all` returns no entries |
+| `deploy_base` | Deployment base is an existing directory |
+| `deploy_log` | Parent directory exists and an existing log is a file |
+| `launch_receipt` | Parent directory exists, the receipt path has no existing entry, and it resolves to a different path from the log |
 
 The freshness check uses local time. Receipt observations are not a process or
 GPU lock; a job starting after observation remains a race. Build/verifier names
