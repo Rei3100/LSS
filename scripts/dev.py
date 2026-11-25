@@ -555,6 +555,8 @@ def _run_tests_reserved(args, paths, selection, directory, reservation):
     xml = directory / "pytest.xml"
     log_path = directory / "pytest.log"
     command = [sys.executable, "-m", "pytest", "-q", "-ra", "--tb=short", *paths, f"--junitxml={xml}"]
+    if getattr(args, "ci", False):
+        command.extend(["-o", "faulthandler_timeout=900"])
     if args.suite not in NATIVE:
         command.extend(f"--deselect={node}" for node in NATIVE.values() if "::" in node)
     if args.keyword:

@@ -135,14 +135,21 @@ jobs:
       - run: python -m pip install torch==2.9.1 torchaudio==2.9.1 torchvision==0.24.1 --index-url https://download.pytorch.org/whl/cpu
       - run: python scripts/fetch_ffmpeg.py
       - run: python scripts/fetch_msst_models.py
-      # Compile librosa's numba kernels once in one process; four test workers compiling them at the same
-      # time hung test_bgm_music_facts on the hosted runner.
-      - run: python -c "import numpy as np; from lss.bgm import music_facts; print(music_facts.tempo(np.random.default_rng(0).random(22050 * 8).astype('float32'), 22050)['status'])"
+      # Populate a runner-local cache before the four workers start (issue #5).
+      - name: Warm the librosa Numba cache
+        timeout-minutes: 5
+        env:
+          NUMBA_CACHE_DIR: ${{ runner.temp }}/lss-numba-cache
+        run: >-
+          python -u -c "import faulthandler; faulthandler.dump_traceback_later(120, repeat=True);
+          import numpy as np; from lss.bgm import music_facts;
+          facts = music_facts.tempo(np.random.default_rng(0).random(22050 * 8).astype('float32'), 22050);
+          assert 'onsets_per_second' in facts, facts; print(facts['status'])"
       # A hung test must fail the job with its stack in the log, not hold a runner for six hours.
       - run: python scripts/dev.py test --ci -j 4 -m "not local"
         timeout-minutes: 50
         env:
-          PYTEST_ADDOPTS: -o faulthandler_timeout=900
+          NUMBA_CACHE_DIR: ${{ runner.temp }}/lss-numba-cache
       - name: Test log tail
         if: failure() || cancelled()
         run: Get-ChildItem $env:RUNNER_TEMP -Filter pytest.log -Recurse | ForEach-Object { Get-Content $_.FullName -Tail 200 }
