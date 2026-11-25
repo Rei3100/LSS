@@ -22,7 +22,7 @@ def require_historical_commits(repo: Path, *revisions: str) -> None:
             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         )
         if result.returncode:
-            pytest.skip(f"公開リポジトリの履歴にない旧コミット {revision}")
+            pytest.skip(f"old commit {revision} is not in the public history")
 
 
 class RepoTest(unittest.TestCase):
