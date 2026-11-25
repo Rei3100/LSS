@@ -396,12 +396,18 @@ def test_scene_model_order_parser_keeps_only_known_name_basis_values():
 def test_transcription_ffmpeg_is_hidden_without_loading_models(tmp_path, monkeypatch):
     import subprocess
     import sys
-    import shutil
     from types import SimpleNamespace
     from lss import paths
     from lss.bgm.scene_models import SceneModels
-    selected = shutil.which("ffmpeg") or "ffmpeg"
-    expected_executable = str(Path(selected).resolve())
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    executable = bin_dir / ("ffmpeg.exe" if sys.platform == "win32" else "ffmpeg")
+    executable.write_bytes(b"test ffmpeg")
+    executable.chmod(0o755)
+    expected_executable = str(executable.resolve())
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PATH", str(bin_dir))
+    monkeypatch.setenv("PATHEXT", ".exe")
     monkeypatch.setattr(paths, "resource_root", lambda: tmp_path / "resources_without_ffmpeg")
     monkeypatch.setattr(paths, "is_frozen", lambda: False)
     monkeypatch.setitem(sys.modules, "torch", SimpleNamespace())
@@ -416,10 +422,10 @@ def test_transcription_ffmpeg_is_hidden_without_loading_models(tmp_path, monkeyp
     monkeypatch.setattr(models, "_drop", lambda *args: None)
     models._asr = lambda *args, **kwargs: {"chunks": [{"timestamp": [0., 1.], "text": "観測した台詞"}]}
     assert models.transcribe(tmp_path / "episode.mkv", [(10., 11.)])[0]["text"] == "観測した台詞"
-    assert calls[0][0][0] == expected_executable
-    assert calls[0][1]["creationflags"] == getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    assert all(call[0][0] == expected_executable and
-               call[1]["creationflags"] == getattr(subprocess, "CREATE_NO_WINDOW", 0) for call in calls)
+    assert [command[1] for command, _ in calls] == ["-version", "-v"]
+    for command, kwargs in calls:
+        assert command[0] == expected_executable
+        assert kwargs["creationflags"] == getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
 
 def memory(*groups):

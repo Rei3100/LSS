@@ -15,14 +15,19 @@ def _py(code: str) -> list[str]:
     return [sys.executable, "-c", code]
 
 
-def _run(queue: Path, expect: int = 0) -> None:
+def _run(queue: Path, expect: int = 0, *, storage_policy: dict | None = None) -> None:
+    # Generic queue behavior; Codex admission has separate coverage.
+    env = {k: v for k, v in os.environ.items()
+           if k not in ("LSS_STORAGE_RESERVATION", "CODEX_SESSION_ID", "CODEX_THREAD_ID")}
+    env.update(LSS_BATCH_POLL="0.1", LSS_MIN_COMMIT_HEADROOM_GB="0", LSS_MIN_FREE_RAM_GB="0")
+    if storage_policy is not None:
+        env["LSS_STORAGE_POLICY_JSON"] = json.dumps(storage_policy)
     done = subprocess.run([sys.executable, str(BATCH), "run", str(queue)], capture_output=True, text=True,
-                          env={**{k: v for k, v in os.environ.items() if k not in ("LSS_STORAGE_RESERVATION", "CODEX_SESSION_ID", "CODEX_THREAD_ID")},  # generic queue behavior; Codex admission has separate coverage
-                               "LSS_BATCH_POLL": "0.1", "LSS_MIN_COMMIT_HEADROOM_GB": "0", "LSS_MIN_FREE_RAM_GB": "0"}, timeout=120)
+                          env=env, timeout=120)
     assert done.returncode == expect, done.stderr
 
 
-def test_queue_runs_in_order_and_survives_failure(tmp_path):
+def test_queue_runs_in_order_and_survives_failure(tmp_path, queue_storage_policy):
     queue = tmp_path / "q.json"
     queue.write_text(json.dumps({"done": "DONE", "steps": [
         {"name": "make marker", "cmd": _py("print('one'); open('MARK', 'w').write('x')"), "duty": 1},
@@ -30,7 +35,7 @@ def test_queue_runs_in_order_and_survives_failure(tmp_path):
         {"name": "after marker", "cmd": _py("print('three')"), "after": ["MARK"], "duty": 1},
         {"name": "capped", "cmd": _py("print('four')")},
     ]}), encoding="utf-8")
-    _run(queue)
+    _run(queue, storage_policy=queue_storage_policy)
     receipt = json.loads((tmp_path / "q.receipt.json").read_text(encoding="utf-8"))
     assert [s["name"] for s in receipt["steps"]] == ["make marker", "fails", "after marker", "capped"]
     assert [s["rc"] for s in receipt["steps"]] == [0, 3, 0, 0]
@@ -47,13 +52,13 @@ def test_queue_runs_in_order_and_survives_failure(tmp_path):
     assert "FAILED" in table.stdout and "ok" in table.stdout
 
 
-def test_required_step_failure_stops_queue(tmp_path):
+def test_required_step_failure_stops_queue(tmp_path, queue_storage_policy):
     queue = tmp_path / "r.json"
     queue.write_text(json.dumps({"done": "DONE", "steps": [
         {"name": "must", "cmd": _py("import sys; sys.exit(1)"), "required": True, "duty": 1},
         {"name": "never", "cmd": _py("print('x')"), "duty": 1},
     ]}), encoding="utf-8")
-    _run(queue, expect=1)
+    _run(queue, expect=1, storage_policy=queue_storage_policy)
     receipt = json.loads((tmp_path / "r.receipt.json").read_text(encoding="utf-8"))
     assert [s["name"] for s in receipt["steps"]] == ["must"]
     assert receipt["status"] == "failed must rc=1"
@@ -74,13 +79,13 @@ def test_queue_after_a_failed_marker_runs_nothing_and_fails(tmp_path):
     assert (tmp_path / "DONE").read_text().splitlines()[-1] == "status failed after UP"
 
 
-def test_old_format_marker_without_status_counts_as_ok(tmp_path):
+def test_old_format_marker_without_status_counts_as_ok(tmp_path, queue_storage_policy):
     (tmp_path / "UP").write_text("must 0 0.1\n", encoding="utf-8")
     queue = tmp_path / "o.json"
     queue.write_text(json.dumps({"steps": [
         {"name": "dependent", "cmd": _py("open('RAN', 'w').write('x')"), "after": ["UP"], "duty": 1},
     ]}), encoding="utf-8")
-    _run(queue)
+    _run(queue, storage_policy=queue_storage_policy)
     assert (tmp_path / "RAN").exists()
     assert json.loads((tmp_path / "o.receipt.json").read_text(encoding="utf-8"))["status"] == "ok"
 

@@ -92,11 +92,16 @@ def test_status_does_not_call_a_dead_receipt_running(queue,monkeypatch,capsys):
     assert json.loads(capsys.readouterr().out)['process_state']=='EXITED'
 
 
-def test_two_real_queue_processes_execute_the_step_only_once(queue):
-    data=json.loads(queue.read_text());data['steps'][0]['cmd']=[sys.executable,'-c',"from pathlib import Path; import time; p=Path('COUNT');p.write_text(p.read_text()+'x' if p.exists() else 'x');time.sleep(.3)"]
+def test_two_real_queue_processes_execute_the_step_only_once(queue, queue_storage_policy):
+    data = json.loads(queue.read_text())
+    data['steps'][0]['cmd'] = [sys.executable, '-c',
+                               "from pathlib import Path; import os, time; "
+                               "Path(f'ran-{os.getpid()}').touch(exist_ok=False); time.sleep(.3)"]
     queue.write_text(json.dumps(data))
-    env={k:v for k,v in os.environ.items() if k not in ('CODEX_SESSION_ID','CODEX_THREAD_ID','LSS_STORAGE_RESERVATION')}
-    env.update(LSS_MIN_FREE_RAM_GB='0',LSS_MIN_COMMIT_HEADROOM_GB='0')
+    env = {k: v for k, v in os.environ.items()
+           if k not in ('CODEX_SESSION_ID', 'CODEX_THREAD_ID', 'LSS_STORAGE_RESERVATION')}
+    env.update(LSS_MIN_FREE_RAM_GB='0', LSS_MIN_COMMIT_HEADROOM_GB='0',
+               LSS_STORAGE_POLICY_JSON=json.dumps(queue_storage_policy))
     command=[sys.executable,str(ROOT/'scripts/batch.py'),'run',str(queue)]
     flags=getattr(subprocess,'CREATE_NO_WINDOW',0)
     first=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,creationflags=flags)
@@ -104,7 +109,7 @@ def test_two_real_queue_processes_execute_the_step_only_once(queue):
     try:
         first.communicate(timeout=30);second.communicate(timeout=30)
         assert sorted([first.returncode,second.returncode])==[0,1]
-        assert (queue.parent/'COUNT').read_text()=='x'
+        assert len(list(queue.parent.glob('ran-*'))) == 1
     finally:
         for child in [first,second]:
             if child.poll() is None:child.kill();child.wait()

@@ -29,15 +29,8 @@ LOCAL_FILES = {
 }
 
 LOCAL_TESTS = {
-    'tests/test_bgm_scene_names.py::test_transcription_ffmpeg_is_hidden_without_loading_models': "a hosted runner's machine conditions (real child-process queues time out there; no second volume; ffmpeg path); runs on the development machine",
-    'tests/test_development_lifecycle.py::test_two_real_queue_processes_execute_the_step_only_once': "a hosted runner's machine conditions (real child-process queues time out there; no second volume; ffmpeg path); runs on the development machine",
     'tests/test_development_lifecycle.py::test_killed_queue_controller_cannot_leave_provider_children': "a hosted runner's machine conditions (real child-process queues time out there; no second volume; ffmpeg path); runs on the development machine",
-    'tests/test_local_llm.py::test_hdd_weights_refuse_before_staging_or_gpu_launch': "a hosted runner's machine conditions (real child-process queues time out there; no second volume; ffmpeg path); runs on the development machine",
-    'tests/test_storage_budget.py::test_cli_nested_policy_exit_and_receipt': "a hosted runner's machine conditions (real child-process queues time out there; no second volume; ffmpeg path); runs on the development machine",
     'tests/test_storage_budget.py::test_cli_owns_descendants_on_exit_or_runner_death': "a hosted runner's machine conditions (real child-process queues time out there; no second volume; ffmpeg path); runs on the development machine",
-    'tests/test_batch_runner.py::test_queue_runs_in_order_and_survives_failure': "a hosted runner's machine conditions (real child-process queues time out there; no second volume; ffmpeg path); runs on the development machine",
-    'tests/test_batch_runner.py::test_required_step_failure_stops_queue': "a hosted runner's machine conditions (real child-process queues time out there; no second volume; ffmpeg path); runs on the development machine",
-    'tests/test_batch_runner.py::test_old_format_marker_without_status_counts_as_ok': "a hosted runner's machine conditions (real child-process queues time out there; no second volume; ffmpeg path); runs on the development machine",
     'tests/test_development_lifecycle.py::test_candidate_preflight_has_no_worktree_or_config_side_effect': "the checkout's own .venv (a hosted runner installs into its own Python)",
     'tests/test_development_lifecycle.py::test_candidate_preparation_records_exact_failure_without_rebuilding_product': "the checkout's own .venv (a hosted runner installs into its own Python)",
     'tests/test_summarize_local_ai_repairs.py::test_existing_output_is_preserved': 'a development Evidence home outside the checkout (LSS_DEV_STATE)',
