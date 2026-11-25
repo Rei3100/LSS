@@ -7,7 +7,6 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
-import tempfile
 from types import SimpleNamespace
 
 import pytest
@@ -603,6 +602,7 @@ def release(tmp_path, monkeypatch):
             "product_running": False, "other_gpu_jobs": 0, "user_heavy_use": False}),
         "deploy_base": str(base), "deploy_log": str(tmp_path / "deploy.log"),
         "launch_receipt": str(tmp_path / "launch.json")}
+    Path(state["deploy_log"]).touch()
     return state, write
 
 
@@ -870,7 +870,7 @@ def test_deploy_uses_package_verified_relative_to_checkout(release, tmp_path, mo
     assert json.loads(capsys.readouterr().out)["deployment"] == "LAUNCHED"
     argv, = calls
     assert argv[argv.index("-BuildOutput") + 1] == package
-    assert not Path(state["deploy_log"]).exists()
+    assert Path(state["deploy_log"]).read_bytes() == b""
 
 
 def test_deploy_refuses_manifest_replacement_after_preflight(release, monkeypatch, capsys):
@@ -973,48 +973,83 @@ def test_check_only_refuses_missing_pwsh(release, tmp_path, monkeypatch, capsys)
     assert json.loads(capsys.readouterr().out)["failures"] == ["pwsh"]
 
 
-@pytest.mark.parametrize("marker", ["pending", "corrupt", "other-target", "orphaned-previous"])
-def test_check_only_refuses_unresolved_deployment(release, monkeypatch, capsys, marker):
+@pytest.mark.parametrize("phase, layout, refusal", [
+    ("stage_ready", "staged", None),
+    ("stage_ready", "cleaned-staging", None),
+    ("stage_ready", "saved-previous", "phase 'stage_ready' has an existing .LSS.previous"),
+    ("stage_ready", "other-target", "phase 'stage_ready' refers to different deployment paths"),
+    ("previous_saved", "saved-previous", "phase 'previous_saved'"),
+    ("target_promoted", "saved-previous", "phase 'target_promoted'"),
+    ("mutable_preserved", "saved-previous", "phase 'mutable_preserved'"),
+    ("awaiting_acceptance", "saved-previous", "phase 'awaiting_acceptance'"),
+    ("unknown_phase", "staged", "phase 'unknown_phase'"),
+    (None, "corrupt", "journal is corrupt or unreadable"),
+    (None, "saved-previous", ".LSS.previous exists without a deployment journal"),
+])
+def test_check_only_distinguishes_pre_swap_recovery(release, monkeypatch, capsys, phase, layout, refusal):
     state, write = release
     base = Path(state["deploy_base"])
     journal = base / ".LSS-deploy.json"
+    staging = base / ".LSS.staging"
     previous = base / ".LSS.previous"
-    if marker in ("pending", "orphaned-previous"):
+    if layout == "staged":
+        staging.mkdir()
+        (staging / "LSS.exe").write_bytes(b"staged candidate")
+    if layout == "saved-previous":
         previous.mkdir()
-    if marker == "corrupt":
+    if layout == "corrupt":
         journal.write_text("{", encoding="utf-8")
-    elif marker != "orphaned-previous":
-        target = base / ("LSS" if marker == "pending" else "other")
-        journal.write_text(json.dumps({"version": 1, "phase": "awaiting_acceptance",
-            "target": str(target), "staging": str(base / ".LSS.staging"),
+    elif phase is not None:
+        target = base / ("other" if layout == "other-target" else "LSS")
+        journal.write_text(json.dumps({"version": 1, "phase": phase,
+            "target": str(target), "staging": str(staging),
             "previous": str(previous), "runtime_entries": ["LSS.exe"]}), encoding="utf-8")
     monkeypatch.setattr(deployment.time, "time", lambda: 1000)
 
     assert deployment.main(["--state", write("state", state), "--check-only"],
-                           git_reader=clean_release_git) == 1
-    assert json.loads(capsys.readouterr().out)["failures"] == ["deploy_base"]
+                           git_reader=clean_release_git) == (0 if refusal is None else 1)
+    result = json.loads(capsys.readouterr().out)
+    if refusal is None:
+        assert result["result"] == "PASS"
+        assert journal.is_file()
+        assert staging.exists() == (layout == "staged")
+    else:
+        assert result["failures"] == ["deploy_base"]
+        assert refusal in result["failure_details"]["deploy_base"]
 
 
-@pytest.mark.parametrize("base_location", ["parent", "same", "child"])
-def test_check_only_refuses_overlapping_package_and_deploy_base(release, tmp_path, monkeypatch, capsys, base_location):
+@pytest.mark.parametrize("location, overlaps", [
+    ("Candidates/LSS", None),
+    ("LSS/candidate", "LSS"),
+    (".LSS.staging", ".LSS.staging"),
+    (".LSS.previous/candidate", ".LSS.previous"),
+    (".", "LSS"),
+])
+def test_check_only_matches_managed_deployment_path_overlap(release, monkeypatch, capsys, location, overlaps):
     state, write = release
     manifest = deployment.load(state["manifest"])
-    parent = tmp_path / "package-parent"
-    parent.mkdir()
-    package = Path(manifest["package_dir"]).rename(parent / "package")
+    base = Path(state["deploy_base"])
+    source = Path(manifest["package_dir"])
+    package = base / location
+    if package == base:
+        (source / "LSS.exe").rename(package / "LSS.exe")
+    else:
+        package.parent.mkdir(parents=True, exist_ok=True)
+        source.rename(package)
     manifest["package_dir"] = str(package)
     state["manifest"] = write("manifest", manifest)
     build = deployment.load(state["build_receipt"])
     build["candidate"] = str(package)
     state["build_receipt"] = write("build", build)
-    base = {"parent": parent, "same": package, "child": package / "nested"}[base_location]
-    base.mkdir(exist_ok=True)
-    state["deploy_base"] = str(base)
     monkeypatch.setattr(deployment.time, "time", lambda: 1000)
 
     assert deployment.main(["--state", write("state", state), "--check-only"],
-                           git_reader=clean_release_git) == 1
-    assert json.loads(capsys.readouterr().out)["failures"] == ["rollback_ready", "deploy_base"]
+                           git_reader=clean_release_git) == (0 if overlaps is None else 1)
+    result = json.loads(capsys.readouterr().out)
+    if overlaps is None:
+        assert result["result"] == "PASS"
+    else:
+        assert result["failure_details"]["deploy_base"] == f"frozen package overlaps managed deployment path {overlaps!r}"
 
 
 @pytest.mark.parametrize("temporary_entry", ["file", "directory", "configured-log"])
@@ -1027,6 +1062,7 @@ def test_check_only_requires_unused_receipt_temporary_path(release, monkeypatch,
         temporary.mkdir()
     else:
         state["deploy_log"] = str(temporary)
+        temporary.touch()
     monkeypatch.setattr(deployment.time, "time", lambda: 1000)
 
     assert deployment.main(["--state", write("state", state), "--check-only"],
@@ -1070,36 +1106,47 @@ def test_check_only_keeps_launcher_outputs_outside_protected_roots(release, monk
     paths = deployment.load(state["manifest"]) if root_key == "package_dir" else state
     root = Path(paths[root_key])
     name = Path(state[output]).name
-    state[output] = str(root / name)
+    if output == "deploy_log":
+        blocked_path = root / ("LSS.exe" if root_key == "package_dir" else "LSS/LSS.exe")
+        prior_bytes = blocked_path.read_bytes()
+    else:
+        blocked_path = root / name
+    state[output] = str(blocked_path)
     monkeypatch.setattr(deployment.time, "time", lambda: 1000)
     args = ["--state", write("state", state), "--check-only"]
 
     assert deployment.main(args, git_reader=clean_release_git) == 1
     assert json.loads(capsys.readouterr().out)["failures"] == [output]
-    assert not Path(state[output]).exists()
+    if output == "deploy_log":
+        assert blocked_path.read_bytes() == prior_bytes
+    else:
+        assert not blocked_path.exists()
 
     sibling = root.with_name(root.name + "-outputs")
     sibling.mkdir()
     state[output] = str(sibling / name)
+    if output == "deploy_log":
+        Path(state[output]).touch()
     write("state", state)
     assert deployment.main(args, git_reader=clean_release_git) == 0
     assert json.loads(capsys.readouterr().out)["result"] == "PASS"
 
 
-def test_check_only_accepts_missing_log_without_opening_a_temporary_file(release, monkeypatch, capsys):
+def test_check_only_requires_precreated_appendable_log(release, tmp_path, monkeypatch, capsys):
     state, write = release
-    log = Path(state["deploy_log"])
-
-    def delete_access_denied(*args, **kwargs):
-        raise PermissionError("delete access denied")
-
-    monkeypatch.setattr(tempfile, "TemporaryFile", delete_access_denied)
+    log = tmp_path / "operator.log"
+    state["deploy_log"] = str(log)
     monkeypatch.setattr(deployment.time, "time", lambda: 1000)
+    args = ["--state", write("state", state), "--check-only"]
 
-    assert deployment.main(["--state", write("state", state), "--check-only"],
-                           git_reader=clean_release_git) == 0
-    assert json.loads(capsys.readouterr().out)["result"] == "PASS"
+    assert deployment.main(args, git_reader=clean_release_git) == 1
+    assert json.loads(capsys.readouterr().out)["failures"] == ["deploy_log"]
     assert not log.exists()
+
+    log.touch()
+    assert deployment.main(args, git_reader=clean_release_git) == 0
+    assert json.loads(capsys.readouterr().out)["result"] == "PASS"
+    assert log.read_bytes() == b""
 
 
 def test_deployment_contract_documents_package_hash_window():

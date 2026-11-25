@@ -92,6 +92,50 @@ def path_contains(parent, child):
     return child_prefix[:len(parent_prefix)].casefold() == parent_prefix.casefold()
 
 
+def require_safe_recovery(journal_path, managed):
+    previous = managed["previous"]
+    if not path_entry_exists(journal_path):
+        if path_entry_exists(previous):
+            raise InvalidField(".LSS.previous exists without a deployment journal")
+        return
+
+    try:
+        if link_like(journal_path) or not journal_path.is_file():
+            raise ValueError("Expected a regular journal file")
+        journal = load(journal_path)
+    except CHECK_ERRORS as error:
+        raise InvalidField("deployment journal is corrupt or unreadable") from error
+
+    phase = journal.get("phase")
+    if not isinstance(phase, str) or not phase:
+        raise InvalidField("deployment journal has an unknown or missing phase")
+    reason = f"deployment journal phase {phase!r}"
+    if phase != "stage_ready":
+        raise InvalidField(f"{reason} does not permit a new deployment")
+
+    version = journal.get("version")
+    runtime_entries = journal.get("runtime_entries")
+    if (type(version) is not int or version != 1 or not isinstance(runtime_entries, list) or
+            not all(isinstance(entry, str) for entry in runtime_entries)):
+        raise InvalidField(f"{reason} has an invalid journal payload")
+    try:
+        recorded = {key: Path(os.path.normpath(field(journal, key, absolute=True))) for key in managed}
+    except CHECK_ERRORS as error:
+        raise InvalidField(f"{reason} has invalid deployment paths") from error
+    if recorded != managed:
+        raise InvalidField(f"{reason} refers to different deployment paths")
+
+    # The first rename may finish before PowerShell records previous_saved.
+    if path_entry_exists(previous):
+        raise InvalidField(f"{reason} has an existing .LSS.previous")
+    target = managed["target"]
+    if not target.is_dir() or link_like(target):
+        raise InvalidField(f"{reason} lacks an intact installation")
+    staging = managed["staging"]
+    if path_entry_exists(staging) and (link_like(staging) or any(link_like(entry) for entry in staging.rglob("*"))):
+        raise InvalidField(f"{reason} has a reparse point in staging")
+
+
 def resolve_pwsh():
     # Python 3.11 does not add PATHEXT when shutil.which receives an absolute path.
     executable = "pwsh.exe" if os.name == "nt" else "pwsh"
@@ -237,10 +281,15 @@ def preflight(state, *, git_reader=git, now=None):
     check("checkout_clean", lambda: not git_reader(checkout(), *CHECKOUT_STATUS_ARGS))
 
     def deploy_base():
-        return (base is not None and base.is_dir() and not has_reparse_ancestor(base) and
-                not path_entry_exists(base / ".LSS-deploy.json") and
-                not path_entry_exists(base / ".LSS.previous") and
-                (package_dir is None or not (path_contains(base, package_dir) or path_contains(package_dir, base))))
+        if base is None or not base.is_dir() or has_reparse_ancestor(base):
+            return False
+        managed = {"target": base / "LSS", "staging": base / ".LSS.staging", "previous": base / ".LSS.previous"}
+        if package_dir is not None:
+            for path in managed.values():
+                if path_contains(path, package_dir) or path_contains(package_dir, path):
+                    raise InvalidField(f"frozen package overlaps managed deployment path {path.name!r}")
+        require_safe_recovery(base / ".LSS-deploy.json", managed)
+        return True
     check("deploy_base", deploy_base)
 
     protected_roots = tuple(root for root in (package_dir, base) if root is not None)
@@ -256,8 +305,8 @@ def preflight(state, *, git_reader=git, now=None):
             return None
         try:
             info = path.stat()
-        except FileNotFoundError:
-            return path
+        except FileNotFoundError as error:
+            raise InvalidField("deploy_log must exist before running the gate") from error
         if not stat.S_ISREG(info.st_mode):
             return None
         os.close(os.open(path, os.O_WRONLY | os.O_APPEND))

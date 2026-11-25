@@ -119,8 +119,9 @@ acceptance to establish actual deployment. The command preserves `-KeepPrevious`
 `--state <json>` selects an explicit state file. The default is
 `$LSS_PRIVATE_ROOT/run/deploy-gate.json`. Each path in that file is an absolute
 path string. A relative path fails the condition that reads it and
-`failure_details` names the key. State and receipts stay private. The state
-contains these path references:
+`failure_details` names the key. State and receipts stay private. The operator
+creates an empty file at a new `deploy_log` path before running the gate.
+The state contains these path references:
 
 | Key | Existing evidence or normalized receipt |
 | --- | --- |
@@ -158,10 +159,18 @@ checkout. Additional fields are below.
 | `machine_idle` | Candidate receipt's numeric Unix-seconds `observed_at` is at most 60 seconds old, `product_running: false`, integer `other_gpu_jobs: 0`, `user_heavy_use: false` |
 | `checkout_head` | HEAD equals the candidate source commit |
 | `checkout_clean` | `git status --porcelain --untracked-files=all` returns no entries |
-| `deploy_base` | Deployment base is an existing directory and neither it nor its ancestors are links or reparse points. Any `.LSS-deploy.json` or `.LSS.previous` entry blocks deployment. The base and frozen package directory are distinct and neither contains the other. The comparison ignores case and uses directory boundaries. |
-| `deploy_log` | The log path and its resolved location are outside the frozen package and deployment base. The parent directory exists. The gate opens an existing log for append without writing. It leaves a missing log uncreated. |
+| `deploy_base` | Deployment base is an existing directory and neither it nor its ancestors are links or reparse points. The frozen package is distinct from and shares no ancestor-or-descendant relationship with `LSS`, `.LSS.staging`, or `.LSS.previous` under the base. The comparison ignores case and uses directory boundaries. Recovery must leave the installed runtime intact. |
+| `deploy_log` | The log path and its resolved location are outside the frozen package and deployment base. The log already exists as a regular file and opens for append. The gate neither creates the log nor writes to it. |
 | `launch_receipt` | The receipt path and its resolved location are outside the frozen package and deployment base. The parent directory exists. Both the receipt and `<receipt>.tmp` must be absent, and both resolve to paths distinct from the log. |
 | `pwsh` | The gate uses `shutil.which` to find `pwsh.exe` on Windows or `pwsh` elsewhere using absolute directories from `PATH`. It skips relative entries and implicit lookup in the caller's working directory. It passes the resolved executable to the hidden launcher. |
+
+When `.LSS-deploy.json` exists, the gate accepts a version 1 `stage_ready`
+journal for the current managed paths only if the installed target is intact,
+`.LSS.previous` is absent, and staging has no links or reparse points. PowerShell
+can then clear staging and the journal while preserving the installed runtime.
+`previous_saved`, `target_promoted`, `mutable_preserved`, `awaiting_acceptance`,
+unknown phases, invalid journals, and an orphaned `.LSS.previous` block deployment.
+`failure_details.deploy_base` gives the reason and names the phase when available.
 
 The gate hashes the package directory at preflight and cannot detect changes between preflight and the copy. The freeze protects the package during that interval.
 
