@@ -83,3 +83,5 @@ release-evidence/**/*.json -text whitespace=blank-at-eol,blank-at-eof,space-befo
 release-evidence/**/*.jsonl -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 release-evidence/**/*.log -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 scripts/githooks/* text eol=lf
+# The vendored React builds are checked by SHA-384 at startup: keep their bytes.
+assets/web/*.js -text

@@ -127,6 +127,14 @@
     class DCLogic extends React.Component {
       state = {};
 
+      // The canvas and the bridge read this.state right after setState, as the exported
+      // runtime allowed: merge at once, then let React render the same patch.
+      setState(update, callback) {
+        const patch = typeof update === 'function' ? update(this.state, this.props) : update;
+        if (patch != null) this.state = Object.assign({}, this.state, patch);
+        super.setState(patch, callback);
+      }
+
       render() {
         return render({ ...this.props, ...this.renderVals() });
       }
