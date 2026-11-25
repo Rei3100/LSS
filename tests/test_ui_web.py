@@ -35,16 +35,42 @@ def test_built_page_needs_no_network_and_carries_the_bridge(tmp_path: Path) -> N
     assert '"debugTools":{"editor":"boolean","default":false' in html.replace("&quot;", '"')
     # 初期データはスクリプトを閉じられない
     assert "</script>\"" not in html and "\\u003c/script>" in html
-    for name in ("support.js", "react.production.min.js", "react-dom.production.min.js"):
-        assert (tmp_path / name).is_file()
-    runtime = (tmp_path / "support.js").read_text(encoding="utf-8")
-    for url, _name in page._REACT:
-        assert url in runtime, "Designのランタイムが読むReactのURLが変わった"
+    scripts = ["react.production.min.js", "react-dom.production.min.js", "runtime.js"]
+    positions = [html.index(f'<script src="./{name}"></script>') for name in scripts]
+    assert positions == sorted(positions)
+    assert (tmp_path / "runtime.js").read_bytes() == page.RUNTIME.read_bytes()
+    assert "support.js" not in html
+    assert not (tmp_path / "support.js").exists()
+
+
+def test_built_pages_resolve_declared_assets_inside_the_cache(tmp_path: Path) -> None:
+    import re
+    from html.parser import HTMLParser
+    from urllib.parse import unquote, urlsplit
+
+    class AssetReferences(HTMLParser):
+        def handle_starttag(self, tag, attrs):
+            assert tag != "base"
+            urls.extend(value for name, value in attrs if name in {"src", "href"} and value)
+
+    entry = page.build(tmp_path)
+    for path in (entry, tmp_path / "tray_menu.html"):
+        html = path.read_text(encoding="utf-8")
+        urls: list[str] = []
+        AssetReferences().feed(html)
+        for css in re.findall(r"<style>(.*?)</style>", html, re.DOTALL):
+            urls.extend(re.findall(r"url\(['\"]?([^'\")]+)['\"]?\)", css))
+        assert urls
+        for url in urls:
+            parts = urlsplit(url)
+            assert not parts.scheme and not parts.netloc, url
+            asset = (path.parent / unquote(parts.path)).resolve()
+            assert asset.is_relative_to(tmp_path.resolve()) and asset.is_file(), url
 
 
 def test_page_rebuilds_over_a_read_only_cache_from_a_read_only_package(
         tmp_path: Path, monkeypatch) -> None:
-    """配備された同梱物は読み取り専用。2回目の起動で support.js の上書きが
+    """配備された同梱物は読み取り専用。2回目の起動でランタイムの上書きが
     PermissionError になり、アプリが起動しなかった（c92defa の配備後）。"""
     import os
     import shutil
@@ -52,14 +78,14 @@ def test_page_rebuilds_over_a_read_only_cache_from_a_read_only_package(
 
     package = tmp_path / "package"
     package.mkdir()
-    runtime = package / "support.js"
+    runtime = package / "runtime.js"
     shutil.copyfile(page.RUNTIME, runtime)
     os.chmod(runtime, stat.S_IREAD)
     monkeypatch.setattr(page, "RUNTIME", runtime)
     web = tmp_path / "state" / "web"
     # 以前の版が残した、属性ごと写した読み取り専用のキャッシュ
     web.mkdir(parents=True)
-    for name in ("support.js", "react.production.min.js"):
+    for name in ("index.html", "runtime.js", "react.production.min.js", "react-dom.production.min.js"):
         shutil.copy2(runtime, web / name)
         os.chmod(web / name, stat.S_IREAD)
     # LSSが書く名前以外の物（利用者のメモ。読み取り専用も）は、起動のたびのページの書き出しで消さない
@@ -75,7 +101,7 @@ def test_page_rebuilds_over_a_read_only_cache_from_a_read_only_package(
             generated = [path for path in web.rglob("*") if path.is_file() and path not in notes]
             for path in generated:
                 assert os.access(path, os.W_OK), path
-            assert (web / "support.js").read_bytes() == runtime.read_bytes()
+            assert (web / "runtime.js").read_bytes() == runtime.read_bytes()
             assert (web / "tray_menu.html").is_file()
             assert {path: path.read_bytes() for path in notes} == notes
             assert not os.access(web / "fonts" / "readonly-note.txt", os.W_OK)
@@ -84,17 +110,11 @@ def test_page_rebuilds_over_a_read_only_cache_from_a_read_only_package(
         os.chmod(web / "fonts" / "readonly-note.txt", stat.S_IWRITE | stat.S_IREAD)
 
 
-def test_vendored_react_matches_the_runtime_integrity_hashes() -> None:
-    import base64
-    import hashlib
-    import re
+def test_vendored_react_matches_the_lss_integrity_hashes() -> None:
+    from hashlib import sha384
 
-    runtime = page.RUNTIME.read_text(encoding="utf-8")
-    for key, name in (("REACT_SRI", "react.production.min.js"),
-                      ("REACT_DOM_SRI", "react-dom.production.min.js")):
-        expected = re.search(rf'var {key} = "sha384-([^"]+)"', runtime).group(1)
-        digest = hashlib.sha384((page.WEB_DIR / name).read_bytes()).digest()
-        assert base64.b64encode(digest).decode() == expected
+    for name, expected in page._REACT:
+        assert sha384((page.WEB_DIR / name).read_bytes()).hexdigest() == expected, name
 
 
 def test_a_reexported_design_fails_loudly_instead_of_drifting() -> None:

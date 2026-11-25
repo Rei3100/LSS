@@ -15,7 +15,7 @@ datas = [
     ("assets", "assets"),
     # 画面は凍結Claude Designのページそのもの（lss/ui/web）。原本とランタイムを同梱する。
     ("design/reference/LSS App.dc.html", "design/reference"),
-    ("design/reference/support.js", "design/reference"),
+    ("lss/ui/web/runtime.js", "lss/ui/web"),
     ("lss/ui/web/bridge.js", "lss/ui/web"),
     ("lss/ui/web/tray_menu.html", "lss/ui/web"),
     ("VERSION", "."),

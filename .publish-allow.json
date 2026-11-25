@@ -294,6 +294,7 @@
     "lss/ui/web/bridge.js",
     "lss/ui/web/host.py",
     "lss/ui/web/page.py",
+    "lss/ui/web/runtime.js",
     "lss/ui/web/session.py",
     "lss/ui/web/tray.py",
     "lss/ui/web/tray_menu.html",
