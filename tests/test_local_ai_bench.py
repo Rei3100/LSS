@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.gates.gate_support import require_historical_commits
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import local_ai_bench as bench
 
@@ -48,6 +50,8 @@ def test_regex_extraction_never_executes_other_assignments():
 
 
 def test_historical_replay_population_and_controls():
+    for commit, _, _ in bench.REPLAYS:
+        require_historical_commits(bench.ROOT, commit, f"{commit}^1")
     tasks = bench.load_replays()
     assert len(tasks) >= 10
     assert len({t["commit"] for t in tasks}) == len(tasks)

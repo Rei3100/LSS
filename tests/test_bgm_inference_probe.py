@@ -6,6 +6,9 @@ import numpy as np
 import pytest
 import soundfile as sf
 
+if not (Path(__file__).resolve().parents[1] / "scripts" / "run_bgm_inference_probe.py").is_file():
+    pytest.skip("missing scripts/run_bgm_inference_probe.py", allow_module_level=True)
+
 from lss.bgm.inference_variants import InferenceVariantRecipe
 from scripts.run_bgm_inference_probe import checked_plan, evaluate
 from scripts.run_bgm_spatial_probe import artifact, sha256

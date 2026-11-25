@@ -1,6 +1,7 @@
 """case単独の再開記録と、元case×variantの全件対応を検証する。"""
 import copy
 import json
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -134,6 +135,13 @@ def test_normalized_matrix_must_match_the_original_sources_and_every_variant(nat
         verify_normalized(duplicate, receipt)
 
 
+@pytest.fixture
+def require_inference_probe():
+    if not (Path(__file__).resolve().parents[1] / "scripts" / "run_bgm_inference_probe.py").is_file():
+        pytest.skip("missing scripts/run_bgm_inference_probe.py")
+
+
+@pytest.mark.usefixtures("require_inference_probe")
 def test_freeze_and_evaluation_use_native_adapter_without_relabelling_it_as_legacy(native, tmp_path):
     from types import SimpleNamespace
     from lss.validation.variant_receipt import METHOD
@@ -153,6 +161,7 @@ def test_freeze_and_evaluation_use_native_adapter_without_relabelling_it_as_lega
     assert not report["promotion_allowed"] and not report["holdout_consumed"]
 
 
+@pytest.mark.usefixtures("require_inference_probe")
 def test_changed_native_final_receipt_is_rejected_before_evaluation_outputs(native, tmp_path):
     from types import SimpleNamespace
     from scripts.prepare_resumable_bgm_variant_comparison import freeze
@@ -169,6 +178,7 @@ def test_changed_native_final_receipt_is_rejected_before_evaluation_outputs(nati
     assert not output.exists()
 
 
+@pytest.mark.usefixtures("require_inference_probe")
 def test_changed_original_comparison_definition_cannot_be_hidden_by_native_receipt(native, tmp_path):
     from scripts.prepare_resumable_bgm_variant_comparison import freeze
 

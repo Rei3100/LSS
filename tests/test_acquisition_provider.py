@@ -10,24 +10,34 @@ import pytest
 
 from lss.acquisition import openpgp, provider
 
-FIXTURES = Path(__file__).parent / "fixtures" / "yt-dlp-2026.08.19"
+ROOT = Path(__file__).resolve().parents[1]
+FIXTURES = ROOT / "tests" / "fixtures" / "yt-dlp-2026.08.19"
 MODULE = (sys.executable, "-m", "yt_dlp")
 
 
 # --- 公式の署名で検証する ----------------------------------------------------
 
-def test_official_release_checksums_verify_with_the_pinned_key():
-    sums = (FIXTURES / "SHA2-256SUMS").read_bytes()
-    signature = (FIXTURES / "SHA2-256SUMS.sig").read_bytes()
+@pytest.fixture
+def official_release_signature():
+    sums_path = FIXTURES / "SHA2-256SUMS"
+    signature_path = FIXTURES / "SHA2-256SUMS.sig"
+    missing = [path.relative_to(ROOT).as_posix()
+               for path in (sums_path, signature_path) if not path.is_file()]
+    if missing:
+        pytest.skip("missing fixtures: " + ", ".join(missing))
+    return sums_path.read_bytes(), signature_path.read_bytes()
+
+
+def test_official_release_checksums_verify_with_the_pinned_key(official_release_signature):
+    sums, signature = official_release_signature
     signer = openpgp.verify_detached(sums, signature, provider.pinned_keys())
     assert signer.fingerprint in provider.PINNED_FINGERPRINTS
     assert provider.parse_sums(sums.decode())["yt-dlp.exe"] == \
         "66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a"
 
 
-def test_tampered_checksums_or_other_keys_are_rejected():
-    sums = (FIXTURES / "SHA2-256SUMS").read_bytes()
-    signature = (FIXTURES / "SHA2-256SUMS.sig").read_bytes()
+def test_tampered_checksums_or_other_keys_are_rejected(official_release_signature):
+    sums, signature = official_release_signature
     with pytest.raises(openpgp.SignatureError):
         openpgp.verify_detached(sums.replace(b"66674953", b"00000000"), signature, provider.pinned_keys())
     other = _TestKey()
