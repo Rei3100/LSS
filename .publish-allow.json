@@ -1446,8 +1446,8 @@
       "reason": "Content, rights and privacy reviewed after one sentence on launch-time naming recovery was added; no work names, paths or secrets added (2026-11-24)"
     },
     "docs/engine/LOCAL_RUNTIME.md": {
-      "blob_oid": "f2fc4cef52e7991dd91bc5739c387f6504580b23",
-      "reason": "Runbook steps 5 and 6 deploy, rehearse rollback and finalize through deploy-gated.cmd; reviewed by Claude and Codex."
+      "blob_oid": "cfa2f0ea578f17270cd9ad92489e934ed079ac85",
+      "reason": "2026-11-25: runbook steps 5 and 6 deploy, rehearse rollback and finalize through deploy-gated.cmd and the installer; reviewed by Claude and Codex."
     },
     "docs/engine/QUALITY_AND_DECISIONS.md": {
       "blob_oid": "1b2440c325f13d8595a516bf3f016e8bcd3566c4",
