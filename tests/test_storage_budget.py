@@ -206,17 +206,20 @@ def test_nudge_absent_diagnostics_cannot_abort_admission(policy, monkeypatch, re
     assert result["detail"] == ""
 
 
-def test_cli_nested_policy_exit_and_receipt(policy, tmp_path):
-    environment = dict(os.environ, LSS_STORAGE_POLICY_JSON=json.dumps(policy))
+def test_cli_nested_policy_exit_and_receipt(queue_storage_policy, tmp_path):
+    environment = dict(os.environ, LSS_STORAGE_POLICY_JSON=json.dumps(queue_storage_policy))
+    environment.pop(budget.TOKEN_ENV, None)
     command = budget.command([sys.executable, "-c", "raise SystemExit(7)"],
                              paths=[tmp_path], archive_paths=[tmp_path / "result"], required_gb=0)
-    result = subprocess.run(command, env=environment, capture_output=True, text=True, timeout=20,
+    command.insert(command.index("--"), "--no-wait")
+    result = subprocess.run(command, cwd=tmp_path, env=environment, capture_output=True, text=True, timeout=20,
                             creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
     assert result.returncode == 7, result.stderr
     receipts = list((tmp_path / "state/budget/receipts").glob("*.json"))
     assert len(receipts) == 1
     assert json.loads(receipts[0].read_text())["status"] == "failed"
-    assert budget.protected_paths(policy) == []
+    assert not list((tmp_path / "state/budget/active").glob("*.json"))
+    assert budget.protected_paths(queue_storage_policy) == []
 
 
 def test_invalid_estimates_and_archive_scope(policy, tmp_path):

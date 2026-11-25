@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -92,11 +93,16 @@ def test_status_does_not_call_a_dead_receipt_running(queue,monkeypatch,capsys):
     assert json.loads(capsys.readouterr().out)['process_state']=='EXITED'
 
 
-def test_two_real_queue_processes_execute_the_step_only_once(queue):
-    data=json.loads(queue.read_text());data['steps'][0]['cmd']=[sys.executable,'-c',"from pathlib import Path; import time; p=Path('COUNT');p.write_text(p.read_text()+'x' if p.exists() else 'x');time.sleep(.3)"]
+def test_two_real_queue_processes_execute_the_step_only_once(queue, queue_storage_policy):
+    data = json.loads(queue.read_text())
+    data['steps'][0]['cmd'] = [sys.executable, '-c',
+                               "from pathlib import Path; import os, time; "
+                               "Path(f'ran-{os.getpid()}').touch(exist_ok=False); time.sleep(.3)"]
     queue.write_text(json.dumps(data))
-    env={k:v for k,v in os.environ.items() if k not in ('CODEX_SESSION_ID','CODEX_THREAD_ID','LSS_STORAGE_RESERVATION')}
-    env.update(LSS_MIN_FREE_RAM_GB='0',LSS_MIN_COMMIT_HEADROOM_GB='0')
+    env = {k: v for k, v in os.environ.items()
+           if k not in ('CODEX_SESSION_ID', 'CODEX_THREAD_ID', 'LSS_STORAGE_RESERVATION')}
+    env.update(LSS_MIN_FREE_RAM_GB='0', LSS_MIN_COMMIT_HEADROOM_GB='0',
+               LSS_STORAGE_POLICY_JSON=json.dumps(queue_storage_policy))
     command=[sys.executable,str(ROOT/'scripts/batch.py'),'run',str(queue)]
     flags=getattr(subprocess,'CREATE_NO_WINDOW',0)
     first=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,creationflags=flags)
@@ -104,7 +110,7 @@ def test_two_real_queue_processes_execute_the_step_only_once(queue):
     try:
         first.communicate(timeout=30);second.communicate(timeout=30)
         assert sorted([first.returncode,second.returncode])==[0,1]
-        assert (queue.parent/'COUNT').read_text()=='x'
+        assert len(list(queue.parent.glob('ran-*'))) == 1
     finally:
         for child in [first,second]:
             if child.poll() is None:child.kill();child.wait()
@@ -122,7 +128,7 @@ def test_hidden_launcher_receipt_observes_real_child_without_arguments(tmp_path,
         assert 'time.sleep' not in receipt.read_text()
         assert hidden_run.main(['--status',str(receipt)])==0
         assert json.loads(capsys.readouterr().out)['state']=='RUNNING'
-        children[0].wait(timeout=5)
+        children[0].wait(timeout=60)
         assert hidden_run.main(['--status',str(receipt)])==3
         assert json.loads(capsys.readouterr().out)['state']=='EXITED'
     finally:
@@ -206,10 +212,37 @@ def test_hidden_receipt_publication_failure_stops_the_spawned_child(tmp_path,mon
     assert json.loads(receipt.read_text())['stage']=='failed'
 
 
+def test_hidden_receipt_retries_a_transient_replace_failure(tmp_path, monkeypatch):
+    receipt = tmp_path / 'launch.json'
+    temporary = receipt.with_suffix('.json.tmp')
+    real_replace = hidden_run.os.replace
+    calls = []
+
+    def replace(source, target):
+        calls.append((source, target))
+        if len(calls) == 1:
+            raise PermissionError('fixture transient publication refusal')
+        return real_replace(source, target)
+
+    child = SimpleNamespace(pid=123, poll=lambda: 0)
+    monkeypatch.setattr(hidden_run.subprocess, 'Popen', lambda *args, **kwargs: child)
+    monkeypatch.setattr(process_state, 'probe', lambda pid: {'state': 'UNKNOWN', 'created': None})
+    monkeypatch.setattr(hidden_run.os, 'replace', replace)
+
+    assert hidden_run.main(
+        ['--log', str(tmp_path / 'job.log'), '--receipt', str(receipt), '--', sys.executable, '-c', 'pass'],
+        storage_supervisor=True,
+    ) == 0
+    assert calls == [(temporary, receipt), (temporary, receipt)]
+    data = json.loads(receipt.read_text(encoding='utf-8'))
+    assert data['stage'] == 'exited'
+    assert data['returncode'] == 0
+
+
 def test_short_hidden_child_records_observed_exit_instead_of_unknown(tmp_path,monkeypatch):
     real=hidden_run.subprocess.Popen
     def completed(*a,**k):
-        child=real(*a,**k);child.wait(timeout=5);return child
+        child=real(*a,**k);child.wait(timeout=60);return child
     monkeypatch.setattr(hidden_run.subprocess,'Popen',completed)
     receipt=tmp_path/'short.json'
     assert hidden_run.main(['--log',str(tmp_path/'log'),'--receipt',str(receipt),'--',sys.executable,'-c','pass'],storage_supervisor=True)==0

@@ -303,29 +303,46 @@ def test_deployed_screen_processes_songs_with_stop_restart_retry_and_reuse(tmp_p
         page = app.launch()
         view = page.state()
         assert view["phase"] == "ready"
-        assert view["st"][row_of(view, batch[0])] == "done"
+        assert all(view["songs"][ident]["path"] != str(batch[0]) for ident in view["queue"])
+        assert view["st"][row_of(view, batch[1])] == "queued"
         assert view["st"][row_of(view, retry_source)] == "failed"
+        b_completions = ledger_rows(batch[0])
+        assert len(b_completions) == 1, b_completions
+        b_completion = b_completions[0]
+        assert b_completion["outcome"] == "artifacts" and b_completion["input_sha256"] == digests[batch[0]]
+        b_output_sha256 = verify_output(batch[0])
+        assert [(Path(item["path"]), item["sha256"]) for item in json.loads(b_completion["outputs"])] == [
+            (expected_output(batch[0]), b_output_sha256),
+        ]
         page.key(**ENTER)
         complete = settled(page, "complete", 600)
-        assert complete["st"][row_of(complete, retry_source)] == "failed"
-        states = {path.name: complete["st"][row_of(complete, path)] for path in batch}
-        # 画面が落ちた間に残ったワーカーが仕上げた曲は、再開時に再利用（skipped）として着地しうる。
-        assert states[batch[0].name] == "done" and states[batch[1].name] in {"done", "skipped"}, states
+        states = {path.name: complete["st"][row_of(complete, path)] for path in (batch[1], retry_source)}
+        # 画面が落ちた間に残ったワーカーが仕上げたCは、再開時に再利用（skipped）として着地しうる。
+        assert states[batch[1].name] in {"done", "skipped"} and states[retry_source.name] == "failed", states
         record["after_screen_crash_row_states"] = states
         batch_outputs = {path: verify_output(path) for path in batch}
+        assert batch_outputs[batch[0]] == b_output_sha256
+        assert ledger_rows(batch[0]) == b_completions
         assert not (retry_source.parent / "LSS" / f"{retry_source.stem} - Instrumental.flac").exists()
         time.sleep(1.5)
         page.screenshot(evidence / "06-complete-with-failure.png")
-        # 保存結果を画面から開く: トレイのメニューの「保存先を開く」で、保存したフォルダが開く。
-        app.open_saved_folder_from_tray_menu(batch[0].parent / "LSS")
-        note("opened_saved_folder_from_tray")
+        saved_folder = expected_output(batch[1]).parent
+        displayed_folder = page.eval(
+            "(() => { const v = window.__lssComponent.renderVals(); return v.resPathRoot + v.resPathLeaf; })()")
+        assert displayed_folder == str(saved_folder), displayed_folder
+        saved_folder_checks = ["displayed_saved_folder"]
+        # Explorer のウィンドウ検出は、試験を実行するデスクトップを列挙する。
+        if not app.hidden_desktop:
+            app.open_saved_folder_from_tray_menu(saved_folder)
+            note("opened_saved_folder_from_tray")
+            saved_folder_checks.append("open_saved_folder_from_tray")
         note("resumed_after_restart", failed=[retry_source.name], saved=[path.name for path in batch])
 
         page.key(**ENTER)
         ready = settled(page, "ready", 30)
         failed_id = row_of(ready, retry_source)
         assert ready["queue"] == [failed_id], "BACK TO READYで失敗曲だけが残る"
-        assert len(ready["hist"]) >= 3
+        assert ready["hist"] == []
         hidden.rename(retry_source)
         page.key(**DOWN)
         wait_for(lambda: page.state()["selId"] == failed_id, 10, "失敗曲の選択")
@@ -384,7 +401,7 @@ def test_deployed_screen_processes_songs_with_stop_restart_retry_and_reuse(tmp_p
             "deployed_screen", "no_dev_python_on_path", "first_run_fetch_failure_halt_retry", "file_dialog_multi_select", "folder_dialog", "real_gpu_songs",
             "stages", "cadence_during_gpu", "safe_stop_after_current", "tray_quit_stops_worker",
             "restart_resume_persisted_queue", "worker_crash_recovery", "screen_crash_resume", "failed_row_only_retry", "complete_and_back_to_ready",
-            "displayed_output_exists_and_valid", "open_saved_folder_from_tray", "readd_reuse_without_rewrite",
+            "displayed_output_exists_and_valid", *saved_folder_checks, "readd_reuse_without_rewrite",
             "deleted_output_regenerated", "sources_immutable",
         ]
     finally:
@@ -477,14 +494,20 @@ def test_deployed_screen_separates_disk_full_unsupported_and_zero_results(tmp_pa
         complete = phase_is(page, "complete", 600)
         states = {path.name: complete["st"][row_of(complete, path)] for path in inputs}
         record["row_states"] = states
-        assert states == {song.name: "done", six.name: "failed", silent.name: "skipped", broken.name: "failed"}, states
+        assert states == {song.name: "done", six.name: "failed", silent.name: "done", broken.name: "failed"}, states
+        silent_id = row_of(complete, silent)
+        silent_result = page.eval("window.__lssComponent.state.tst[" + json.dumps(silent_id) + "].inst")
+        assert (silent_result["k"], silent_result["n"]) == ("none", 0), silent_result
+        assert not complete["songs"][silent_id].get("out")
+        saved_count = page.eval(
+            "Number(window.__lssComponent.renderVals().resTargets.find(target => target.key === 'inst').num)")
+        assert saved_count == 1, saved_count
         rows = page.eval(
             "(() => { const c = window.__lssComponent; const s = c.state; return Object.fromEntries("
             "c.renderVals().rows.map(r => [c.songs()[r.key].path, {badge: r.badge, note: r.note, hasNote: r.hasNote}])); })()")
         record["rows"] = rows
         assert rows[str(six)]["badge"] == "UNSUPPORTED" and rows[str(six)]["note"].startswith("6ch")
         assert rows[str(broken)]["badge"] == "UNSUPPORTED"
-        assert rows[str(silent)]["badge"] == "SKIPPED" and not rows[str(silent)]["hasNote"]
         time.sleep(1.5)
         page.screenshot(evidence / "03-complete-edges.png")
         assert output.is_file() and sf.info(output).channels == 2
@@ -498,7 +521,8 @@ def test_deployed_screen_separates_disk_full_unsupported_and_zero_results(tmp_pa
             assert session.input_sha256_of(path) == digests[path]
         record["verified"] = [
             "disk_full_halt", "halt_skip", "skipped_halt_row_retry_after_restart", "unsupported_channels",
-            "nonfinite_input", "exact_silence_zero_result_without_false_note", "no_artifacts_for_failures",
+            "nonfinite_input", "exact_silence_zero_result", "zero_result_excluded_from_saved_count",
+            "no_artifacts_for_failures_or_zero_results",
         ]
     finally:
         (evidence / "record.json").write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
