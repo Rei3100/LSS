@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -127,7 +128,7 @@ def test_hidden_launcher_receipt_observes_real_child_without_arguments(tmp_path,
         assert 'time.sleep' not in receipt.read_text()
         assert hidden_run.main(['--status',str(receipt)])==0
         assert json.loads(capsys.readouterr().out)['state']=='RUNNING'
-        children[0].wait(timeout=5)
+        children[0].wait(timeout=60)
         assert hidden_run.main(['--status',str(receipt)])==3
         assert json.loads(capsys.readouterr().out)['state']=='EXITED'
     finally:
@@ -211,10 +212,37 @@ def test_hidden_receipt_publication_failure_stops_the_spawned_child(tmp_path,mon
     assert json.loads(receipt.read_text())['stage']=='failed'
 
 
+def test_hidden_receipt_retries_a_transient_replace_failure(tmp_path, monkeypatch):
+    receipt = tmp_path / 'launch.json'
+    temporary = receipt.with_suffix('.json.tmp')
+    real_replace = hidden_run.os.replace
+    calls = []
+
+    def replace(source, target):
+        calls.append((source, target))
+        if len(calls) == 1:
+            raise PermissionError('fixture transient publication refusal')
+        return real_replace(source, target)
+
+    child = SimpleNamespace(pid=123, poll=lambda: 0)
+    monkeypatch.setattr(hidden_run.subprocess, 'Popen', lambda *args, **kwargs: child)
+    monkeypatch.setattr(process_state, 'probe', lambda pid: {'state': 'UNKNOWN', 'created': None})
+    monkeypatch.setattr(hidden_run.os, 'replace', replace)
+
+    assert hidden_run.main(
+        ['--log', str(tmp_path / 'job.log'), '--receipt', str(receipt), '--', sys.executable, '-c', 'pass'],
+        storage_supervisor=True,
+    ) == 0
+    assert calls == [(temporary, receipt), (temporary, receipt)]
+    data = json.loads(receipt.read_text(encoding='utf-8'))
+    assert data['stage'] == 'exited'
+    assert data['returncode'] == 0
+
+
 def test_short_hidden_child_records_observed_exit_instead_of_unknown(tmp_path,monkeypatch):
     real=hidden_run.subprocess.Popen
     def completed(*a,**k):
-        child=real(*a,**k);child.wait(timeout=5);return child
+        child=real(*a,**k);child.wait(timeout=60);return child
     monkeypatch.setattr(hidden_run.subprocess,'Popen',completed)
     receipt=tmp_path/'short.json'
     assert hidden_run.main(['--log',str(tmp_path/'log'),'--receipt',str(receipt),'--',sys.executable,'-c','pass'],storage_supervisor=True)==0

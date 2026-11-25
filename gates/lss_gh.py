@@ -205,8 +205,15 @@ def main(argv=None, *, runner=run):
             # Inspect the literal title too; JSON escaping must not hide private literals.
             reporter.text("<outgoing>", args.title)
         if args.operation in ("push", "pr-create"):
-            # Scan every ancestor, including metadata. Do not assume remote history is safe.
-            for oid in git("rev-list", head).splitlines():
+            # Scan every commit, including metadata, that the fixed repository's main does not already hold.
+            # Commits reachable from the main that the destination reports now are published there; scanning
+            # them again sends nothing less and grew with main's history. When the destination cannot be asked
+            # or reports a main this checkout lacks, every ancestor is scanned. The tip is always scanned.
+            published = guard.published_main(repo, "origin", origin)
+            # Replacement refs could hide the commits that push sends.
+            excluded = ["^" + published] if published else []
+            ancestors = git("--no-replace-objects", "rev-list", head, *excluded).splitlines()
+            for oid in dict.fromkeys([head, *ancestors]):
                 if guard.scan(repo, oid)["result"] != "PASS":
                     raise ValueError("Outgoing commit rejected")
         if args.operation == "push":

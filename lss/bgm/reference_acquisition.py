@@ -488,6 +488,7 @@ def _new_opportunity(hint: dict, previous: dict | None, source_sha256: str | Non
             "checked_sources": sorted(set(keep.get("checked_sources", [])) | {source_sha256}),
             "candidates": {k: dict(v) for k, v in (keep.get("candidates") or {}).items()},
             "albums": {k: dict(v) for k, v in (keep.get("albums") or {}).items()},
+            "album_ranks_current": bool(keep.get("album_ranks_current")),
             "releases": list(keep.get("releases") or []), "queries": list(keep.get("queries") or []),
             "attempts": int(keep.get("attempts") or 0) + 1, "state": "searching"}
 
@@ -912,11 +913,13 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
                     and bool(albums)
                     and all(opportunity["albums"].get(url, {}).get("state") == "restricted" for url in albums))
 
-        def check(rows: list[dict], role: str, budget: str, limit: int) -> None:
+        def check(rows: list[dict], role: str, budget: str, limit: int, *, full_album: dict | None = None) -> None:
             """一曲ずつ取得して照合する。確かめた曲の収録盤が分かれば、その盤の他の候補は確認に取らない
-            （盤ごと取得する）。認証を求める盤の残りの曲は取りに行かない。"""
+            （盤ごと取得する）。認証を求める盤の残りの曲は取りに行かない。全曲の確認は、盤が認証で止まれば打ち切る。"""
             for row in rows:
                 if should_stop() or counters[budget] >= limit:
+                    break
+                if full_album is not None and full_album.get("state") == "restricted":
                     break
                 if in_release(row) or source_sha256 in row["checks"] or row["state"] == "restricted":
                     continue
@@ -963,6 +966,11 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
                 opportunity["albums"][url].update(score=score, search_rank=rank)
                 ranked.append((score, rank, url, found_album))
             ranked.sort(key=lambda item: (-item[0], item[1]))
+            # 今回の検索に出なかった盤も記録には残す。順位は今回の候補だけに付ける。
+            for album_row in opportunity["albums"].values():
+                album_row.pop("album_rank", None)
+            # 順位は今回の検索だけで決まる。古い形式で保存された機会の順位は次の検索まで使わない。
+            opportunity["album_ranks_current"] = True
             for album_rank, (score, rank, url, found_album) in enumerate(ranked[:MAX_ALBUMS]):
                 opportunity["albums"][url]["album_rank"] = album_rank
                 for position, track in enumerate(_sample(found_album["tracks"][:MAX_TRACKS], SAMPLE_TRACKS)):
@@ -1002,29 +1010,47 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
                     row["state"] = "not_needed"
 
         if not verified_any():
-            # 作品名とサウンドトラックの語が両方合う候補と、最上位の候補は、見本が外れただけかもしれない。
-            # 全曲で確かめ直す（全曲の確認の上限つき）。
+            # 作品名とサウンドトラックの語が両方合う盤は、見本が外れただけかもしれない。
+            # 題が少しでも合う盤のうち、制限がなく曲目を読める最上位の盤も全曲で確かめる。
+            top_found = False
             for url, album_row in sorted(opportunity["albums"].items(),
                                          key=lambda item: item[1].get("album_rank", 99)):
                 if should_stop():
                     break
-                if (album_row.get("full_verification") or "album_rank" not in album_row
-                        or album_row.get("state") == "restricted"):
+                rank = album_row.get("album_rank")
+                if rank is None or album_row.get("state") == "restricted":
                     continue
-                if album_row.get("score", 0) < STRONG_SCORE and album_row.get("album_rank") != 0:
+                score = album_row.get("score", 0)
+                # 制限のない最上位の盤は、元の順位0の扱いのとおり題の一致を問わない。
+                # 順位0以外が代わりになるのは、順位が今回の検索のものと分かる時だけ。
+                if opportunity.get("album_ranks_current"):
+                    is_top = not top_found and (rank == 0 or score > 0)
+                else:
+                    is_top = rank == 0   # 古い形式の順位：元のとおり順位0の盤だけ（重複していてもすべて）
+                if score < STRONG_SCORE and not is_top:
+                    continue
+                if album_row.get("full_verification"):
+                    # 全曲確認を始めた盤は曲目を取得済み。
+                    top_found = top_found or is_top
                     continue
                 listed_album = album(url)
                 if listed_album is None:
                     continue
                 album_row["full_verification"] = True
+                if is_top:
+                    top_found = True
+                    if rank != 0 and score < STRONG_SCORE:
+                        album_row["full_verification_reason"] = "top_restricted"
                 rows = [_candidate(opportunity, track, {"kind": "album_full", "album_url": url,
-                                                        "album_rank": album_row["album_rank"],
+                                                        "album_rank": rank,
                                                         "position": position})
                         for position, track in enumerate(listed_album["tracks"][:MAX_TRACKS])]
                 check([row for row in rows if row["state"] == "pending"], "verification_full",
-                      "full_verification_downloads", MAX_TRACKS)
+                      "full_verification_downloads", MAX_TRACKS, full_album=album_row)
                 if any(row["state"] == "verified" for row in rows):
                     break
+                if is_top and album_row.get("state") == "restricted":
+                    top_found = False   # 確かめる途中で認証が要ると分かった：次の盤が最上位の扱いを受ける
         # 4. 収録盤：手元の知識で確かめた曲など、まだ収録盤を探していない確かめた曲。
         for row in [r for r in opportunity["candidates"].values()
                     if r["state"] == "verified" and not r.get("release_checked")]:
