@@ -367,6 +367,68 @@ def test_an_album_that_needs_a_paid_or_member_login_is_not_requested_track_by_tr
     assert backend.downloads == []
 
 
+@pytest.mark.parametrize(
+    ("restriction", "next_score", "match_next", "full_downloads", "substitutes"),
+    [
+        pytest.param("sample", 1.0, True, 1, True, id="restricted_top_uses_positive_runner_up"),
+        pytest.param("full", 1.0, True, 2, True, id="top_becomes_restricted_during_full_verification"),
+        pytest.param(None, 1.0, True, 2, False, id="unrestricted_top_keeps_runner_up_sample_only"),
+        pytest.param("sample", 0.0, True, 0, False, id="restricted_top_skips_zero_score_albums"),
+        pytest.param("sample", 1.0, False, 2, True, id="unmatched_substitute_does_not_promote_another_album"),
+    ],
+)
+def test_full_verification_after_album_sampling(
+    state, tmp_path, monkeypatch, restriction, next_score, match_next, full_downloads, substitutes,
+):
+    # 各盤の最初と最後だけを見本にして、照合できる曲はその間に置く。
+    monkeypatch.setattr(ra, "SAMPLE_TRACKS", 2)
+    monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
+    top_ids = ["a1", "a2", "a3", "a4"]
+    next_ids = ["b1", "b2", "b3", "b4"]
+    third_ids = ["c1", "c2", "c3"]
+    seeds = {track: seed for seed, track in enumerate(top_ids + next_ids + third_ids, start=400)}
+    seeds.update(b2=42, c2=43)
+    media = {track: _track(tmp_path / "remote" / f"{track}.flac", seed) for track, seed in seeds.items()}
+    failures = {track: [FailureKind.AUTH_REQUIRED] for track in top_ids} if restriction else {}
+    if restriction == "full":
+        failures["a4"] = [FailureKind.UNAVAILABLE]
+    backend = FakeBackend(media, failures=failures)
+    other_title = "別の作品 サウンドトラック" if next_score > 0 else "別の作品の曲集"
+    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["A", "B", "C"]},
+                      listings={"A": ("番組名 オリジナル・サウンドトラック", top_ids),
+                                "B": (other_title, next_ids), "C": (other_title, third_ids)})
+    matching_track = "b2" if match_next else "c2"
+    source = _episode(tmp_path / "『番組名』第1話.wav", [(seeds[matching_track], 10.0, 30.0)])
+
+    result = ra.discover(source, source_sha256="r" * 64, cache_dir=_cache(state), state_root=state,
+                         search=catalog, backend=backend, pacing=NO_WAIT, courtesy=_polite())
+
+    top_url = "https://music.example.test/browse/A"
+    next_url = "https://music.example.test/browse/B"
+    top_album = result["albums"][top_url]
+    next_album = result["albums"][next_url]
+    assert top_album["album_rank"] == 0 and (top_album["state"] == "restricted") == bool(restriction)
+    assert next_album["album_rank"] == 1 and next_album["score"] == next_score
+    assert result["counters"]["full_verification_downloads"] == full_downloads
+    assert next_album.get("full_verification", False) is substitutes
+    assert "c2" not in backend.downloads
+    if restriction:
+        assert backend.failures["a3"] == [FailureKind.AUTH_REQUIRED]
+    if substitutes:
+        saved = ra.load_opportunity(result["work_key"], state)["albums"][next_url]
+        assert saved["full_verification_reason"] == "top_restricted"
+        assert saved["full_verification_replaces"] == top_url
+        assert "b2" in backend.downloads
+    else:
+        assert "full_verification_reason" not in next_album
+        assert "b2" not in backend.downloads
+    if substitutes and match_next:
+        assert result["verified_tracks"] == ["b2"]
+        assert result["counters"]["release_downloads"] == 1  # 最初の一致の後は収録盤の取得に移る。
+    else:
+        assert result["state"] == "no_verified_release"
+
+
 def test_a_members_album_skipped_without_login_is_tried_again_after_logging_in(state, tmp_path):
     """ログインが無い時に会員向けとして打ち切った盤は、LSSでログインした後の機会に取り直す（早期の打ち切りを残さない）。"""
     from lss.acquisition.store import AuthMethod

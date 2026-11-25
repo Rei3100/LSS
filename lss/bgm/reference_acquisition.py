@@ -912,11 +912,13 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
                     and bool(albums)
                     and all(opportunity["albums"].get(url, {}).get("state") == "restricted" for url in albums))
 
-        def check(rows: list[dict], role: str, budget: str, limit: int) -> None:
+        def check(rows: list[dict], role: str, budget: str, limit: int, *, full_album: dict | None = None) -> None:
             """一曲ずつ取得して照合する。確かめた曲の収録盤が分かれば、その盤の他の候補は確認に取らない
-            （盤ごと取得する）。認証を求める盤の残りの曲は取りに行かない。"""
+            （盤ごと取得する）。認証を求める盤の残りの曲は取りに行かない。全曲の確認は、盤が認証で止まれば打ち切る。"""
             for row in rows:
                 if should_stop() or counters[budget] >= limit:
+                    break
+                if full_album is not None and full_album.get("state") == "restricted":
                     break
                 if in_release(row) or source_sha256 in row["checks"] or row["state"] == "restricted":
                     continue
@@ -1004,25 +1006,42 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
         if not verified_any():
             # 作品名とサウンドトラックの語が両方合う候補と、最上位の候補は、見本が外れただけかもしれない。
             # 全曲で確かめ直す（全曲の確認の上限つき）。
+            top_url = None
+            top_album = None
             for url, album_row in sorted(opportunity["albums"].items(),
                                          key=lambda item: item[1].get("album_rank", 99)):
                 if should_stop():
                     break
-                if (album_row.get("full_verification") or "album_rank" not in album_row
-                        or album_row.get("state") == "restricted"):
+                rank = album_row.get("album_rank")
+                if rank is None or album_row.get("full_verification"):
                     continue
-                if album_row.get("score", 0) < STRONG_SCORE and album_row.get("album_rank") != 0:
+                # 最上位の盤が認証で止まったら、題が検索に合う次の盤を1つだけ代わりに確かめる。
+                # 前の機会に代わりの盤を確かめていたら、さらに次の盤へは広げない。
+                if rank == 0 and not any(row.get("full_verification_replaces") == url
+                                         for row in opportunity["albums"].values()):
+                    top_url, top_album = url, album_row
+                if album_row.get("state") == "restricted":
+                    continue
+                score = album_row.get("score", 0)
+                replaced_url = None
+                if (rank != 0 and score > 0 and top_album is not None
+                        and top_album.get("state") == "restricted"):
+                    replaced_url = top_url
+                    top_album = None
+                if score < STRONG_SCORE and rank != 0 and replaced_url is None:
                     continue
                 listed_album = album(url)
                 if listed_album is None:
                     continue
                 album_row["full_verification"] = True
+                if replaced_url is not None:
+                    album_row.update(full_verification_reason="top_restricted", full_verification_replaces=replaced_url)
                 rows = [_candidate(opportunity, track, {"kind": "album_full", "album_url": url,
-                                                        "album_rank": album_row["album_rank"],
+                                                        "album_rank": rank,
                                                         "position": position})
                         for position, track in enumerate(listed_album["tracks"][:MAX_TRACKS])]
                 check([row for row in rows if row["state"] == "pending"], "verification_full",
-                      "full_verification_downloads", MAX_TRACKS)
+                      "full_verification_downloads", MAX_TRACKS, full_album=album_row)
                 if any(row["state"] == "verified" for row in rows):
                     break
         # 4. 収録盤：手元の知識で確かめた曲など、まだ収録盤を探していない確かめた曲。
