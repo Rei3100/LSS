@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Iterable
 from pathlib import Path
 
 try:
@@ -37,6 +38,30 @@ sys.path.insert(0, str(ROOT))
 def _prunable_roots() -> tuple[Path, ...]:
     """Keep development evidence separate from legacy Product work paths."""
     return (dev_state_root(ROOT) / "validation", ROOT / ".providers", ROOT / ".state/work")
+
+
+def _local_cleanup_path(path: Path) -> bool:
+    from storage_tiers import is_link
+
+    if path.is_relative_to(ROOT):
+        parent = ROOT
+        for part in path.relative_to(ROOT).parts:
+            if part == ".." or is_link(parent):
+                return False
+            parent /= part
+    return not is_link(path) and os.path.normcase(path.resolve()) == os.path.normcase(path)
+
+
+def _local_deletion_path(path: Path) -> bool:
+    """Recheck the checkout and every component down to the deletion target."""
+    return path != ROOT and path.is_relative_to(ROOT) and _local_cleanup_path(path)
+
+
+def _cleanup_receipt(prefix: str) -> Path:
+    record = dev_state_root(ROOT) / "validation" / f"{prefix}-{int(time.time())}.json"
+    if not _local_cleanup_path(record):
+        raise StorageMutationRefused(f"Storage mutation refused: linked cleanup receipt path: {record}")
+    return record
 
 
 def _reported_path(path: Path) -> str:
@@ -116,22 +141,24 @@ def _json_under(root: Path) -> list[Path]:
     return sorted(found)
 
 
-def local_files(root: Path):
+def local_files(root: Path, *, include_file_links: bool = False):
     """Walk local real directories only: never follow a relocation junction,
-    including broken ones. Other I/O errors abort collection, never authorize GC.
+    including broken ones. Optionally yield file links without following them.
+    Other I/O errors abort collection, never authorize GC.
     """
     from storage_tiers import is_link
     if is_link(root):
         return
     def failed(error):
         raise error
-    for directory, names, files in os.walk(root, onerror=failed):
+    for directory, names, files in os.walk(root, onerror=failed, followlinks=False):
         names[:] = [n for n in names if n not in {'.venv', 'venv', 'site-packages', '_internal',
                                                  'node_modules', '.git', '__pycache__'}
                     and not is_link(Path(directory) / n)]
         for name in files:
             path = Path(directory) / name
-            if not is_link(path) and path.is_file():
+            linked = is_link(path)
+            if (linked and include_file_links) or (not linked and path.is_file()):
                 yield path
 
 
@@ -204,10 +231,10 @@ def survey() -> list[dict]:
     tracked = {path.resolve() for path in tracked_files(".")}
     rows = []
     for base in _prunable_roots():
-        if not base.is_dir():
+        if not _local_cleanup_path(base) or not base.is_dir():
             continue
         for entry in sorted(base.iterdir()):
-            if not entry.is_dir() or entry.name == "dev":
+            if not _local_cleanup_path(entry) or not entry.is_dir() or entry.name == "dev":
                 continue
             resolved = entry.resolve()
             # 自分の中の記録が自分を指すのは参照とみなさない。外から必要とされているかを見る。
@@ -262,6 +289,7 @@ def prune(apply_changes: bool, limit: int, keep_reports: int = 30) -> int:
         from storage_tiers import load_policy, require_machine_overlay
         require_machine_overlay(load_policy())
         require_owned_for_deletion(ROOT)
+        record = _cleanup_receipt("disk-cleanup")
     rows, unreadable = survey()
     if unreadable:
         raise SystemExit("参照元を読めないため削除しません:\n  " + "\n  ".join(unreadable))
@@ -274,16 +302,20 @@ def prune(apply_changes: bool, limit: int, keep_reports: int = 30) -> int:
               f"試験の実行記録 {len(reports)}件（新しい{keep_reports}件と参照済みは残す）", flush=True)
         if apply_changes:
             for path in reports:
+                if not _local_deletion_path(path):
+                    raise SystemExit(f"削除対象の所在が不正です: {path}")
                 shutil.rmtree(path)
         freed += size
+    roots = _prunable_roots()
     for row in candidates:
         target = ROOT / row["path"]
-        if not target.is_dir() or not any(target.resolve().is_relative_to(base.resolve())
-                                          for base in _prunable_roots()):
+        if target.parent not in roots or not _local_cleanup_path(target) or not target.is_dir():
             raise SystemExit(f"削除対象の所在が不正です: {target}")
         print(f"{'削除' if apply_changes else '削除候補'}: {_human(row['bytes']):>9}  {row['path']}",
               flush=True)
         if apply_changes:
+            if not _local_deletion_path(target):
+                raise SystemExit(f"削除対象の所在が不正です: {target}")
             shutil.rmtree(target)
         freed += row["bytes"]
     summary = {"schema_version": 1, "status": "PRUNED_UNREFERENCED_WORK" if apply_changes
@@ -293,7 +325,6 @@ def prune(apply_changes: bool, limit: int, keep_reports: int = 30) -> int:
                "rule": "外部からの参照なし・Git未追跡・保護対象なしの作業物と、古い試験の実行記録のみ",
                "removed": candidates}
     if apply_changes:
-        record = dev_state_root(ROOT) / "validation" / f"disk-cleanup-{int(time.time())}.json"
         record.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
         summary["record"] = str(record)
     print(json.dumps({key: value for key, value in summary.items() if key != "removed"},
@@ -308,11 +339,13 @@ MEDIA_SUFFIXES = frozenset({".wav", ".flac", ".mkv", ".mp4", ".m4a", ".mp3", ".a
 
 
 def rejected_directories(rows: list[dict]) -> list[dict]:
+    base = dev_state_root(ROOT) / "validation"
     selected = []
     for row in rows:
-        if not (ROOT / row["path"]).resolve().is_relative_to((dev_state_root(ROOT) / "validation").resolve()):
+        directory = ROOT / row["path"]
+        if directory.parent != base or not _local_cleanup_path(directory):
             continue
-        decisions = _decisions(ROOT / row["path"])
+        decisions = _decisions(directory)
         matched = sorted({value for value in decisions
                           if any(marker in value.lower() for marker in REJECTION_MARKERS)})
         if matched:
@@ -326,6 +359,7 @@ def retire(apply_changes: bool) -> int:
         from storage_tiers import load_policy, require_machine_overlay
         require_machine_overlay(load_policy())
         require_owned_for_deletion(ROOT)
+        record = _cleanup_receipt("media-retirement")
     rows, unreadable = survey()
     if unreadable:
         raise SystemExit("参照元を読めないため退役しません: " + ", ".join(unreadable))
@@ -333,19 +367,18 @@ def retire(apply_changes: bool) -> int:
     tracked = {path.resolve() for path in tracked_files(".")}
     classes, freed = [], 0
     for row in rejected_directories(rows):
-        directory = (ROOT / row["path"]).resolve()
+        directory = ROOT / row["path"]
         victims = []
-        for item in sorted(directory.rglob("*")):
-            if not item.is_file() or item.suffix.lower() not in MEDIA_SUFFIXES:
+        for item in sorted(local_files(directory)):
+            if item.suffix.lower() not in MEDIA_SUFFIXES or not _local_cleanup_path(item):
                 continue
-            resolved = item.resolve()
-            if resolved in tracked:
+            if item in tracked:
                 continue
-            outside = [source for source in referenced.get(resolved, set())
+            outside = [source for source in referenced.get(item, set())
                        if directory not in source.parents and source != directory]
             if outside:
                 continue
-            victims.append(resolved)
+            victims.append(item)
         if not victims:
             continue
         size = sum(path.stat().st_size for path in victims)
@@ -355,6 +388,8 @@ def retire(apply_changes: bool) -> int:
               f"{row['path']}  ({', '.join(row['decisions'])[:60]})", flush=True)
         if apply_changes:
             for path in victims:
+                if not _local_deletion_path(path):
+                    raise SystemExit(f"退役対象の所在が不正です: {path}")
                 path.unlink()
         freed += size
     summary = {"schema_version": 1, "applied": apply_changes,
@@ -363,7 +398,6 @@ def retire(apply_changes: bool) -> int:
                "directories": len(classes), "freed_bytes": freed, "freed": _human(freed),
                "classes": classes}
     if apply_changes:
-        record = dev_state_root(ROOT) / "validation" / f"media-retirement-{int(time.time())}.json"
         record.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
         summary["record"] = str(record)
     print(json.dumps({key: value for key, value in summary.items() if key != "classes"},
@@ -395,7 +429,7 @@ PROVIDER_RUN_RECORDS = frozenset({
 def _path_key(path: Path) -> str:
     try:
         return str(path.resolve()).casefold()
-    except (OSError, ValueError):
+    except (OSError, RuntimeError, ValueError):
         return str(path).casefold()
 
 
@@ -417,10 +451,10 @@ def _resolve_candidate(value: str, source: Path, candidates: dict[str, Path], na
     return found
 
 
-def _json_candidate_refs(source: Path, candidates: dict[str, Path]) -> list[tuple[str, str]]:
+def _json_candidate_refs(source: Path, candidates: dict[str, Path],
+                         names: set[str]) -> list[tuple[str, str]]:
     data = json.loads(source.read_text(encoding="utf-8"))
     hits: list[tuple[str, str]] = []
-    names = {p.name.casefold() for p in candidates.values()}
 
     def walk(value, pointer: str = "$") -> None:
         if isinstance(value, dict):
@@ -437,7 +471,7 @@ def _json_candidate_refs(source: Path, candidates: dict[str, Path]) -> list[tupl
     return hits
 
 
-def _raw_candidate_refs(source: Path, candidates: dict[str, Path]) -> list[tuple[str, str]]:
+def _raw_candidate_refs(source: Path, paths: list[tuple[str, Path]]) -> list[tuple[str, str]]:
     """Fallback for intentionally malformed/partial JSON.
 
     Parse failure is not treated as a global I/O failure. We scan the raw text for
@@ -445,12 +479,12 @@ def _raw_candidate_refs(source: Path, candidates: dict[str, Path]) -> list[tuple
     """
     text = source.read_text(encoding="utf-8", errors="ignore")
     haystack = text.replace("\\\\", "\\").replace("/", "\\").casefold()
-    hits: list[tuple[str, str]] = []
-    for key, path in candidates.items():
+    hits: set[tuple[str, str]] = set()
+    for key, path in paths:
         variants: list[str] = []
         try:
             variants.append(str(path.resolve()))
-        except (OSError, ValueError):
+        except (OSError, RuntimeError, ValueError):
             variants.append(str(path))
         try:
             variants.append(str(path.relative_to(ROOT)))
@@ -464,21 +498,30 @@ def _raw_candidate_refs(source: Path, candidates: dict[str, Path]) -> list[tuple
         except ValueError:
             pass
         if any(v.replace("/", "\\").casefold() in haystack for v in variants if v):
-            hits.append((key, "$[UNPARSEABLE_JSON]"))
-    return hits
+            hits.add((key, "$[UNPARSEABLE_JSON]"))
+    return sorted(hits)
 
 
-def _collect_json_refs(candidates: dict[str, Path]) -> tuple[dict[str, list[tuple[Path, str]]], list[str]]:
+def _collect_json_refs(
+    candidates: dict[str, Path], linked_paths: Iterable[Path] = (),
+) -> tuple[dict[str, list[tuple[Path, str]]], list[str]]:
+    paths = list(candidates.items())
+    # A reference through a linked filename can still protect its local target.
+    for path in linked_paths:
+        key = _path_key(path)
+        if key in candidates:
+            paths.append((key, path))
+    names = {path.name.casefold() for _, path in paths}
     refs: dict[str, list[tuple[Path, str]]] = {key: [] for key in candidates}
     unreadable: list[str] = []
     for source in reference_sources():
         if source.suffix.lower() != ".json":
             continue
         try:
-            hits = _json_candidate_refs(source, candidates)
+            hits = _json_candidate_refs(source, candidates, names)
         except (UnicodeError, ValueError):
             try:
-                hits = _raw_candidate_refs(source, candidates)
+                hits = _raw_candidate_refs(source, paths)
             except OSError as exc:
                 unreadable.append(f"{source}: {exc}")
                 continue
@@ -560,28 +603,37 @@ def _provider_run_root(path: Path, base: Path) -> Path | None:
 
 
 def provider_media_candidates() -> tuple[list[dict], list[str]]:
+    from storage_tiers import is_link
+
     base = ROOT / ".providers"
-    if not base.is_dir():
+    if is_link(base) or not base.is_dir():
         return [], []
     run_roots: dict[str, Path] = {}
     paths = []
-    for path in base.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in MEDIA_SUFFIXES or _provider_protected(path, base):
+    linked_paths = []
+    rows = []
+    for path in local_files(base, include_file_links=True):
+        if path.suffix.lower() not in MEDIA_SUFFIXES or _provider_protected(path, base):
             continue
         run_root = _provider_run_root(path, base)
         if run_root is None:
             continue
+        if is_link(path):
+            linked_paths.append(path)
+            rows.append({"path": _reported_path(path), "bytes": 0,
+                         "class": "KEEP", "reason": "linked"})
+            continue
         paths.append(path)
         run_roots[_path_key(path)] = run_root.resolve()
     candidates = {_path_key(path): path for path in paths}
-    refs, unreadable = _collect_json_refs(candidates)
+    refs, unreadable = _collect_json_refs(candidates, linked_paths)
     try:
         tracked = {_path_key(path) for path in tracked_files(".providers")}
     except (OSError, subprocess.SubprocessError) as exc:
-        return [{"path": str(path.relative_to(ROOT).as_posix()), "bytes": path.stat().st_size,
-                 "class": "UNKNOWN", "reason": f"git ls-files failed: {exc}"} for path in paths], unreadable
+        rows.extend({"path": _reported_path(path), "bytes": path.stat().st_size,
+                     "class": "UNKNOWN", "reason": f"git ls-files failed: {exc}"} for path in paths)
+        return rows, unreadable
 
-    rows = []
     for key, path in candidates.items():
         if key in tracked:
             cls, reason = "KEEP", "git-tracked media"
@@ -625,18 +677,20 @@ def _media_gc(rows: list[dict], unreadable: list[str], apply_changes: bool,
         for row in victims:
             print(f"{'退役' if apply_changes else '退役候補'}: {_human(row['bytes']):>9}  {row['path']}  ({row['reason']})")
     if apply_changes:
-        resolved = []
-        root = root.resolve()
+        record = _cleanup_receipt(receipt_prefix)
+        targets = []
         for row in victims:
-            path = (ROOT / row["path"]).resolve()
-            if not path.is_file() or not path.is_relative_to(root):
+            path = ROOT / row["path"]
+            if not path.is_relative_to(root) or not _local_cleanup_path(path) or not path.is_file():
                 raise SystemExit(f"退役対象の所在が不正です: {path}")
             if allowed_names is not None and path.name.lower() not in allowed_names:
                 raise SystemExit(f"退役対象名が不正です: {path}")
             if path.stat().st_size != row["bytes"]:
                 raise SystemExit(f"監査後にサイズが変化しました: {path}")
-            resolved.append(path)
-        for path in resolved:
+            targets.append(path)
+        for path in targets:
+            if not _local_deletion_path(path):
+                raise SystemExit(f"退役対象の所在が不正です: {path}")
             path.unlink()
     applied_status = ("RETIRED_REBUILDABLE_MEDIA_WITH_UNKNOWN_PRESERVED"
                       if apply_changes and unknown else
@@ -647,7 +701,6 @@ def _media_gc(rows: list[dict], unreadable: list[str], apply_changes: bool,
                "retire_files": len(victims), "keep_files": len(keep), "unknown_files": len(unknown),
                "freed_bytes": freed, "freed": _human(freed)}
     if apply_changes:
-        record = dev_state_root(ROOT) / "validation" / f"{receipt_prefix}-{int(time.time())}.json"
         record.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
         summary["record"] = str(record)
     print(json.dumps(summary, ensure_ascii=False), flush=True)
@@ -658,8 +711,11 @@ def validation_media_gc(apply_changes: bool, quiet: bool = False) -> int:
     if apply_changes:
         from storage_tiers import load_policy, require_machine_overlay
         require_machine_overlay(load_policy())
+        state = require_owned_for_deletion(ROOT)
+    else:
+        state = dev_state_root(ROOT)
     rows, unreadable = validation_media_candidates()
-    return _media_gc(rows, unreadable, apply_changes, dev_state_root(ROOT) / "validation",
+    return _media_gc(rows, unreadable, apply_changes, state / "validation",
                      TRISTEM_NAMES, "media-gc", quiet)
 
 
@@ -678,11 +734,11 @@ DEV_REPORT_ROOT = Path("validation/dev")
 def stale_dev_reports(keep: int) -> list[Path]:
     """試験のたびに増える実行記録のうち、新しい方からkeep件と参照済みを残す。"""
     base = dev_state_root(ROOT) / DEV_REPORT_ROOT
-    if not base.is_dir():
+    if not _local_cleanup_path(base) or not base.is_dir():
         return []
     referenced, _ = referenced_paths()
     tracked = {path.resolve() for path in tracked_files(".")}
-    entries = sorted((path for path in base.iterdir() if path.is_dir()),
+    entries = sorted((path for path in base.iterdir() if _local_cleanup_path(path) and path.is_dir()),
                      key=lambda path: path.stat().st_mtime, reverse=True)
     stale = []
     for path in entries[keep:]:
