@@ -2,19 +2,23 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import dataclass
+from functools import cache
 import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
+import stat
 import subprocess
 import sys
+import tempfile
 import time
-import stat
 
 CONDITIONS = ("integrated_main", "frozen_candidate", "packaged_acceptance",
               "independent_verification", "answer_key_non_regression",
               "rollback_ready", "machine_idle", "checkout_head", "checkout_clean",
-              "deploy_base", "deploy_log", "launch_receipt")
+              "deploy_base", "deploy_log", "launch_receipt", "pwsh")
 INTEGRATED_MAIN_ARGS = ("rev-parse", "--verify", "refs/remotes/origin/main^{commit}")
 CHECKOUT_STATUS_ARGS = ("status", "--porcelain", "--untracked-files=all")
 CHECK_ERRORS = (OSError, ValueError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError)
@@ -22,6 +26,17 @@ CHECK_ERRORS = (OSError, ValueError, KeyError, TypeError, RuntimeError, subproce
 
 class InvalidField(ValueError):
     pass
+
+
+@dataclass(frozen=True)
+class LaunchPlan:
+    repo: Path
+    manifest_path: Path
+    manifest_digest: str
+    source_commit: str
+    package_dir: Path
+    deploy_base: Path
+    pwsh: Path
 
 
 def field(item, key, expected=(str,), *, absolute=False):
@@ -38,11 +53,15 @@ def sha(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def load(path):
-    item = json.loads(Path(path).read_text(encoding="utf-8"))
+def receipt_object(text):
+    item = json.loads(text)
     if not isinstance(item, dict):
         raise ValueError("Expected a receipt object")
     return item
+
+
+def load(path):
+    return receipt_object(Path(path).read_text(encoding="utf-8"))
 
 
 def git(repo, *args):
@@ -52,10 +71,24 @@ def git(repo, *args):
 
 def link_like(path):
     info = path.lstat()
-    return stat.S_ISLNK(info.st_mode) or bool(getattr(info, "st_file_attributes", 0) & 0x400)
+    return stat.S_ISLNK(info.st_mode) or bool(getattr(info, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT)
+
+
+def has_reparse_ancestor(path):
+    return any(link_like(entry) for entry in (path, *path.parents))
+
+
+def resolve_pwsh():
+    # Match hidden_run.py's lookup before resolving the command it will launch.
+    path = Path(shutil.which("pwsh") or "pwsh").resolve()
+    return path if path.is_file() else None
 
 
 def evaluate(state, *, git_reader=git, now=None):
+    return preflight(state, git_reader=git_reader, now=now)[0]
+
+
+def preflight(state, *, git_reader=git, now=None):
     """Missing, malformed, stale and contradictory evidence all fail closed."""
     now = time.time() if now is None else now
     checks = dict.fromkeys(CONDITIONS, False)
@@ -63,14 +96,32 @@ def evaluate(state, *, git_reader=git, now=None):
 
     def check(name, action):
         try:
-            checks[name] = bool(action())
+            value = action()
+            checks[name] = bool(value)
+            return value
         except InvalidField as error:
             details[name] = str(error)
         except CHECK_ERRORS:
             checks[name] = False
 
+    @cache
+    def checkout():
+        return Path(field(state, "repo", absolute=True)).resolve()
+
+    def checkout_path(value):
+        path = Path(value)
+        if not path.is_absolute():
+            path = checkout() / path
+        if not path.is_absolute():
+            raise ValueError("Path cannot be made absolute against the deployment checkout")
+        # Keep links visible to the reparse-point checks.
+        return Path(os.path.normpath(path))
+
     try:
-        manifest = load(field(state, "manifest", absolute=True))
+        manifest_path = checkout_path(field(state, "manifest", absolute=True))
+        content = manifest_path.read_bytes()
+        manifest = receipt_object(content.decode("utf-8"))
+        manifest_digest = hashlib.sha256(content).hexdigest()
     except InvalidField as error:
         details["frozen_candidate"] = str(error)
         manifest = {}
@@ -87,32 +138,34 @@ def evaluate(state, *, git_reader=git, now=None):
         return item
 
     check("integrated_main", lambda: field(manifest, "source_commit") ==
-          git_reader(field(state, "repo", absolute=True), *INTEGRATED_MAIN_ARGS))
+          git_reader(checkout(), *INTEGRATED_MAIN_ARGS))
 
     def frozen():
-        root = Path(field(manifest, "package_dir"))
+        root = checkout_path(field(manifest, "package_dir"))
         commit = field(manifest, "source_commit")
         exe_hash = field(manifest, "exe_sha256")
         tree_hash = field(manifest, "tree_sha256")
         build = load(field(state, "build_receipt", absolute=True))
-        if link_like(root):
-            return False
+        if has_reparse_ancestor(root):
+            return None
         rows = field(manifest, "files_sha256", (dict,))
         actual = {}
         for path in root.rglob("*"):
             if link_like(path):
-                return False
+                return None
             if path.is_file():
                 actual[path.relative_to(root).as_posix()] = {"bytes": path.stat().st_size, "sha256": sha(path)}
         tree = hashlib.sha256("".join(f"{k}\t{v['sha256']}\n" for k, v in sorted(actual.items())).encode()).hexdigest()
-        return (manifest["type"] == "lss_frozen_candidate_package" and
+        if (manifest["type"] == "lss_frozen_candidate_package" and
                 actual == rows and bool(actual) and
                 all(type(row["bytes"]) is int for row in rows.values()) and tree == tree_hash and
                 actual["LSS.exe"]["sha256"] == exe_hash and
                 build["status"] == "complete" and build["phase"] == "complete" and
                 build["commit"] == commit and build["exe_sha256"] == exe_hash and
-                Path(field(build, "candidate")).resolve() == root.resolve())
-    check("frozen_candidate", frozen)
+                checkout_path(field(build, "candidate")) == root):
+            return root
+        return None
+    package_dir = check("frozen_candidate", frozen)
     check("packaged_acceptance", lambda: receipt("packaged_receipt")["scope"] == "real-machine-package")
 
     def independent():
@@ -132,12 +185,18 @@ def evaluate(state, *, git_reader=git, now=None):
                 (field(item, "change_kind") != "timing-only" or item.get("pcm_identical") is True))
     check("answer_key_non_regression", answers)
 
+    @cache
+    def deploy_base_path():
+        return checkout_path(field(state, "deploy_base", absolute=True))
+
     def rollback():
         item = receipt("rollback_receipt", candidate=False)
         current = load(field(state, "current_product", absolute=True))
-        deployed = Path(field(current, "deployed_executable"))
-        return (item["exe_sha256"] == field(current, "exe_sha256") == sha(deployed) and
-                Path(field(item, "exe")).resolve() == deployed.resolve() and item["startup_pass"] is True)
+        deployed = deploy_base_path() / "LSS" / "LSS.exe"
+        return (checkout_path(field(current, "deployed_executable")) == deployed and
+                checkout_path(field(item, "exe")) == deployed and
+                item["exe_sha256"] == field(current, "exe_sha256") == sha(deployed) and
+                item["startup_pass"] is True)
     check("rollback_ready", rollback)
 
     def idle():
@@ -148,21 +207,43 @@ def evaluate(state, *, git_reader=git, now=None):
     check("machine_idle", idle)
 
     check("checkout_head", lambda: field(manifest, "source_commit") ==
-          git_reader(field(state, "repo", absolute=True), "rev-parse", "HEAD"))
-    check("checkout_clean", lambda: not git_reader(field(state, "repo", absolute=True), *CHECKOUT_STATUS_ARGS))
-    check("deploy_base", lambda: Path(field(state, "deploy_base", absolute=True)).is_dir())
+          git_reader(checkout(), "rev-parse", "HEAD"))
+    check("checkout_clean", lambda: not git_reader(checkout(), *CHECKOUT_STATUS_ARGS))
+
+    def deploy_base():
+        path = deploy_base_path()
+        return path if path.is_dir() and not has_reparse_ancestor(path) else None
+    base = check("deploy_base", deploy_base)
 
     def deploy_log():
-        path = Path(field(state, "deploy_log", absolute=True))
-        return path.parent.is_dir() and (not path.exists() or path.is_file())
-    check("deploy_log", deploy_log)
+        path = Path(field(state, "deploy_log", absolute=True)).resolve()
+        if not path.parent.is_dir():
+            return None
+        try:
+            info = path.stat()
+        except FileNotFoundError:
+            # Probe the parent without creating the configured log.
+            with tempfile.TemporaryFile(dir=path.parent):
+                pass
+        else:
+            if not stat.S_ISREG(info.st_mode):
+                return None
+            os.close(os.open(path, os.O_WRONLY | os.O_APPEND))
+        return path
+    log = check("deploy_log", deploy_log)
 
     def launch_receipt():
         path = Path(field(state, "launch_receipt", absolute=True))
+        temporary = path.with_suffix(path.suffix + ".tmp")
         return (path.parent.is_dir() and not os.path.lexists(path) and
-                (not checks["deploy_log"] or path.resolve() != Path(state["deploy_log"]).resolve()))
+                not temporary.is_dir() and path.resolve() != log)
     check("launch_receipt", launch_receipt)
-    return verdict(checks, details)
+    pwsh = check("pwsh", resolve_pwsh)
+    result = verdict(checks, details)
+    if result["result"] == "PASS":
+        return result, LaunchPlan(checkout(), manifest_path, manifest_digest,
+                                  manifest["source_commit"], package_dir, base, pwsh)
+    return result, None
 
 
 def verdict(checks, details=None):
@@ -173,20 +254,22 @@ def verdict(checks, details=None):
     return result
 
 
-def deploy(state, manifest):
-    repo = Path(state["repo"]).resolve()
+def deploy(state, plan):
+    repo = plan.repo
     # Deployment executes checkout code: bind those bytes to the integrated candidate.
-    if git(repo, "rev-parse", "HEAD") != manifest["source_commit"]:
+    if git(repo, "rev-parse", "HEAD") != plan.source_commit:
         raise ValueError("checkout_head: HEAD differs from the candidate source commit")
-    if git(repo, *INTEGRATED_MAIN_ARGS) != manifest["source_commit"]:
+    if git(repo, *INTEGRATED_MAIN_ARGS) != plan.source_commit:
         raise ValueError("integrated_main: origin/main differs from the candidate source commit")
     if git(repo, *CHECKOUT_STATUS_ARGS):
         raise ValueError("checkout_clean: deployment checkout has local changes")
+    if sha(plan.manifest_path) != plan.manifest_digest:
+        raise ValueError("frozen_candidate: manifest changed after preflight")
     command = [sys.executable, "-B", str(repo / "scripts" / "hidden_run.py"),
                "--log", state["deploy_log"], "--receipt", state["launch_receipt"],
-               "--cwd", str(repo), "--", "pwsh", "-NoProfile", "-NonInteractive", "-File",
-               str(repo / "deploy-to-freesoft.ps1"), "-BuildOutput", manifest["package_dir"],
-               "-DeployBase", state["deploy_base"], "-KeepPrevious"]
+               "--cwd", str(repo), "--", str(plan.pwsh), "-NoProfile", "-NonInteractive", "-File",
+               str(repo / "deploy-to-freesoft.ps1"), "-BuildOutput", str(plan.package_dir),
+               "-DeployBase", str(plan.deploy_base), "-KeepPrevious"]
     subprocess.run(command, check=True, capture_output=True, text=True, timeout=30)
 
 
@@ -198,12 +281,13 @@ def main(argv=None, *, deployer=deploy, git_reader=git):
     try:
         path = args.state or Path(os.environ["LSS_PRIVATE_ROOT"]) / "run" / "deploy-gate.json"
         state = load(path)
-        result = evaluate(state, git_reader=git_reader)
+        result, plan = preflight(state, git_reader=git_reader)
     except CHECK_ERRORS:
         result = verdict(dict.fromkeys(CONDITIONS, False))
-    if result["result"] == "PASS" and not args.check_only:
+        plan = None
+    if plan is not None and not args.check_only:
         try:
-            deployer(state, load(state["manifest"]))
+            deployer(state, plan)
             result["deployment"] = "LAUNCHED"
         except CHECK_ERRORS as error:
             result["result"] = "BLOCK"
