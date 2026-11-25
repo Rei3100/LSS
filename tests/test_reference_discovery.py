@@ -530,6 +530,18 @@ def test_search_refresh_drops_the_rank_of_the_old_restricted_top(state, tmp_path
     assert runner_up["album_rank"] == 1 and "full_verification" not in runner_up
 
 
+def test_current_album_ranks_survive_a_resumed_opportunity(state, tmp_path):
+    # 検索の後に先送りされた機会を再開しても、順位が今回の検索のものだという印は残る。古い保存には付かない。
+    source = tmp_path / "『番組名』第1話.wav"
+    hint = ra.work_hint(source, "r" * 64, state)
+    saved = ra._new_opportunity(hint, None, "r" * 64, 1000.0)
+    assert saved["album_ranks_current"] is False
+    saved["album_ranks_current"] = True
+    assert ra._new_opportunity(hint, saved, "r" * 64, 2000.0)["album_ranks_current"] is True
+    legacy = {k: v for k, v in saved.items() if k != "album_ranks_current"}
+    assert ra._new_opportunity(hint, legacy, "r" * 64, 2000.0)["album_ranks_current"] is False
+
+
 def test_a_members_album_skipped_without_login_is_tried_again_after_logging_in(state, tmp_path):
     """ログインが無い時に会員向けとして打ち切った盤は、LSSでログインした後の機会に取り直す（早期の打ち切りを残さない）。"""
     from lss.acquisition.store import AuthMethod

@@ -488,6 +488,7 @@ def _new_opportunity(hint: dict, previous: dict | None, source_sha256: str | Non
             "checked_sources": sorted(set(keep.get("checked_sources", [])) | {source_sha256}),
             "candidates": {k: dict(v) for k, v in (keep.get("candidates") or {}).items()},
             "albums": {k: dict(v) for k, v in (keep.get("albums") or {}).items()},
+            "album_ranks_current": bool(keep.get("album_ranks_current")),
             "releases": list(keep.get("releases") or []), "queries": list(keep.get("queries") or []),
             "attempts": int(keep.get("attempts") or 0) + 1, "state": "searching"}
 
@@ -1022,7 +1023,10 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
                 score = album_row.get("score", 0)
                 # 制限のない最上位の盤は、元の順位0の扱いのとおり題の一致を問わない。
                 # 順位0以外が代わりになるのは、順位が今回の検索のものと分かる時だけ。
-                is_top = not top_found and (rank == 0 or (score > 0 and opportunity.get("album_ranks_current")))
+                if opportunity.get("album_ranks_current"):
+                    is_top = not top_found and (rank == 0 or score > 0)
+                else:
+                    is_top = rank == 0   # 古い形式の順位：元のとおり順位0の盤だけ（重複していてもすべて）
                 if score < STRONG_SCORE and not is_top:
                     continue
                 if album_row.get("full_verification"):
