@@ -19,6 +19,7 @@ import shutil
 import stat
 import sys
 from dataclasses import dataclass
+from hashlib import sha384
 from pathlib import Path
 
 
@@ -30,19 +31,19 @@ def _root() -> Path:
 ROOT = _root()
 REFERENCE = ROOT / "design" / "reference"
 CANVAS = REFERENCE / "LSS App.dc.html"
-RUNTIME = REFERENCE / "support.js"
+RUNTIME = Path(__file__).with_name("runtime.js")
 FONT_DIR = ROOT / "assets" / "fonts"
 WEB_DIR = ROOT / "assets" / "web"
 BRIDGE = Path(__file__).with_name("bridge.js")
 TRAY_MENU = Path(__file__).with_name("tray_menu.html")
 SYSTEM_ASSETS = ROOT / "assets" / "system"
 
-# 凍結Designのランタイムが既定でunpkgから読むReact。同じ版・同じSRIのファイルを同梱し、
-# ランタイム自身の資源表（window.__resources）で差し替える。ネットに頼らない。
+# LSS pins the vendored React and ReactDOM 18.3.1 UMD builds by SHA-384.
 _REACT = (
-    ("https://unpkg.com/react@18.3.1/umd/react.production.min.js", "react.production.min.js"),
-    ("https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js",
-     "react-dom.production.min.js"),
+    ("react.production.min.js",
+     "0c6c8bc40ca3ab47fd48fa557af0fa220ced085967305ea85bf5d01a67def88b19f13a84883adc1e430b288e9f881fd9"),
+    ("react-dom.production.min.js",
+     "8131b1873db595519834c71d24ecaad3511d8348e19ff736da7b31d24caa3f44f1695e5655db121f57d20d47f96098f5"),
 )
 
 # 凍結Designの1画面の参照構図。実機ではこれが収まる倍率で拡大し、画面の縦横比との差は
@@ -120,12 +121,18 @@ PATCHES: tuple[Patch, ...] = (
         new="<style>\n" + _font_faces() + "\n</style>",
     ),
     Patch(
-        name="react-local",
-        why="Designのランタイムが読むReactを、同梱した同じ版のファイルへ差し替える。",
+        name="lss-runtime",
+        why="同梱の React、ReactDOM、LSS のランタイムを順に読み込む。",
         old='<script src="./support.js"></script>',
-        new="<script>window.__resources=" + json.dumps({url: name for url, name in _REACT})
-            + ";window.__lssPush=function(s){window.__LSS_INITIAL__=s};</script>\n"
-            '<script src="./support.js"></script>',
+        new='<script>window.__lssPush=function(s){window.__LSS_INITIAL__=s};</script>\n'
+            + "\n".join(f'<script src="./{name}"></script>' for name, _digest in _REACT)
+            + '\n<script src="./runtime.js"></script>',
+    ),
+    Patch(
+        name="hide-template-until-mount",
+        why="ランタイムの起動前に、バインディングを含むテンプレートが表示されるのを防ぐ。",
+        old="<x-dc>",
+        new="<x-dc hidden>",
     ),
     Patch(
         name="backend-bridge",
@@ -208,12 +215,15 @@ def _copy(source: Path, target: Path) -> None:
 
 def build(destination: Path, *, initial: dict | None = None) -> Path:
     """アプリで配るページ一式を `destination` へ書き出し、入口のパスを返す。"""
+    for name, digest in _REACT:
+        if sha384((WEB_DIR / name).read_bytes()).hexdigest() != digest:
+            raise PatchError(f"Bundled React integrity check failed for {name}")
     destination.mkdir(parents=True, exist_ok=True)
     page = apply(CANVAS.read_text(encoding="utf-8"), initial=initial)
     entry = destination / "index.html"
     _write(entry, page)
-    _copy(RUNTIME, destination / "support.js")
-    for _url, name in _REACT:
+    _copy(RUNTIME, destination / "runtime.js")
+    for name, _digest in _REACT:
         _copy(WEB_DIR / name, destination / name)
     fonts = destination / "fonts"
     fonts.mkdir(exist_ok=True)
