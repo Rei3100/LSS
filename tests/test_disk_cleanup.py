@@ -194,12 +194,17 @@ def _directory_link(link, target):
         pytest.skip(f"Directory links are unavailable: {exc}")
 
 
-def test_local_cleanup_path_refuses_case_only_redirection(cleanup, monkeypatch):
-    path = cleanup.ROOT / ".state" / "work"
-    path.mkdir()
-    with monkeypatch.context() as patch:
-        patch.setattr(Path, "resolve", lambda self: path.with_name("WORK"))
-        assert not cleanup._local_cleanup_path(path)
+@pytest.mark.skipif(os.name != "nt", reason="Windows path casing")
+def test_prune_accepts_case_insensitive_directory_names(cleanup):
+    candidate = comparison(cleanup, "old-run")
+    validation = candidate.parent
+    state = validation.parent
+    validation.rename(state / "temp-validation").rename(state / "Validation")
+    state.rename(cleanup.ROOT / "temp-state").rename(cleanup.ROOT / ".STATE")
+
+    assert cleanup.prune(True, limit=0) == 0
+    assert not candidate.exists()
+    assert list((cleanup.ROOT / ".STATE" / "Validation").glob("disk-cleanup-*.json"))
 
 
 def test_prune_rechecks_parent_junction_after_printing_candidate(cleanup, tmp_path, monkeypatch):
@@ -258,7 +263,7 @@ def test_prune_refuses_a_linked_validation_receipt_directory(cleanup, tmp_path):
     assert list(outside.iterdir()) == []
 
 
-def test_provider_media_gc_refuses_media_behind_a_linked_root(cleanup, tmp_path):
+def test_provider_media_gc_skips_a_linked_provider_root(cleanup, tmp_path):
     outside = tmp_path / "outside"
     run = outside / "run"
     run.mkdir(parents=True)
@@ -269,9 +274,30 @@ def test_provider_media_gc_refuses_media_behind_a_linked_root(cleanup, tmp_path)
     providers.rmdir()
     _directory_link(providers, outside)
 
-    with pytest.raises(SystemExit, match="keep.wav"):
-        cleanup.provider_media_gc(True, quiet=True)
+    assert cleanup.provider_media_candidates() == ([], [])
+    assert cleanup.provider_media_gc(True, quiet=True) == 0
     assert stem.read_bytes() == b"outside media"
+
+
+def test_provider_media_gc_skips_linked_directory_and_removes_local_media(cleanup, tmp_path):
+    run = cleanup.ROOT / ".providers" / "run"
+    run.mkdir()
+    (run / "plan.json").write_text("{}", encoding="utf-8")
+    local = run / "local.wav"
+    local.write_bytes(b"local media")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    payload = outside / "keep.wav"
+    payload.write_bytes(b"outside media")
+    junction = run / "stems"
+    _directory_link(junction, outside)
+
+    rows, unreadable = cleanup.provider_media_candidates()
+    assert unreadable == []
+    assert [(row["path"], row["class"]) for row in rows] == [(".providers/run/local.wav", "RETIRE")]
+    assert cleanup.provider_media_gc(True, quiet=True) == 0
+    assert not local.exists()
+    assert (junction / payload.name).read_bytes() == b"outside media"
 
 
 @pytest.mark.parametrize("link_kind", ["real", "simulated", "local-dependency"])

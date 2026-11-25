@@ -85,9 +85,15 @@ def require_owned_for_deletion(checkout_root: Path | None = None) -> Path:
     reference is not an absent one. Deleting is therefore allowed only when the
     development state is this checkout's own `.state`.
     """
+    if __package__:
+        from .storage_tiers import is_link
+    else:
+        from storage_tiers import is_link
+
     root = (CHECKOUT_ROOT if checkout_root is None else Path(checkout_root)).resolve()
+    expected = root / ".state"
     state = dev_state_root(root)
-    if str(state.resolve()) != str(root / ".state"):
+    if is_link(expected) or os.path.normcase(state.resolve()) != os.path.normcase(expected):
         raise SystemExit("Deleting development records runs only from the checkout that owns them")
     return state
 

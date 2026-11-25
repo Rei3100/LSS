@@ -43,23 +43,18 @@ def _prunable_roots() -> tuple[Path, ...]:
 def _local_cleanup_path(path: Path) -> bool:
     from storage_tiers import is_link
 
-    return not is_link(path) and str(path.resolve()) == str(path)
+    if path.is_relative_to(ROOT):
+        parent = ROOT
+        for part in path.relative_to(ROOT).parts:
+            if part == ".." or is_link(parent):
+                return False
+            parent /= part
+    return not is_link(path) and os.path.normcase(path.resolve()) == os.path.normcase(path)
 
 
 def _local_deletion_path(path: Path) -> bool:
     """Recheck the checkout and every component down to the deletion target."""
-    from storage_tiers import is_link
-
-    root_parts = ROOT.parts
-    relative_parts = path.parts[len(root_parts):]
-    if path.parts[:len(root_parts)] != root_parts or not relative_parts:
-        return False
-    parent = ROOT
-    for part in relative_parts:
-        if part == ".." or is_link(parent):
-            return False
-        parent /= part
-    return _local_cleanup_path(path)
+    return path != ROOT and path.is_relative_to(ROOT) and _local_cleanup_path(path)
 
 
 def _cleanup_receipt(prefix: str) -> Path:
@@ -146,22 +141,24 @@ def _json_under(root: Path) -> list[Path]:
     return sorted(found)
 
 
-def local_files(root: Path):
+def local_files(root: Path, *, include_file_links: bool = False):
     """Walk local real directories only: never follow a relocation junction,
-    including broken ones. Other I/O errors abort collection, never authorize GC.
+    including broken ones. Optionally yield file links without following them.
+    Other I/O errors abort collection, never authorize GC.
     """
     from storage_tiers import is_link
     if is_link(root):
         return
     def failed(error):
         raise error
-    for directory, names, files in os.walk(root, onerror=failed):
+    for directory, names, files in os.walk(root, onerror=failed, followlinks=False):
         names[:] = [n for n in names if n not in {'.venv', 'venv', 'site-packages', '_internal',
                                                  'node_modules', '.git', '__pycache__'}
                     and not is_link(Path(directory) / n)]
         for name in files:
             path = Path(directory) / name
-            if not is_link(path) and path.is_file():
+            linked = is_link(path)
+            if (linked and include_file_links) or (not linked and path.is_file()):
                 yield path
 
 
@@ -609,22 +606,19 @@ def provider_media_candidates() -> tuple[list[dict], list[str]]:
     from storage_tiers import is_link
 
     base = ROOT / ".providers"
-    if not base.is_dir():
+    if is_link(base) or not base.is_dir():
         return [], []
     run_roots: dict[str, Path] = {}
     paths = []
     linked_paths = []
     rows = []
-    for path in base.rglob("*"):
+    for path in local_files(base, include_file_links=True):
         if path.suffix.lower() not in MEDIA_SUFFIXES or _provider_protected(path, base):
-            continue
-        linked = is_link(path)
-        if not linked and not path.is_file():
             continue
         run_root = _provider_run_root(path, base)
         if run_root is None:
             continue
-        if linked:
+        if is_link(path):
             linked_paths.append(path)
             rows.append({"path": _reported_path(path), "bytes": 0,
                          "class": "KEEP", "reason": "linked"})
