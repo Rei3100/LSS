@@ -738,14 +738,6 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
             return any(row["state"] == "verified" and not from_theme(key)
                        for key, row in opportunity["candidates"].items())
 
-        listing_failed_states = ("resolve_failed", "needs_login")
-
-        def can_substitute(album_row: dict) -> bool:
-            rank = album_row.get("album_rank")
-            return (rank is not None and rank > 0 and 0 < album_row.get("score", 0) < STRONG_SCORE
-                    and not album_row.get("full_verification") and album_row.get("state") != "restricted"
-                    and album_row.get("state") not in listing_failed_states)
-
         if not verified_any():
             for row in opportunity["candidates"].values():
                 if row["state"] == "not_needed":
@@ -755,33 +747,16 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
         fresh = searched is not None and now - float(searched) < RETRY_AFTER_SECONDS
         themes_searched = opportunity.get("theme_songs_searched_at_epoch")
         themes_fresh = themes_searched is not None and now - float(themes_searched) < RETRY_AFTER_SECONDS
-        albums = opportunity["albums"]
-        substitute_url = next((url for url, row in albums.items() if row.get("full_verification_in_progress")), None)
-        substitute_started = substitute_url is not None or any(
-            row.get("full_verification_replaces") for row in albums.values())
-        # 代わりの盤だけに属する未確認の曲は、全曲確認の続きで扱う。
         undecided = [row for row in opportunity["candidates"].values()
-                     if (row["state"] in ("pending", "auth_failed")
-                         or row["checks"].get(source_sha256) == PENDING_WAVEFORM)
-                     and (substitute_url is None or not row["origins"]
-                          or any(origin.get("album_url") != substitute_url for origin in row["origins"]))]
+                     if row["state"] in ("pending", "auth_failed")
+                     or row["checks"].get(source_sha256) == PENDING_WAVEFORM]
         unreleased = [row for row in opportunity["candidates"].values()
                       if row["state"] == "verified" and not row.get("release_checked")]
         incomplete = [url for url in opportunity["releases"]
                       if opportunity["albums"].get(url, {}).get("state") not in ("acquired", "restricted", "needs_login")]
-        substitute_only = False
         if fresh and themes_fresh and not undecided and not unreleased and not incomplete:
-            # 見本を確認済みでも、認証で止まった最上位の盤に代わる候補が残っていれば確認を続ける。
-            if not verified_any():
-                if substitute_url is not None:
-                    substitute_only = albums[substitute_url].get("state") not in listing_failed_states
-                elif not substitute_started:
-                    substitute_only = (any(row.get("album_rank") == 0 and row.get("state") == "restricted"
-                                           for row in albums.values())
-                                       and any(can_substitute(row) for row in albums.values()))
-            if not substitute_only:
-                has = any(row["state"] == "verified" for row in opportunity["candidates"].values())
-                return finish("verified" if has else "no_verified_release", reused=True)
+            has = any(row["state"] == "verified" for row in opportunity["candidates"].values())
+            return finish("verified" if has else "no_verified_release", reused=True)
 
         ensure = ensure_provider if ensure_provider is not None else _default_ensure(search, backend)
         ensured: list = []
@@ -987,19 +962,14 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
                 if found_album is None:
                     continue
                 score = _score(found_album.get("title"), hint["title"])
-                album_row = albums[url]
-                if album_row.get("state") in listing_failed_states:
-                    album_row["state"] = "candidate"
-                    for key in ("failure", "failure_detail", "needs_login"):
-                        album_row.pop(key, None)
-                album_row.update(score=score, search_rank=rank)
+                opportunity["albums"][url].update(score=score, search_rank=rank)
                 ranked.append((score, rank, url, found_album))
             ranked.sort(key=lambda item: (-item[0], item[1]))
             # 今回の検索に出なかった盤も記録には残す。順位は今回の候補だけに付ける。
-            for album_row in albums.values():
+            for album_row in opportunity["albums"].values():
                 album_row.pop("album_rank", None)
             for album_rank, (score, rank, url, found_album) in enumerate(ranked[:MAX_ALBUMS]):
-                albums[url]["album_rank"] = album_rank
+                opportunity["albums"][url]["album_rank"] = album_rank
                 for position, track in enumerate(_sample(found_album["tracks"][:MAX_TRACKS], SAMPLE_TRACKS)):
                     _candidate(opportunity, track, {"kind": "album_sample", "album_url": url,
                                                     "album_rank": album_rank, "score": score,
@@ -1023,75 +993,52 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
         for row in opportunity["candidates"].values():
             if row["state"] == "auth_failed":
                 row["state"] = "pending"   # ログインしての拒否は一時的なことがある：機会ごとに一度やり直す
-        if not substitute_only:
-            pending = sorted((row for row in opportunity["candidates"].values() if row["state"] == "pending"),
-                             key=_priority)
-            check([row for row in pending if _priority(row)[0] == 0], "verification_sample",
-                  "verification_downloads", VERIFY_BUDGET)
-            samples = [row for row in pending if 0 < _priority(row)[0] < 3 and row["state"] == "pending"
-                       and (not verified_any() or _priority(row)[0] == 1)]
-            check(samples, "verification_sample", "verification_downloads", VERIFY_BUDGET)
-            if verified_any():
-                # 曲の検索で確かめられた：作品名の合わないアルバムの見本は取らない（無駄な取得をしない）。
-                for row in pending:
-                    if row["state"] == "pending" and _priority(row)[0] == 2 and not in_release(row):
-                        row["state"] = "not_needed"
-
-        def finish_substitution(album_row: dict, replaced_url: str) -> None:
-            album_row.update(full_verification=True, full_verification_reason="top_restricted",
-                             full_verification_replaces=replaced_url)
-            album_row.pop("full_verification_in_progress", None)
+        pending = sorted((row for row in opportunity["candidates"].values() if row["state"] == "pending"),
+                         key=_priority)
+        check([row for row in pending if _priority(row)[0] == 0], "verification_sample",
+              "verification_downloads", VERIFY_BUDGET)
+        samples = [row for row in pending if 0 < _priority(row)[0] < 3 and row["state"] == "pending"
+                   and (not verified_any() or _priority(row)[0] == 1)]
+        check(samples, "verification_sample", "verification_downloads", VERIFY_BUDGET)
+        if verified_any():
+            # 曲の検索で確かめられた：作品名の合わないアルバムの見本は取らない（無駄な取得をしない）。
+            for row in pending:
+                if row["state"] == "pending" and _priority(row)[0] == 2 and not in_release(row):
+                    row["state"] = "not_needed"
 
         if not verified_any():
-            # 作品名とサウンドトラックの語が両方合う候補と、最上位の候補は、見本が外れただけかもしれない。
-            # 全曲で確かめ直す（全曲の確認の上限つき）。
-            ranked_albums = sorted(((url, row) for url, row in albums.items() if row.get("album_rank") is not None),
-                                   key=lambda item: item[1]["album_rank"])
-            top_url, top_album = next(((url, row) for url, row in ranked_albums if row["album_rank"] == 0),
-                                      (None, {}))
-            if substitute_url is not None:
-                ranked_albums = [(substitute_url, albums[substitute_url])] + [
-                    (url, row) for url, row in ranked_albums if url != substitute_url]
-            for url, album_row in ranked_albums:
+            # 作品名とサウンドトラックの語が両方合う盤は、見本が外れただけかもしれない。
+            # 題が少しでも合う盤のうち、制限がなく曲目を読める最上位の盤も全曲で確かめる。
+            top_found = False
+            for url, album_row in sorted(opportunity["albums"].items(),
+                                         key=lambda item: item[1].get("album_rank", 99)):
                 if should_stop():
                     break
-                rank = album_row.get("album_rank", 99)
-                album_state = album_row.get("state")
-                replaced_url = album_row.get("full_verification_in_progress")
-                if album_state == "restricted":
-                    if replaced_url is not None:
-                        finish_substitution(album_row, replaced_url)
+                rank = album_row.get("album_rank")
+                if rank is None or album_row.get("state") == "restricted":
+                    continue
+                score = album_row.get("score", 0)
+                is_top = not top_found and score > 0
+                if score < STRONG_SCORE and not is_top:
                     continue
                 if album_row.get("full_verification"):
-                    continue
-                # 最上位の盤が認証で止まったら、題が検索に合う次の盤を1つだけ代わりに確かめる。
-                if not substitute_started and top_album.get("state") == "restricted" and can_substitute(album_row):
-                    replaced_url = top_url
-                if replaced_url is None:
-                    if substitute_only or (rank != 0 and album_row.get("score", 0) < STRONG_SCORE):
-                        continue
-                elif album_state in listing_failed_states or counters["full_verification_downloads"] >= MAX_TRACKS:
+                    # 全曲確認を始めた盤は曲目を取得済み。
+                    top_found = top_found or is_top
                     continue
                 listed_album = album(url)
                 if listed_album is None:
                     continue
-                if replaced_url is None:
-                    album_row["full_verification"] = True
-                else:
-                    # 曲数の上限や中断で残った確認は、次の機会に同じ盤から続ける。
-                    album_row["full_verification_in_progress"] = replaced_url
-                    substitute_started = True
+                album_row["full_verification"] = True
+                if is_top:
+                    top_found = True
+                    if rank != 0:
+                        album_row["full_verification_reason"] = "top_restricted"
                 rows = [_candidate(opportunity, track, {"kind": "album_full", "album_url": url,
                                                         "album_rank": rank,
                                                         "position": position})
                         for position, track in enumerate(listed_album["tracks"][:MAX_TRACKS])]
                 check([row for row in rows if row["state"] == "pending"], "verification_full",
                       "full_verification_downloads", MAX_TRACKS, full_album=album_row)
-                if replaced_url is not None:
-                    unchecked = any(row["state"] in ("pending", "auth_failed") and source_sha256 not in row["checks"]
-                                    and not in_release(row) for row in rows)
-                    if album_row.get("state") == "restricted" or not unchecked:
-                        finish_substitution(album_row, replaced_url)
                 if any(row["state"] == "verified" for row in rows):
                     break
         # 4. 収録盤：手元の知識で確かめた曲など、まだ収録盤を探していない確かめた曲。

@@ -368,247 +368,112 @@ def test_an_album_that_needs_a_paid_or_member_login_is_not_requested_track_by_tr
 
 
 @pytest.mark.parametrize(
-    ("restriction", "next_score", "match_next", "full_downloads", "substitutes"),
+    ("top_restricted", "runner_up_score", "full_downloads"),
     [
-        pytest.param("sample", 1.0, True, 1, True, id="restricted_top_uses_positive_runner_up"),
-        pytest.param("full", 1.0, True, 2, True, id="top_becomes_restricted_during_full_verification"),
-        pytest.param(None, 1.0, True, 2, False, id="unrestricted_top_keeps_runner_up_sample_only"),
-        pytest.param("sample", 0.0, True, 0, False, id="restricted_top_skips_zero_score_albums"),
-        pytest.param("sample", 1.0, False, 2, True, id="unmatched_substitute_does_not_promote_another_album"),
+        pytest.param(True, 1.0, 1, id="restricted_top_uses_positive_runner_up"),
+        pytest.param(False, 1.0, 2, id="unrestricted_top_keeps_runner_up_sample_only"),
+        pytest.param(True, 0.0, 0, id="restricted_top_skips_zero_score_albums"),
     ],
 )
-def test_full_verification_after_album_sampling(
-    state, tmp_path, monkeypatch, restriction, next_score, match_next, full_downloads, substitutes,
+def test_full_verification_uses_the_top_available_album(
+    state, tmp_path, monkeypatch, top_restricted, runner_up_score, full_downloads,
 ):
-    # 各盤の最初と最後だけを見本にして、照合できる曲はその間に置く。
+    # 各盤の最初と最後を見本にして、一致する曲は次点の盤の真ん中に置く。
     monkeypatch.setattr(ra, "SAMPLE_TRACKS", 2)
     monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
     top_ids = ["a1", "a2", "a3", "a4"]
-    next_ids = ["b1", "b2", "b3", "b4"]
-    third_ids = ["c1", "c2", "c3"]
-    seeds = {track: seed for seed, track in enumerate(top_ids + next_ids + third_ids, start=400)}
-    seeds.update(b2=42, c2=43)
+    runner_up_ids = ["b1", "b2", "b3"]
+    seeds = {track: seed for seed, track in enumerate(top_ids + runner_up_ids, start=400)}
+    seeds["b2"] = 42
     media = {track: _track(tmp_path / "remote" / f"{track}.flac", seed) for track, seed in seeds.items()}
-    failures = {track: [FailureKind.AUTH_REQUIRED] for track in top_ids} if restriction else {}
-    if restriction == "full":
-        failures["a4"] = [FailureKind.UNAVAILABLE]
+    failures = {track: [FailureKind.AUTH_REQUIRED] for track in top_ids} if top_restricted else {}
     backend = FakeBackend(media, failures=failures)
-    other_title = "別の作品 サウンドトラック" if next_score > 0 else "別の作品の曲集"
-    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["A", "B", "C"]},
+    runner_up_title = "別の作品 サウンドトラック" if runner_up_score else "別の作品の曲集"
+    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["A", "B"]},
                       listings={"A": ("番組名 オリジナル・サウンドトラック", top_ids),
-                                "B": (other_title, next_ids), "C": (other_title, third_ids)})
-    matching_track = "b2" if match_next else "c2"
-    source = _episode(tmp_path / "『番組名』第1話.wav", [(seeds[matching_track], 10.0, 30.0)])
+                                "B": (runner_up_title, runner_up_ids)})
+    source = _episode(tmp_path / "『番組名』第1話.wav", [(seeds["b2"], 10.0, 30.0)])
 
     result = ra.discover(source, source_sha256="r" * 64, cache_dir=_cache(state), state_root=state,
                          search=catalog, backend=backend, pacing=NO_WAIT, courtesy=_polite())
 
-    top_url = "https://music.example.test/browse/A"
-    next_url = "https://music.example.test/browse/B"
-    top_album = result["albums"][top_url]
-    next_album = result["albums"][next_url]
-    assert top_album["album_rank"] == 0 and (top_album["state"] == "restricted") == bool(restriction)
-    assert next_album["album_rank"] == 1 and next_album["score"] == next_score
+    top = result["albums"]["https://music.example.test/browse/A"]
+    runner_up = result["albums"]["https://music.example.test/browse/B"]
+    assert top["album_rank"] == 0 and (top["state"] == "restricted") == top_restricted
+    assert top.get("full_verification", False) is (not top_restricted)
+    assert runner_up["album_rank"] == 1 and runner_up["score"] == runner_up_score
     assert result["counters"]["full_verification_downloads"] == full_downloads
-    assert next_album.get("full_verification", False) is substitutes
-    assert "c2" not in backend.downloads
-    if restriction:
-        assert backend.failures["a3"] == [FailureKind.AUTH_REQUIRED]
-    if substitutes:
-        saved = ra.load_opportunity(result["work_key"], state)["albums"][next_url]
-        assert saved["full_verification_reason"] == "top_restricted"
-        assert saved["full_verification_replaces"] == top_url
-        assert "b2" in backend.downloads
-    else:
-        assert "full_verification_reason" not in next_album
-        assert "b2" not in backend.downloads
-    if substitutes and match_next:
+    if top_restricted and runner_up_score > 0:
+        assert runner_up["full_verification"] is True
+        assert runner_up["full_verification_reason"] == "top_restricted"
         assert result["verified_tracks"] == ["b2"]
-        assert result["counters"]["release_downloads"] == 1  # 最初の一致の後は収録盤の取得に移る。
     else:
+        assert "full_verification" not in runner_up
+        assert "full_verification_reason" not in runner_up
+        assert "b2" not in backend.downloads
         assert result["state"] == "no_verified_release"
 
 
-@pytest.fixture
-def saved_restricted_top(state, tmp_path, monkeypatch):
+def test_full_verification_stops_when_the_album_becomes_restricted_even_with_a_shared_track(
+    state, tmp_path, monkeypatch,
+):
+    # 見本の取得枠は最上位の盤で使い切る。共通の曲は別の盤の見本にも残る。
+    monkeypatch.setattr(ra, "SAMPLE_TRACKS", 2)
+    monkeypatch.setattr(ra, "VERIFY_BUDGET", 2)
+    monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
+    top_ids = ["a1", "a2", "a3", "shared", "a5"]
+    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["A", "B"]},
+                      listings={"A": ("番組名 オリジナル・サウンドトラック", top_ids),
+                                "B": ("別の作品の曲集", ["shared"])})
+    backend = FakeBackend({}, failures={"a1": [FailureKind.UNAVAILABLE], "a5": [FailureKind.UNAVAILABLE],
+                                        "a2": [FailureKind.AUTH_REQUIRED], "a3": [FailureKind.AUTH_REQUIRED],
+                                        "shared": [FailureKind.UNAVAILABLE]})
+    source = tmp_path / "『番組名』第1話.wav"
+
+    result = ra.discover(source, source_sha256="r" * 64, cache_dir=_cache(state), state_root=state,
+                         search=catalog, backend=backend, pacing=NO_WAIT, courtesy=_polite(),
+                         query_samples=np.zeros(LOW, np.float32))
+
+    top_url = "https://music.example.test/browse/A"
+    other_url = "https://music.example.test/browse/B"
+    top = result["albums"][top_url]
+    assert top["full_verification"] is True and top["state"] == "restricted"
+    assert result["albums"][other_url]["state"] == "candidate"
+    assert result["counters"]["full_verification_downloads"] == 2
+    shared = result["candidates"]["shared"]
+    assert shared["state"] == "pending"
+    assert {(origin["kind"], origin["album_url"]) for origin in shared["origins"]} == {
+        ("album_sample", other_url), ("album_full", top_url),
+    }
+    assert backend.failures["shared"] == [FailureKind.UNAVAILABLE]
+
+
+def test_search_refresh_drops_the_rank_of_the_old_restricted_top(state, tmp_path, monkeypatch):
     monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
     source = tmp_path / "『番組名』第1話.wav"
     source_sha256 = "r" * 64
+    old_url = "https://music.example.test/browse/A"
     hint = ra.work_hint(source, source_sha256, state)
     saved = ra._new_opportunity(hint, None, source_sha256, 1000.0)
-    urls = {name: f"https://music.example.test/browse/{name}" for name in ("A", "B", "C")}
     saved.update(state="no_verified_release", searched_at_epoch=1000.0, theme_songs_searched_at_epoch=1000.0,
-                 albums={urls["A"]: dict(url=urls["A"], album_rank=0, score=3.0, state="restricted",
-                                         full_verification=True),
-                         urls["B"]: dict(url=urls["B"], album_rank=1, score=1.0, state="candidate"),
-                         urls["C"]: dict(url=urls["C"], album_rank=2, score=1.0, state="candidate")})
+                 albums={old_url: dict(url=old_url, album_rank=0, score=3.0, state="restricted")})
     ra._save_opportunity(saved, state)
-    search = Catalog(listings={"B": ("別の作品 サウンドトラック", ["b1"]),
-                               "C": ("別の作品 サウンドトラック", ["c1"])})
-    # 盤を選んで曲を要求したかだけを確かめる。曲は取得できないものとする。
+    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["B", "C"]},
+                      listings={"B": ("別の作品 サウンドトラック", ["b1"]),
+                                "C": ("別の作品 サウンドトラック", ["c1"])})
     backend = FakeBackend({}, failures={"b1": [FailureKind.UNAVAILABLE], "c1": [FailureKind.UNAVAILABLE]})
 
-    def discover(now=2000.0, *, backend=backend):
-        return ra.discover(source, source_sha256=source_sha256, cache_dir=_cache(state), state_root=state,
-                           search=search, backend=backend, pacing=NO_WAIT, courtesy=_polite(), now=now,
-                           query_samples=np.zeros(LOW, np.float32))
+    result = ra.discover(source, source_sha256=source_sha256, cache_dir=_cache(state), state_root=state,
+                         search=catalog, backend=backend, pacing=NO_WAIT, courtesy=_polite(),
+                         query_samples=np.zeros(LOW, np.float32), now=1000.0 + ra.RETRY_AFTER_SECONDS)
 
-    return discover, saved, search, urls
-
-
-def test_saved_restricted_top_can_be_replaced_after_full_verification_started(saved_restricted_top):
-    discover, _, search, urls = saved_restricted_top
-
-    result = discover()
-
-    assert result["albums"][urls["A"]]["full_verification"] is True
-    substitute = result["albums"][urls["B"]]
-    assert substitute["full_verification"] is True
-    assert substitute["full_verification_reason"] == "top_restricted"
-    assert substitute["full_verification_replaces"] == urls["A"]
-    assert result["counters"]["full_verification_downloads"] == 1
-    assert search.calls == [("tracks", urls["B"])]
-
-
-def test_restricted_top_is_replaced_only_once_across_discoveries(saved_restricted_top, state):
-    discover, _, search, urls = saved_restricted_top
-    first = discover()
-    assert first["albums"][urls["B"]]["full_verification_replaces"] == urls["A"]
-
-    # 主題歌の検索だけを更新して、盤の順位を保ったまま全曲確認の経路を通る。
-    saved = ra.load_opportunity(first["work_key"], state)
-    saved["theme_songs_searched_at_epoch"] = None
-    ra._save_opportunity(saved, state)
-    second = discover(now=3000.0)
-
-    assert second["state"] == "no_verified_release"
-    assert second["counters"]["full_verification_downloads"] == 0
-    assert second["albums"][urls["B"]]["full_verification_replaces"] == urls["A"]
-    assert "full_verification" not in second["albums"][urls["C"]]
-    assert ("tracks", urls["C"]) not in search.calls
-
-
-def test_unreadable_album_listing_leaves_substitution_available(saved_restricted_top, monkeypatch):
-    discover, _, search, urls = saved_restricted_top
-    tracks = search.tracks
-
-    def read_listing(url):
-        if url == urls["B"]:
-            raise AcquisitionFailure(FailureKind.UNAVAILABLE, "album listing unavailable")
-        return tracks(url)
-
-    monkeypatch.setattr(search, "tracks", read_listing)
-    result = discover()
-
-    unreadable = result["albums"][urls["B"]]
-    assert unreadable["state"] == "resolve_failed"
-    assert "full_verification_reason" not in unreadable
-    assert result["albums"][urls["C"]]["full_verification_replaces"] == urls["A"]
-    assert result["counters"]["full_verification_downloads"] == 1
-
-
-@pytest.mark.parametrize("budget", [pytest.param(2, id="same_discovery"), pytest.param(1, id="next_discovery")])
-def test_strong_album_does_not_consume_the_restricted_top_substitute(saved_restricted_top, state, monkeypatch, budget):
-    discover, saved, _, urls = saved_restricted_top
-    saved["albums"][urls["B"]]["score"] = ra.STRONG_SCORE
-    saved["theme_songs_searched_at_epoch"] = None
-    ra._save_opportunity(saved, state)
-    monkeypatch.setattr(ra, "MAX_TRACKS", budget)
-
-    result = discover()
-
-    strong = result["albums"][urls["B"]]
-    assert strong["full_verification"] is True
-    assert "full_verification_reason" not in strong
-    assert result["counters"]["full_verification_downloads"] == budget
-    if budget == 1:
-        assert "full_verification" not in result["albums"][urls["C"]]
-        result = discover(now=3000.0)
-        assert result["counters"]["full_verification_downloads"] == 1
-    assert result["albums"][urls["C"]]["full_verification_replaces"] == urls["A"]
-
-
-@pytest.mark.parametrize("failure", [FailureKind.UNAVAILABLE, FailureKind.AUTH_REQUIRED])
-def test_unreadable_substitute_is_retried_only_after_search_refresh(saved_restricted_top, state, monkeypatch, failure):
-    discover, saved, search, urls = saved_restricted_top
-    del saved["albums"][urls["C"]]
-    ra._save_opportunity(saved, state)
-    tracks = search.tracks
-    failed_urls = []
-
-    def read_listing(url):
-        if url == urls["B"] and not search.album_answers:
-            failed_urls.append(url)
-            raise AcquisitionFailure(failure, "album listing unavailable")
-        return tracks(url)
-
-    monkeypatch.setattr(search, "tracks", read_listing)
-    first = discover()
-    assert first["albums"][urls["B"]]["state"] in ("resolve_failed", "needs_login")
-    assert discover(now=3000.0)["reused"] is True
-    assert failed_urls == [urls["B"]]
-
-    search.album_answers["番組名 オリジナル・サウンドトラック"] = ["A", "B"]
-    search.listings["A"] = ("番組名 オリジナル・サウンドトラック", [])
-    refreshed = discover(now=1000.0 + ra.RETRY_AFTER_SECONDS)
-    assert refreshed["albums"][urls["B"]]["full_verification_replaces"] == urls["A"]
-    assert ("tracks", urls["B"]) in search.calls
-
-
-def test_search_refresh_drops_the_rank_of_the_old_restricted_top(saved_restricted_top):
-    discover, _, search, urls = saved_restricted_top
-    search.album_answers["番組名 オリジナル・サウンドトラック"] = ["B", "C"]
-
-    result = discover(now=1000.0 + ra.RETRY_AFTER_SECONDS)
-
-    assert result["albums"][urls["A"]]["state"] == "restricted"
-    assert "album_rank" not in result["albums"][urls["A"]]
-    assert result["albums"][urls["B"]]["album_rank"] == 0
-    assert result["albums"][urls["B"]]["full_verification"] is True
-    assert result["albums"][urls["C"]]["album_rank"] == 1
-    assert "full_verification" not in result["albums"][urls["C"]]
-
-
-def test_substitute_continues_the_same_album_after_exhausting_the_budget(saved_restricted_top, state, monkeypatch):
-    discover, saved, search, urls = saved_restricted_top
-    # 強い候補が先に1曲分を使うため、代わりの盤は1曲を残して止まる。
-    saved["albums"][urls["C"]].update(album_rank=1, score=ra.STRONG_SCORE)
-    saved["albums"][urls["B"]]["album_rank"] = 2
-    saved["theme_songs_searched_at_epoch"] = None
-    ra._save_opportunity(saved, state)
-    search.listings["B"] = ("別の作品 サウンドトラック", ["b1", "b2"])
-    backend = FakeBackend({}, failures={key: [FailureKind.UNAVAILABLE] for key in ("b1", "b2", "c1")})
-    monkeypatch.setattr(ra, "MAX_TRACKS", 2)
-
-    first = discover(backend=backend)
-    substitute = first["albums"][urls["B"]]
-    assert first["counters"]["full_verification_downloads"] == 2
-    assert first["candidates"]["b2"]["state"] == "pending"
-    assert substitute["full_verification_in_progress"] == urls["A"]
-    assert "full_verification" not in substitute and "full_verification_reason" not in substitute
-
-    second = discover(now=3000.0, backend=backend)
-    substitute = second["albums"][urls["B"]]
-    assert second["counters"]["full_verification_downloads"] == 1
-    assert second["candidates"]["b2"]["state"] == "acquire_failed"
-    assert substitute["full_verification"] is True
-    assert substitute["full_verification_reason"] == "top_restricted"
-    assert substitute["full_verification_replaces"] == urls["A"]
-    assert "full_verification_in_progress" not in substitute
-
-
-def test_fresh_discovery_for_a_pending_substitute_checks_only_that_album(saved_restricted_top, state, monkeypatch):
-    discover, saved, search, urls = saved_restricted_top
-    saved["albums"][urls["B"]]["score"] = ra.STRONG_SCORE
-    ra._save_opportunity(saved, state)
-    monkeypatch.setattr(ra, "MAX_TRACKS", 1)
-
-    result = discover()
-
-    assert "full_verification" not in result["albums"][urls["B"]]
-    assert result["albums"][urls["C"]]["full_verification_replaces"] == urls["A"]
-    assert result["counters"]["full_verification_downloads"] == 1
-    assert search.calls == [("tracks", urls["C"])]
+    assert result["albums"][old_url]["state"] == "restricted"
+    assert "album_rank" not in result["albums"][old_url]
+    top = result["albums"]["https://music.example.test/browse/B"]
+    assert top["album_rank"] == 0 and top["full_verification"] is True
+    assert "full_verification_reason" not in top
+    runner_up = result["albums"]["https://music.example.test/browse/C"]
+    assert runner_up["album_rank"] == 1 and "full_verification" not in runner_up
 
 
 def test_a_members_album_skipped_without_login_is_tried_again_after_logging_in(state, tmp_path):
