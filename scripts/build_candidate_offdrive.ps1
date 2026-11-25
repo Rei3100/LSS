@@ -76,7 +76,7 @@ if ($LASTEXITCODE -ne 0) { throw "build failed" }
 $record.phase = 'runtime-source-check'; Save-BuildReceipt
 # dist is a junction to the data SSD. Freeze and the deploy gate refuse a package reached through a
 # link, so the receipt names the real directory, the one to freeze and deploy.
-$candidate = & $python -c "import os,sys; print(os.path.realpath(sys.argv[1]))" (Join-Path $Worktree "dist\LSS")
+$candidate = & $python -c "import os,sys; print(os.path.realpath(sys.argv[1], strict=True))" (Join-Path $Worktree "dist\LSS")
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $candidate -PathType Container)) { throw "candidate directory cannot be resolved" }
 & $python (Join-Path $Worktree "scripts\check_runtime_sources.py") $candidate --require-data-files
 if ($LASTEXITCODE -ne 0) { throw "candidate provider/adapter differs from source" }
