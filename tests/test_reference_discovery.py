@@ -414,6 +414,30 @@ def test_full_verification_uses_the_top_available_album(
         assert result["state"] == "no_verified_release"
 
 
+def test_unrestricted_top_album_is_fully_verified_even_when_its_title_does_not_match(
+    state, tmp_path, monkeypatch,
+):
+    # 公式の盤の題が作品名と違う表記でも、制限のない最上位の盤は全曲で確かめる（元の順位0の扱い）。
+    monkeypatch.setattr(ra, "SAMPLE_TRACKS", 2)
+    monkeypatch.setattr(ra, "theme_songs", lambda *_: [])
+    ids = ["c1", "c2", "c3"]
+    seeds = {track: seed for seed, track in enumerate(ids, start=700)}
+    seeds["c2"] = 43
+    media = {track: _track(tmp_path / "remote" / f"{track}.flac", seed) for track, seed in seeds.items()}
+    backend = FakeBackend(media)
+    catalog = Catalog(albums={"番組名 オリジナル・サウンドトラック": ["C"]},
+                      listings={"C": ("Original Score Collection", ids)})
+    source = _episode(tmp_path / "『番組名』第1話.wav", [(seeds["c2"], 10.0, 30.0)])
+
+    result = ra.discover(source, source_sha256="z" * 64, cache_dir=_cache(state), state_root=state,
+                         search=catalog, backend=backend, pacing=NO_WAIT, courtesy=_polite())
+
+    top = result["albums"]["https://music.example.test/browse/C"]
+    assert top["album_rank"] == 0 and top["score"] == 0
+    assert top["full_verification"] is True and "full_verification_reason" not in top
+    assert result["verified_tracks"] == ["c2"]
+
+
 def test_full_verification_stops_when_the_album_becomes_restricted_even_with_a_shared_track(
     state, tmp_path, monkeypatch,
 ):

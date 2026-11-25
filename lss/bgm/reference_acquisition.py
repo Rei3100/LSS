@@ -1018,7 +1018,8 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
                 if rank is None or album_row.get("state") == "restricted":
                     continue
                 score = album_row.get("score", 0)
-                is_top = not top_found and score > 0
+                # 制限のない最上位の盤は、元の順位0の扱いのとおり題の一致を問わない。
+                is_top = not top_found and (score > 0 or rank == 0)
                 if score < STRONG_SCORE and not is_top:
                     continue
                 if album_row.get("full_verification"):
@@ -1031,7 +1032,7 @@ def discover(source: Path, *, source_sha256: str | None, cache_dir: Path, state_
                 album_row["full_verification"] = True
                 if is_top:
                     top_found = True
-                    if rank != 0:
+                    if rank != 0 and score < STRONG_SCORE:
                         album_row["full_verification_reason"] = "top_restricted"
                 rows = [_candidate(opportunity, track, {"kind": "album_full", "album_url": url,
                                                         "album_rank": rank,
