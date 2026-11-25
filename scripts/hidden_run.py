@@ -22,6 +22,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 
@@ -93,7 +94,14 @@ def main(argv=None, *, storage_supervisor: bool = False) -> int:
                 data.update(stage='exited', returncode=ended)
             temporary = args.receipt.with_suffix(args.receipt.suffix+'.tmp')
             temporary.write_text(json.dumps(data,indent=2)+'\n', encoding='utf-8')
-            os.replace(temporary,args.receipt)
+            for attempt in range(4):  # a scanner holding the fresh file briefly denies the rename (WinError 5/32)
+                try:
+                    os.replace(temporary, args.receipt)
+                    break
+                except PermissionError:
+                    if attempt == 3:
+                        raise
+                    time.sleep(0.5 * 2 ** attempt)
         print(child.pid)
         return 0
     except BaseException as exc:
