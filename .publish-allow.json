@@ -1418,8 +1418,8 @@
       "reason": "Content, rights and privacy reviewed (Codex full-text review b6, 2026-11-11)"
     },
     "design/reference/LSS App.dc.html": {
-      "blob_oid": "ae59af9fafc00fbb633db47a63d96cea3ae0d912",
-      "reason": "Project UI canvas exported from Claude Design (the owner's own design); the app serves it via lss/ui/web/page.py. Demo rows use neutral C:\\Music folders (rewritten 2026-11-14); no names or private data."
+      "blob_oid": "84d02d848d811a61b122552728e3e5d91948fcfd",
+      "reason": "Content, rights and privacy reviewed after the zero-accompaniment text and the row folder were corrected; no work names, paths or secrets added (2026-11-25)"
     },
     "design/system-assets/LSS System Assets.dc.html": {
       "blob_oid": "c8c5454c65762503b0eb70a72e97134001c2e387",

@@ -1642,7 +1642,7 @@ class Component extends DCLogic {
           const shown = files.slice(0, files.length > 3 ? 2 : 3);
           shown.forEach((fl, j) => out.push({ key: t + j, jp: j === 0 ? L : '', file: fl, fileStyle: fileS(false), tagStyle: tg(reused ? 'have' : 'done', j > 0) }));
           if (files.length > shown.length) out.push({ key: t + 'more', jp: '', file: 'ほか ' + (files.length - shown.length) + ' 曲', fileStyle: fileS(true), tagStyle: tg('done', true) });
-        } else if (o.k === 'none' || reused) out.push({ key: t, jp: L, file: t === 'snd' ? '指定した音は見つかりませんでした' : 'BGM は見つかりませんでした', fileStyle: fileS(true), tagStyle: tg('none') });
+        } else if (o.k === 'none' || reused) out.push({ key: t, jp: L, file: t === 'snd' ? '指定した音は見つかりませんでした' : t === 'inst' ? '伴奏は作られませんでした' : 'BGM は見つかりませんでした', fileStyle: fileS(true), tagStyle: tg('none') });
         else if (o.k === 'held') out.push({ key: t, jp: L, file: '品質の基準に届かなかったため、保存していません', fileStyle: fileS(true), tagStyle: tg('held') });
         else if (!(t === 'snd' && Array.isArray(o.items) && o.items.length)) out.push({ key: t, jp: L, file: o.k === 'unsupported' ? 'この音源には対応していません' : '作成できませんでした。再試行できます', fileStyle: fileS(true), tagStyle: tg(o.k === 'unsupported' ? 'unsup' : 'fail') });
         // each wanted sound that did not become a file says why, in the user's own words
@@ -1770,7 +1770,9 @@ class Component extends DCLogic {
       const showOuts = isHist || (phase === 'complete' && (st === 'done' || (st === 'failed' && !!tt && !whole)));
       const hasAction = open && !isHist && (st === 'failed' || (phase === 'ready' && st === 'queued'));
       const retryable = st === 'failed' && err && err[2];
-      const sp = this.splitPath(showOuts ? f.dir + '\\LSS' : f.dir);
+      // the LSS folder only once something was written there; otherwise the source's folder
+      const folder = showOuts && f.out ? f.dir + '\\LSS' : f.dir;
+      const sp = this.splitPath(folder);
       const pfs = 12;
       const stamp = (s.stamps && s.stamps[id]) || (f.on ? { on: f.on, at: f.at } : null);
       let note = '';
@@ -1845,7 +1847,7 @@ class Component extends DCLogic {
         wave: open && !showOuts ? this.wave(id, 120).map(hh => ({ flex: 1, minWidth: 0, height: hh + '%', background: hh > 80 ? 'oklch(0.62 0.15 27)' : 'oklch(0.46 0.012 264)' })) : [],
         hasOutputs: open && showOuts, outputs: showOuts ? outputsFor(id) : [],
         pathBoxStyle: Object.assign({}, pathBox(pfs), { cursor: 'pointer', transition: 'border-color .15s ease, transform .12s ease' }), pathRoot: sp.root, pathLeaf: sp.leaf,
-        onOpen: (e) => { if (e) e.stopPropagation(); },
+        folder, onOpen: (e) => { if (e) e.stopPropagation(); },
         pathRootStyle: pathRoot(pfs), pathLeafStyle: pathLeaf(pfs),
         hasNote: !!note, note,
         hasStamp: isHist && !!stamp, savedDate: stamp ? stamp.on : '', savedTime: stamp ? stamp.at : '',
