@@ -4,6 +4,9 @@ from types import SimpleNamespace
 
 import pytest
 
+if not (Path(__file__).resolve().parents[1] / "scripts" / "run_bgm_inference_probe.py").is_file():
+    pytest.skip("missing scripts/run_bgm_inference_probe.py", allow_module_level=True)
+
 from lss.bgm.inference_variants import InferenceVariantRecipe
 from scripts.run_bgm_dominance_probe import definition, evaluate
 from scripts.run_bgm_spatial_probe import sha256

@@ -4,8 +4,9 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from scripts.dev_source_frame_evidence import extract
+from scripts import dev_source_frame_evidence as frame_evidence
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,7 +16,7 @@ FFMPEG = ROOT / "bin" / "ffmpeg.exe"
 @unittest.skipUnless(FFMPEG.is_file(), "bundled ffmpeg is required for this CPU-only fixture")
 class SourceFrameEvidenceTest(unittest.TestCase):
     def test_filename_pts_is_png_packet_pts_on_generated_video(self):
-        with tempfile.TemporaryDirectory(dir=ROOT / ".state") as temporary:
+        with tempfile.TemporaryDirectory() as temporary:
             base = Path(temporary)
             source = base / "fixture.mkv"
             generated = subprocess.run(
@@ -28,7 +29,8 @@ class SourceFrameEvidenceTest(unittest.TestCase):
             digest = hashlib.sha256(source.read_bytes()).hexdigest()
             self.assertEqual(source.drive.upper(), "C:")
             output = base / "evidence"
-            manifest_path = extract(str(source), digest, str(FFMPEG), [1.0], str(output))
+            with patch.object(frame_evidence, "STATE_ROOT", base):
+                manifest_path = frame_evidence.extract(str(source), digest, str(FFMPEG), [1.0], str(output))
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             frame = manifest["frames"][0]
             self.assertTrue(frame["filename_pts_identifies_saved_frame"])
@@ -45,11 +47,11 @@ class SourceFrameEvidenceTest(unittest.TestCase):
             self.assertTrue(manifest["source_unchanged"])
 
     def test_refuses_existing_output(self):
-        with tempfile.TemporaryDirectory(dir=ROOT / "tests") as temporary:
+        with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "already-there"
             path.mkdir()
             with self.assertRaises(FileExistsError):
-                extract("C:/unused.mkv", "0" * 64, str(FFMPEG), [1.0], str(path))
+                frame_evidence.extract("C:/unused.mkv", "0" * 64, str(FFMPEG), [1.0], str(path))
 
 
 if __name__ == "__main__":

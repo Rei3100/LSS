@@ -1,4 +1,4 @@
-"""Local-only disposable Git fixtures; all fixture writes stay inside this repo."""
+"""Git helpers for history checks and disposable repositories used in tests."""
 import json
 import os
 from pathlib import Path
@@ -10,6 +10,19 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 GUARD = ROOT / "gates" / "public_guard.py"
 MIGRATE = ROOT / "gates" / "migrate_to_public.py"
+
+
+def require_historical_commits(repo: Path, *revisions: str) -> None:
+    import pytest
+
+    for revision in revisions:
+        result = subprocess.run(
+            ["git", "cat-file", "-e", f"{revision}^{{commit}}"], cwd=repo,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        )
+        if result.returncode:
+            pytest.skip(f"old commit {revision} is not in the public history")
 
 
 class RepoTest(unittest.TestCase):

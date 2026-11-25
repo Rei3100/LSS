@@ -97,9 +97,16 @@ def test_real_sources_unify_vgmdb_romanized_original_composers_with_musicbrainz(
     import contextlib
     from lss.metadata.sources import musicbrainz, vgmdb
 
-    root = Path(__file__).parent / "fixtures" / "metadata"
-    mb_body = (root / "musicbrainz" / "lookup_ae026de5.json").read_text(encoding="utf-8")
-    vg_body = (root / "vgmdb" / "album_900001.html").read_text(encoding="utf-8")
+    repo = Path(__file__).resolve().parents[1]
+    root = repo / "tests" / "fixtures" / "metadata"
+    mb_path = root / "musicbrainz" / "lookup_ae026de5.json"
+    vg_path = root / "vgmdb" / "album_900001.html"
+    missing = [path.relative_to(repo).as_posix()
+               for path in (mb_path, vg_path) if not path.is_file()]
+    if missing:
+        pytest.skip("missing fixtures: " + ", ".join(missing))
+    mb_body = mb_path.read_text(encoding="utf-8")
+    vg_body = vg_path.read_text(encoding="utf-8")
 
     def opener(url):
         if url.endswith("robots.txt"):
