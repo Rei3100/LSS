@@ -407,12 +407,10 @@ Component = class LSSComponent extends Component {
     }
     // what the COMPLETE panel counts, for the notification that may say it while LSS is in the tray
     this._lss.toast = (v.toastTags || []).map(t => t.t);
-    // a row's path opens the folder it names: the source's folder, or after a session its LSS folder
+    // a row's path opens the folder it names: the source's folder, or its LSS folder once something was written there
     v.rows.forEach(r => {
-      const dir = this.song(r.key).dir;
-      if (!dir) return;
-      const target = r.hasOutputs ? dir + '\\LSS' : dir;
-      r.onOpen = (e) => { if (e) e.stopPropagation(); this.lssOpen(target); };
+      if (!r.folder) return;
+      r.onOpen = (e) => { if (e) e.stopPropagation(); this.lssOpen(r.folder); };
     });
     // published BGM: show the real file names (they carry the start time), and how many
     // stayed held (not saved) because they did not reach the standard.

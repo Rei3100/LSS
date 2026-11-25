@@ -102,6 +102,77 @@ def test_a_reexported_design_fails_loudly_instead_of_drifting() -> None:
         page.apply("<html><head></head><body></body></html>")
 
 
+def test_result_details_show_zero_messages_and_name_the_lss_folder_only_when_written() -> None:
+    import shutil
+    import subprocess
+
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is required for the result details JavaScript check")
+
+    directory = r"C:\Music"
+    snapshot = {
+        "queue": ["silent", "saved"],
+        "st": {"silent": "done", "saved": "done"},
+        "songs": {
+            "silent": {"name": "silent", "dir": directory, "ch": 2, "zero": True},
+            "saved": {"name": "saved", "dir": directory, "ch": 2, "out": True},
+        },
+        "tst": {
+            "silent": {target: {"k": "none", "n": 0} for target in ("inst", "bgm", "snd")},
+            "saved": {"inst": {"k": "reused", "n": 1}},
+        },
+        "bdef": ["inst", "bgm", "snd"],
+        "settle": {"seq": 1, "kind": "drained"},
+        "arrival": {"seq": 0, "ids": []},
+    }
+    html = page.apply(page.CANVAS.read_text(encoding="utf-8"))
+    script = r'''
+const fs = require('fs'), vm = require('vm');
+const html = fs.readFileSync(0, 'utf8');
+const source = html.match(/<script type="text\/x-dc"[^>]*>([\s\S]*?)<\/script>/)[1];
+const context = {window: {__LSS_INITIAL__: JSON.parse(process.argv[1])}};
+const details = vm.runInNewContext(`
+class DCLogic { constructor(props) { this.props = props; } }
+` + source + `
+const component = new Component({});
+component.state.phase = 'complete';
+['silent', 'saved'].map(id => {
+    component.state.selId = id;
+    const row = component.renderVals().rows.find(r => r.key === id);
+    const opened = [];
+    component.lssCall = (name, path) => opened.push([name, path]);
+    row.onOpen?.();
+    return {
+        hasOutputs: row.hasOutputs,
+        outputs: Object.fromEntries(row.outputs.map(output => [output.key, output.file])),
+        path: row.pathRoot + row.pathLeaf,
+        hasFolderLink: typeof row.onOpen === 'function',
+        opened,
+    };
+});`, context);
+process.stdout.write(JSON.stringify(details));
+'''
+    result = subprocess.run(
+        [node, "-e", script, json.dumps(snapshot)], input=html.encode("utf-8"),
+        capture_output=True, timeout=30, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+    )
+    assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
+    silent, saved = json.loads(result.stdout)
+    assert silent["hasOutputs"]
+    assert silent["outputs"] == {
+        "inst": "伴奏は作られませんでした",
+        "bgm": "BGM は見つかりませんでした",
+        "snd": "指定した音は見つかりませんでした",
+    }
+    # nothing was written: the row names and opens the source's folder, not an empty LSS folder
+    assert (silent["path"], silent["opened"]) == (directory, [["openFolder", directory]])
+    destination = directory + r"\LSS"
+    assert saved["hasFolderLink"]
+    assert saved["path"] == destination
+    assert saved["opened"] == [["openFolder", destination]]
+
+
 # --- セッションの事実 --------------------------------------------------------
 
 
