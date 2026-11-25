@@ -104,15 +104,24 @@ this implementation performs a real GitHub write or network request.
 ## Deployment evidence contract
 
 `deploy-gated.cmd --check-only` evaluates without launching anything and prints
-one JSON verdict with `conditions` and named `failures`; exit 0 means PASS and
-exit 1 means BLOCK. Without `--check-only`, only a full pass invokes the hidden
-launcher once. The result then includes `deployment: LAUNCHED`, which does not
-claim completion. Use its launch receipt and the runbook's installed acceptance
-to establish actual deployment. The command preserves `-KeepPrevious`.
+one JSON verdict with `conditions` and named `failures`. Exit 0 means PASS and
+exit 1 means BLOCK. Without `--check-only`, a full pass allows one launch
+attempt. The gate rechecks HEAD, the remote-tracking commit, checkout
+cleanliness and the verified manifest's SHA-256 immediately before invoking the
+hidden launcher. It passes the same absolute package directory and `pwsh`
+executable that preflight verifies. If deployment
+raises an error after a full pass, the verdict is BLOCK and retains the
+preflight `conditions` and `failures`, with `deployment: REFUSED` and a
+`deployment_error` describing the refusal. A successful launch reports
+`deployment: LAUNCHED`. Use its launch receipt and the runbook's installed
+acceptance to establish actual deployment. The command preserves `-KeepPrevious`.
 
 `--state <json>` selects an explicit state file. The default is
-`$LSS_PRIVATE_ROOT/run/deploy-gate.json`. Paths in that file must be absolute;
-state and receipts stay private. It contains these path references:
+`$LSS_PRIVATE_ROOT/run/deploy-gate.json`. Each path in that file is an absolute
+path string. A relative path fails the condition that reads it and
+`failure_details` names the key. State and receipts stay private. The operator
+creates an empty file at a new `deploy_log` path before running the gate.
+The state contains these path references:
 
 | Key | Existing evidence or normalized receipt |
 | --- | --- |
@@ -134,22 +143,40 @@ existing receipts need a normalized JSON summary referring to their actual
 Evidence; this gate does not generate or invent PASS receipts. The live
 receipt-to-summary integration remains to be verified in T17. Every candidate
 receipt requires `status: PASS` and exact `source_commit`, `exe_sha256` and
-`tree_sha256` from the freeze manifest. Additional fields are below.
+`tree_sha256` from the freeze manifest. Fields of the wrong type fail the
+condition that reads them. The manifest's `package_dir` and the build receipt's
+`candidate` are interpreted as absolute paths or relative to the deployment
+checkout. Additional fields are below.
 
 | Condition | Exact check |
 | --- | --- |
-| `integrated_main` | Source commit equals locally recorded origin/main (conservatively requires the tip); no fetch |
-| `frozen_candidate` | Native frozen type; all package file names, sizes, hashes and tree digest match; no links; EXE hash matches; native build status/phase complete and commit, EXE hash and candidate directory match |
+| `integrated_main` | Source commit equals the commit resolved by local `git rev-parse --verify refs/remotes/origin/main^{commit}`. The gate uses the locally recorded tip. |
+| `frozen_candidate` | Native frozen type; all package file names, sizes, hashes and tree digest match; the package tree and its ancestors have no links or reparse points; EXE hash matches; native build status/phase complete and commit, EXE hash and candidate directory match |
 | `packaged_acceptance` | Candidate receipt has `scope: real-machine-package` |
-| `independent_verification` | Nonempty packaged `builder` and verification `verifier` differ |
+| `independent_verification` | Nonempty packaged `builder` and verification `verifier` strings differ |
 | `answer_key_non_regression` | Candidate receipt has `baseline_exe_sha256` equal to current-product hash, exact `answer_key_sha256`, `non_regression: true`, nonempty `user_benefit`, and `change_kind`; timing-only additionally requires `pcm_identical: true` |
-| `rollback_ready` | Current-product `deployed_executable` exists and hashes to its `exe_sha256`; rollback receipt has same `exe`, `exe_sha256`, `status: PASS` and `startup_pass: true` |
-| `machine_idle` | Candidate receipt's Unix-seconds `observed_at` is at most 60 seconds old, `product_running: false`, `other_gpu_jobs: 0`, `user_heavy_use: false` |
+| `rollback_ready` | Current-product `deployed_executable` and rollback receipt `exe` both identify `deploy_base/LSS/LSS.exe`. That executable exists and hashes to the `exe_sha256` in both records. The rollback receipt has `status: PASS` and `startup_pass: true`. |
+| `machine_idle` | Candidate receipt's numeric Unix-seconds `observed_at` is at most 60 seconds old, `product_running: false`, integer `other_gpu_jobs: 0`, `user_heavy_use: false` |
+| `checkout_head` | HEAD equals the candidate source commit |
+| `checkout_clean` | `git status --porcelain --untracked-files=all` returns no entries |
+| `deploy_base` | Deployment base is an existing directory and neither it nor its ancestors are links or reparse points. The frozen package is distinct from and shares no ancestor-or-descendant relationship with `LSS`, `.LSS.staging`, or `.LSS.previous` under the base. The comparison ignores case and uses directory boundaries. Recovery must leave the installed runtime intact. |
+| `deploy_log` | The log path and its resolved location are outside the frozen package and deployment base. The log already exists as a regular file and opens for append. The gate neither creates the log nor writes to it. |
+| `launch_receipt` | The receipt path and its resolved location are outside the frozen package and deployment base. The parent directory exists. Both the receipt and `<receipt>.tmp` must be absent, and both resolve to paths distinct from the log. |
+| `pwsh` | The gate uses `shutil.which` to find `pwsh.exe` on Windows or `pwsh` elsewhere using absolute directories from `PATH`. It skips relative entries and implicit lookup in the caller's working directory. It passes the resolved executable to the hidden launcher. |
+
+When `.LSS-deploy.json` exists, the gate accepts a version 1 `stage_ready`
+journal for the current managed paths only if the installed target is intact,
+`.LSS.previous` is absent, and staging has no links or reparse points. PowerShell
+can then clear staging and the journal while preserving the installed runtime.
+`previous_saved`, `target_promoted`, `mutable_preserved`, `awaiting_acceptance`,
+unknown phases, invalid journals, and an orphaned `.LSS.previous` block deployment.
+`failure_details.deploy_base` gives the reason and names the phase when available.
+
+The gate hashes the package directory at preflight and cannot detect changes between preflight and the copy. The freeze protects the package during that interval.
 
 The freshness check uses local time. Receipt observations are not a process or
 GPU lock; a job starting after observation remains a race. Build/verifier names
-are an accountable record, not cryptographic proof of independence. Package
-checks rehash bytes; they do not enforce freeze ACLs. T17 must remove each real
-receipt in turn, observe refusal, then use valid receipts for an authorized real
+are an accountable record, not cryptographic proof of independence. T17 must
+remove each real receipt in turn, observe refusal, then use valid receipts for an authorized real
 hidden deployment and independent installed verification. T3 must establish the
 wrapper permission behavior. These machine-dependent claims remain deferred.
