@@ -1446,8 +1446,8 @@
       "reason": "Content, rights and privacy reviewed after one sentence on launch-time naming recovery was added; no work names, paths or secrets added (2026-11-24)"
     },
     "docs/engine/LOCAL_RUNTIME.md": {
-      "blob_oid": "5fdac80527b039b9bfa8505844b549bf453f6db3",
-      "reason": "Content, rights and privacy reviewed after the hidden_run form of the candidate build was added; no work names, paths or secrets added (2026-11-25)"
+      "blob_oid": "5cbe17fe3155f72ffc99de83e3dcd2cc37244dda",
+      "reason": "Content, rights and privacy reviewed after the deploy and rollback steps were rewritten around deploy-gated.cmd; no work names, paths or secrets added (2026-11-25)"
     },
     "docs/engine/QUALITY_AND_DECISIONS.md": {
       "blob_oid": "1b2440c325f13d8595a516bf3f016e8bcd3566c4",
