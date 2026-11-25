@@ -130,13 +130,24 @@ def test_shipped_registry_is_valid_and_has_the_wanted_models():
 
 def test_hdd_weights_refuse_before_staging_or_gpu_launch(env, monkeypatch):
     from dataclasses import replace
-    from dev_hot_paths import HotPathError
-    model = replace(llm.get_model("fake"), path=Path(('E' + chr(58) + '/archive/not-read.gguf')))
+    from functools import partial
+
+    import dev_hot_paths
+
+    weights = (env / "not-read.gguf").resolve()
+    model = replace(llm.get_model("fake"), path=weights)
     monkeypatch.setattr(llm, "get_model", lambda name: model)
+
+    def volume_for(path):
+        return "archive-volume" if Path(path) == weights else "fast-volume"
+
+    monkeypatch.setattr(dev_hot_paths, "require_hot", partial(
+        dev_hot_paths.require_hot, hot_volume=env.anchor, volume_resolver=volume_for))
     monkeypatch.setattr(llm, "stage_path", lambda *a, **kw: pytest.fail("HDD staging is forbidden at execution"))
-    with pytest.raises(HotPathError):
+    with pytest.raises(dev_hot_paths.HotPathError) as raised:
         with llm.serving("fake"):
             pass
+    assert raised.value.record["label"] == "model weights"
     assert FakeLease.events == []
     assert not (env / "fake_pid.txt").exists()
 

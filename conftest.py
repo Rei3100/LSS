@@ -174,6 +174,16 @@ def pytest_configure(config):
         threading.Thread(target=_watch_parent, args=(parent,), daemon=True, name="lss-parent-watch").start()
 
 
+@pytest.fixture
+def queue_storage_policy(tmp_path):
+    """Isolate real subprocess reservations from the machine's capacity thresholds."""
+    return {
+        "hot_volume": tmp_path.anchor,
+        "local_state_root": str(tmp_path / "state"),
+        "storage_budget": {"floor_gb": 0, "default_job_gb": 0},
+    }
+
+
 @pytest.fixture(autouse=True)
 def _fresh_audio_content_identities():
     """Tests synthesize the same samples in many places; an identity verified by decoding in one test must not
